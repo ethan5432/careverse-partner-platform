@@ -418,6 +418,10 @@ If you find this project useful, please consider:
 
 ---
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=refferq/refferq&type=date&legend=top-left)](https://www.star-history.com/#refferq/refferq&type=date&legend=top-left)
+
 ## 🙏 Acknowledgments
 
 Built with ❤️ using:
