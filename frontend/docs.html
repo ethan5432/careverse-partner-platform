@@ -195,6 +195,7 @@
                     <a href="#authentication" class="docs-nav-link">Authentication</a>
                     <a href="#endpoints" class="docs-nav-link">API Endpoints</a>
                     <a href="#webhooks" class="docs-nav-link">Webhooks</a>
+                    <a href="#reports-api" class="docs-nav-link">Reports API</a>
                 </div>
                 <div class="docs-nav-section">
                     <div class="docs-nav-title">Deployment</div>
@@ -483,28 +484,103 @@ Content-Type: application/json
 
             <h2 id="webhooks">🔔 Webhooks</h2>
 
-            <p>Configure webhooks to receive real-time notifications:</p>
+            <div class="success-box">
+                <strong>🆕 New in v1.1.0!</strong> Complete webhook management system with HMAC signatures, auto-retry, and delivery logs.
+            </div>
 
-            <h3>Webhook Events</h3>
+            <p>Configure webhooks to receive real-time notifications when events occur in your affiliate program.</p>
+
+            <h3>Webhook Events (12 Types)</h3>
             <ul>
                 <li><code>affiliate.created</code> - New affiliate registered</li>
-                <li><code>affiliate.approved</code> - Affiliate status changed to ACTIVE</li>
-                <li><code>referral.created</code> - New referral tracked</li>
-                <li><code>conversion.created</code> - New conversion recorded</li>
-                <li><code>payout.completed</code> - Payout marked as completed</li>
+                <li><code>affiliate.approved</code> - Affiliate approved by admin</li>
+                <li><code>affiliate.rejected</code> - Affiliate rejected by admin</li>
+                <li><code>referral.submitted</code> - New referral submitted</li>
+                <li><code>referral.approved</code> - Referral approved</li>
+                <li><code>referral.rejected</code> - Referral rejected</li>
+                <li><code>commission.created</code> - Commission generated</li>
+                <li><code>commission.approved</code> - Commission approved</li>
+                <li><code>commission.paid</code> - Commission paid out</li>
+                <li><code>payout.requested</code> - Payout requested</li>
+                <li><code>payout.completed</code> - Payout completed</li>
+                <li><code>payout.failed</code> - Payout failed</li>
             </ul>
+
+            <h3>Webhook Management API</h3>
+            <pre><code># Create a webhook
+POST /api/admin/webhooks
+{
+  "name": "My Webhook",
+  "url": "https://example.com/webhook",
+  "events": ["affiliate.approved", "commission.paid"]
+}
+
+# List webhooks
+GET /api/admin/webhooks
+
+# Update webhook
+PUT /api/admin/webhooks?id=webhook_id
+
+# Delete webhook
+DELETE /api/admin/webhooks?id=webhook_id
+
+# Test webhook
+POST /api/admin/webhooks?action=test&id=webhook_id</code></pre>
+
+            <h3>Webhook Security</h3>
+            <p>All webhooks include HMAC SHA-256 signatures for verification:</p>
+            <pre><code># Headers sent with each webhook
+X-Refferq-Event: affiliate.approved
+X-Refferq-Signature: sha256=abc123...
+X-Refferq-Delivery: del_123456
+X-Refferq-Timestamp: 2025-12-14T10:30:00Z</code></pre>
 
             <h3>Webhook Payload Example</h3>
             <pre><code>{
-  "event": "conversion.created",
-  "timestamp": "2025-10-12T10:30:00Z",
+  "event": "commission.paid",
+  "timestamp": "2025-12-14T10:30:00Z",
   "data": {
-    "conversionId": "conv_123",
+    "commissionId": "comm_123",
     "affiliateId": "aff_456",
-    "amount": 99.99,
-    "commission": 19.99,
-    "orderId": "order_789"
+    "affiliateName": "John Doe",
+    "amount": 19.99,
+    "currency": "USD"
   }
+}</code></pre>
+
+            <h3>Retry Logic</h3>
+            <p>Failed webhooks are automatically retried with exponential backoff:</p>
+            <ul>
+                <li>1st retry: 2 minutes after failure</li>
+                <li>2nd retry: 4 minutes after 1st retry</li>
+                <li>3rd retry: 8 minutes after 2nd retry</li>
+                <li>Webhook disabled after 5 consecutive failures</li>
+            </ul>
+
+            <h2 id="reports-api">📊 Reports API</h2>
+
+            <div class="success-box">
+                <strong>🆕 New in v1.1.0!</strong> Comprehensive analytics and reporting endpoints.
+            </div>
+
+            <h3>Get Analytics Data</h3>
+            <pre><code>GET /api/admin/reports?range=30d
+
+# Available ranges: today, 7d, 30d, 90d, 1y, all</code></pre>
+
+            <h3>Response</h3>
+            <pre><code>{
+  "overview": {
+    "totalRevenue": 15000.00,
+    "totalCommissions": 3000.00,
+    "totalConversions": 150,
+    "conversionRate": 3.5,
+    "avgOrderValue": 100.00
+  },
+  "topPerformers": [...],
+  "geoData": [...],
+  "trafficSources": [...],
+  "conversionFunnel": {...}
 }</code></pre>
 
             <h2 id="vercel">☁️ Deploy to Vercel</h2>

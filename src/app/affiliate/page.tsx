@@ -40,59 +40,69 @@ function DashboardPage({ stats, referrals }: { stats: AffiliateStats | null; ref
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
       <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Total Earnings</span>
-            <span className="text-2xl">💰</span>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-500 font-medium">Total Earnings</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+              <span className="text-white">💰</span>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
             ₹{((stats?.totalEarnings || 0) / 100).toFixed(2)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Lifetime earnings</p>
+          <p className="text-xs text-gray-400 mt-2">Lifetime earnings</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Total Clicks</span>
-            <span className="text-2xl">👆</span>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-500 font-medium">Total Clicks</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
+              <span className="text-white">👆</span>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats?.totalClicks || 0}</p>
-          <p className="text-xs text-gray-500 mt-1">Link clicks</p>
+          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">{stats?.totalClicks || 0}</p>
+          <p className="text-xs text-gray-400 mt-2">Link clicks</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Total Leads</span>
-            <span className="text-2xl">📊</span>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-500 font-medium">Total Leads</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+              <span className="text-white">📊</span>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats?.totalLeads || 0}</p>
-          <p className="text-xs text-gray-500 mt-1">Submitted leads</p>
+          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">{stats?.totalLeads || 0}</p>
+          <p className="text-xs text-gray-400 mt-2">Submitted leads</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Customers</span>
-            <span className="text-2xl">✅</span>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-500 font-medium">Customers</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
+              <span className="text-white">✅</span>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats?.totalReferredCustomers || 0}</p>
-          <p className="text-xs text-gray-500 mt-1">Converted customers</p>
+          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">{stats?.totalReferredCustomers || 0}</p>
+          <p className="text-xs text-gray-400 mt-2">Converted customers</p>
         </div>
       </div>
 
       {/* Links Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Referral Links</h3>
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-5">Your Referral Links</h3>
         
         {!stats?.referralCode ? (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-4">🔗</div>
-            <p className="text-gray-600 mb-4">No referral code found</p>
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="text-center py-10">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🔗</span>
+            </div>
+            <p className="text-gray-600 mb-2 font-medium">No referral code found</p>
+            <p className="text-sm text-gray-400 mb-5">
               Generate your referral code to start earning commissions
             </p>
             <button
@@ -110,42 +120,42 @@ function DashboardPage({ stats, referrals }: { stats: AffiliateStats | null; ref
                   alert('Failed to generate code. Please try again.');
                 }
               }}
-              className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 font-medium transition-all duration-300"
             >
               Generate Referral Code
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Referral Link</label>
-              <div className="flex gap-2">
+              <label className="block text-sm font-medium text-gray-600 mb-2">Referral Link</label>
+              <div className="flex gap-3">
                 <input
                   type="text"
                   readOnly
                   value={stats?.referralLink || ''}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
                 <button
                   onClick={() => copyToClipboard(stats?.referralLink || '')}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium"
+                  className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 text-sm font-semibold transition-all duration-300"
                 >
                   Copy
                 </button>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Referral Code</label>
-              <div className="flex gap-2">
+              <label className="block text-sm font-medium text-gray-600 mb-2">Referral Code</label>
+              <div className="flex gap-3">
                 <input
                   type="text"
                   readOnly
                   value={stats?.referralCode || ''}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
                 <button
                   onClick={() => copyToClipboard(stats?.referralCode || '')}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium"
+                  className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 text-sm font-semibold transition-all duration-300"
                 >
                   Copy
                 </button>
@@ -156,42 +166,45 @@ function DashboardPage({ stats, referrals }: { stats: AffiliateStats | null; ref
       </div>
 
       {/* Recent Referrals */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Referrals</h3>
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-5">Recent Referrals</h3>
         {referrals.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No referrals yet</p>
+          <div className="text-center py-10 text-gray-400">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">📋</span>
+            </div>
+            <p className="font-medium">No referrals yet</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Name</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Email</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Value</th>
+                <tr className="border-b border-gray-200 bg-gray-50/50">
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Value</th>
                 </tr>
               </thead>
               <tbody>
                 {referrals.slice(0, 5).map((ref) => (
-                  <tr key={ref.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm text-gray-900">{ref.leadName}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{ref.leadEmail}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        ref.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                        ref.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
+                  <tr key={ref.id} className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors">
+                    <td className="py-4 px-5 text-sm font-medium text-gray-900">{ref.leadName}</td>
+                    <td className="py-4 px-5 text-sm text-gray-500">{ref.leadEmail}</td>
+                    <td className="py-4 px-5">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        ref.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                        ref.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                        'bg-amber-100 text-amber-700'
                       }`}>
                         {ref.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className="py-4 px-5 text-sm text-gray-500">
                       {new Date(ref.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-900 text-right">
+                    <td className="py-4 px-5 text-sm font-semibold text-gray-900 text-right">
                       ₹{(Number(ref.estimatedValue) || 0).toFixed(2)}
                     </td>
                   </tr>
@@ -214,14 +227,14 @@ function ReferralsPage({ referrals, onSubmitLead }: { referrals: Referral[]; onS
     : referrals;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Referrals</h2>
         <button
           onClick={onSubmitLead}
-          className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium flex items-center gap-2"
+          className="px-5 py-2.5 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:shadow-lg hover:shadow-gray-900/20 font-medium flex items-center gap-2 transition-all duration-300"
         >
-          <span>+</span>
+          <span className="text-lg">+</span>
           <span>Submit lead</span>
         </button>
       </div>
@@ -231,20 +244,20 @@ function ReferralsPage({ referrals, onSubmitLead }: { referrals: Referral[]; onS
         <div className="flex gap-6">
           <button
             onClick={() => setActiveTab('all')}
-            className={`pb-3 px-1 border-b-2 font-medium text-sm ${
+            className={`pb-3 px-1 border-b-2 font-semibold text-sm transition-all ${
               activeTab === 'all'
                 ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
             }`}
           >
             Referrals ({referrals.length})
           </button>
           <button
             onClick={() => setActiveTab('submitted')}
-            className={`pb-3 px-1 border-b-2 font-medium text-sm ${
+            className={`pb-3 px-1 border-b-2 font-semibold text-sm transition-all ${
               activeTab === 'submitted'
                 ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
             }`}
           >
             Submitted Leads ({referrals.filter(r => r.status === 'PENDING').length})
@@ -253,14 +266,17 @@ function ReferralsPage({ referrals, onSubmitLead }: { referrals: Referral[]; onS
       </div>
 
       {/* Referrals Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100">
         {filteredReferrals.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">📋</div>
-            <p className="text-gray-600 mb-4">No referrals yet</p>
+          <div className="text-center py-16">
+            <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-4xl">📋</span>
+            </div>
+            <p className="text-gray-600 mb-2 font-medium text-lg">No referrals yet</p>
+            <p className="text-gray-400 mb-6">Start submitting leads to earn commissions</p>
             <button
               onClick={onSubmitLead}
-              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium"
+              className="px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:shadow-lg font-medium transition-all duration-300"
             >
               Submit your first lead
             </button>
@@ -269,34 +285,34 @@ function ReferralsPage({ referrals, onSubmitLead }: { referrals: Referral[]; onS
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Lead Name</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Email</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Company</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Est. Value</th>
+                <tr className="border-b border-gray-200 bg-gray-50/80">
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lead Name</th>
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Est. Value</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredReferrals.map((ref) => (
-                  <tr key={ref.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900">{ref.leadName}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{ref.leadEmail}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{ref.company || '-'}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        ref.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                        ref.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
+                  <tr key={ref.id} className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors">
+                    <td className="py-4 px-5 text-sm font-medium text-gray-900">{ref.leadName}</td>
+                    <td className="py-4 px-5 text-sm text-gray-500">{ref.leadEmail}</td>
+                    <td className="py-4 px-5 text-sm text-gray-500">{ref.company || '-'}</td>
+                    <td className="py-4 px-5">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        ref.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                        ref.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                        'bg-amber-100 text-amber-700'
                       }`}>
                         {ref.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className="py-4 px-5 text-sm text-gray-500">
                       {new Date(ref.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-900 text-right">
+                    <td className="py-4 px-5 text-sm font-semibold text-gray-900 text-right">
                       ₹{(Number(ref.estimatedValue) || 0).toFixed(2)}
                     </td>
                   </tr>
@@ -321,33 +337,33 @@ function PayoutsPage({ stats, payouts }: { stats: AffiliateStats | null; payouts
     .reduce((sum, p) => sum + p.amount, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
       <h2 className="text-2xl font-bold text-gray-900">Payouts</h2>
 
       {/* Earnings Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p className="text-sm text-gray-600 mb-2">Total Earned</p>
-          <p className="text-2xl font-bold text-gray-900">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
+          <p className="text-sm text-gray-500 font-medium mb-2">Total Earned</p>
+          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
             ₹{((stats?.totalEarnings || 0) / 100).toFixed(2)}
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p className="text-sm text-gray-600 mb-2">Total Paid</p>
-          <p className="text-2xl font-bold text-green-600">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
+          <p className="text-sm text-gray-500 font-medium mb-2">Total Paid</p>
+          <p className="text-3xl font-bold text-emerald-600">
             ₹{(totalPaid / 100).toFixed(2)}
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p className="text-sm text-gray-600 mb-2">Pending</p>
-          <p className="text-2xl font-bold text-yellow-600">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
+          <p className="text-sm text-gray-500 font-medium mb-2">Pending</p>
+          <p className="text-3xl font-bold text-amber-600">
             ₹{(pendingAmount / 100).toFixed(2)}
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
           <p className="text-sm text-gray-600 mb-2">Next Payout</p>
           <p className="text-lg font-bold text-gray-900">Jan 1, 2026</p>
           <p className="text-xs text-gray-500 mt-1">Monthly cycle</p>
@@ -656,10 +672,10 @@ export default function AffiliateDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -667,107 +683,133 @@ export default function AffiliateDashboard() {
 
   if (!user || !user.hasAffiliate) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h1>
-          <p className="text-gray-600">Affiliate account required</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">🔒</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-500">Affiliate account required</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-          notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-xl border backdrop-blur-sm animate-slideIn ${
+          notification.type === 'success' 
+            ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800' 
+            : 'bg-red-50/90 border-red-200 text-red-800'
         }`}>
-          <div className="flex items-center gap-2">
-            <span>{notification.type === 'success' ? '✓' : '⚠'}</span>
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              notification.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'
+            }`}>
+              <span>{notification.type === 'success' ? '✓' : '⚠'}</span>
+            </div>
             <span className="text-sm font-medium">{notification.message}</span>
           </div>
         </div>
       )}
 
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-60 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-900">Affiliate Portal</h1>
-          <p className="text-sm text-gray-500 mt-1">Welcome, {user.name}</p>
+      <div className="fixed left-0 top-0 h-full w-60 bg-white/80 backdrop-blur-xl border-r border-gray-200/50 flex flex-col shadow-xl shadow-gray-200/20">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+              <span className="text-white text-lg">💎</span>
+            </div>
+            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">Affiliate Portal</h1>
+          </div>
+          <p className="text-sm text-gray-500 ml-1">Welcome, {user.name}</p>
         </div>
 
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 space-y-1">
           <button
             onClick={() => setActivePage('dashboard')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-left ${
-              activePage === 'dashboard' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-left font-medium transition-all duration-200 ${
+              activePage === 'dashboard' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>🏠</span>
+            <span className="text-lg">🏠</span>
             <span>Dashboard</span>
           </button>
           
           <button
             onClick={() => setActivePage('referrals')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-left ${
-              activePage === 'referrals' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-left font-medium transition-all duration-200 ${
+              activePage === 'referrals' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>👥</span>
+            <span className="text-lg">👥</span>
             <span>Referrals</span>
           </button>
           
           <button
             onClick={() => setActivePage('resources')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-left ${
-              activePage === 'resources' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-left font-medium transition-all duration-200 ${
+              activePage === 'resources' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>📚</span>
+            <span className="text-lg">📚</span>
             <span>Resources</span>
           </button>
           
           <button
             onClick={() => setActivePage('payouts')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-left ${
-              activePage === 'payouts' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-left font-medium transition-all duration-200 ${
+              activePage === 'payouts' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>💳</span>
+            <span className="text-lg">💳</span>
             <span>Payouts</span>
           </button>
           
           <button
             onClick={() => setActivePage('reports')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-left ${
-              activePage === 'reports' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-left font-medium transition-all duration-200 ${
+              activePage === 'reports' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
+            <span className="text-lg">📊</span>
             <span className="flex items-center gap-2">
-              📊
-              <span>Reports</span>
-              <span className="ml-auto px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">Beta</span>
+              Reports
+              <span className="px-2 py-0.5 text-[10px] bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full font-semibold">Beta</span>
             </span>
           </button>
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-100">
           <button
             onClick={() => setActivePage('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 text-left ${
-              activePage === 'settings' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-2 text-left font-medium transition-all duration-200 ${
+              activePage === 'settings' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>⚙️</span>
+            <span className="text-lg">⚙️</span>
             <span>Settings</span>
           </button>
           
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-red-500 hover:bg-red-50 font-medium transition-all duration-200"
           >
-            <span>🚪</span>
+            <span className="text-lg">🚪</span>
             <span>Sign Out</span>
           </button>
         </div>
@@ -776,10 +818,12 @@ export default function AffiliateDashboard() {
       {/* Main Content */}
       <div className="ml-60 p-8">
         {/* Top Banner */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center gap-2 text-green-800">
-            <span>✓</span>
-            <span className="text-sm font-medium">Earn 20% on all paid customers.</span>
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-5 mb-6 shadow-lg shadow-emerald-500/20">
+          <div className="flex items-center gap-3 text-white">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <span className="text-xl">💰</span>
+            </div>
+            <span className="font-semibold">Earn 20% on all paid customers. Start referring today!</span>
           </div>
         </div>
 
@@ -823,25 +867,25 @@ export default function AffiliateDashboard() {
 
       {/* Submit Lead Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Submit lead</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl animate-fadeIn">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Submit lead</h3>
               <button
                 onClick={() => setShowSubmitModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all"
               >
-                <span className="text-2xl">&times;</span>
+                <span className="text-xl">&times;</span>
               </button>
             </div>
 
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-500 mb-8">
               Enter the details below to submit a lead. Ensure all information is accurate for proper tracking and follow-up.
             </p>
 
-            <form onSubmit={handleSubmitLead} className="space-y-4">
+            <form onSubmit={handleSubmitLead} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   What's the lead's name?*
                 </label>
                 <input
@@ -849,13 +893,13 @@ export default function AffiliateDashboard() {
                   required
                   value={submitForm.leadName}
                   onChange={(e) => setSubmitForm({ ...submitForm, leadName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                   placeholder="Full name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   What is the main contact's email address?*
                 </label>
                 <input
@@ -863,23 +907,23 @@ export default function AffiliateDashboard() {
                   required
                   value={submitForm.leadEmail}
                   onChange={(e) => setSubmitForm({ ...submitForm, leadEmail: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                   placeholder="email@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   What is the estimated deal size for this lead? (Type 0 if unsure)*
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-500">₹</span>
+                  <span className="absolute left-4 top-3.5 text-gray-400 font-medium">₹</span>
                   <input
                     type="number"
                     required
                     value={submitForm.estimatedValue}
                     onChange={(e) => setSubmitForm({ ...submitForm, estimatedValue: e.target.value })}
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                     placeholder="0"
                   />
                 </div>
@@ -887,7 +931,7 @@ export default function AffiliateDashboard() {
 
               <button
                 type="submit"
-                className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium"
+                className="w-full py-3.5 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:shadow-lg hover:shadow-gray-900/20 font-semibold transition-all duration-300"
               >
                 Submit lead
               </button>

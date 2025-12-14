@@ -51,4 +51,4 @@ logs
 *.log
 
 # Copilot
-.copilot-instructions.md
+.github/copilot-instructions.md

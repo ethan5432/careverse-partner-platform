@@ -803,6 +803,85 @@ function PartnersPage() {
     setShowActionsMenu(false);
   };
 
+  // Bulk Approve Selected Partners
+  const handleBulkApprove = async () => {
+    if (selectedPartners.length === 0) {
+      alert('Please select partners to approve');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to approve ${selectedPartners.length} partner(s)?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/affiliates/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          affiliateIds: selectedPartners,
+          action: 'changeStatus',
+          status: 'ACTIVE'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`Successfully approved ${selectedPartners.length} partner(s)`);
+        setSelectedPartners([]);
+        fetchPartners();
+      } else {
+        alert(data.error || 'Failed to approve partners');
+      }
+      setShowActionsMenu(false);
+    } catch (error) {
+      console.error('Failed to approve partners:', error);
+      alert('Failed to approve partners');
+    }
+  };
+
+  // Bulk Reject Selected Partners
+  const handleBulkReject = async () => {
+    if (selectedPartners.length === 0) {
+      alert('Please select partners to reject');
+      return;
+    }
+
+    const reason = prompt('Enter rejection reason (optional):');
+
+    if (!confirm(`Are you sure you want to reject ${selectedPartners.length} partner(s)?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/affiliates/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          affiliateIds: selectedPartners,
+          action: 'changeStatus',
+          status: 'INACTIVE',
+          reason: reason
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`Successfully rejected ${selectedPartners.length} partner(s)`);
+        setSelectedPartners([]);
+        fetchPartners();
+      } else {
+        alert(data.error || 'Failed to reject partners');
+      }
+      setShowActionsMenu(false);
+    } catch (error) {
+      console.error('Failed to reject partners:', error);
+      alert('Failed to reject partners');
+    }
+  };
+
   const handleDeleteSelected = async () => {
     if (selectedPartners.length === 0) {
       alert('Please select partners to delete');
@@ -1113,6 +1192,33 @@ function PartnersPage() {
                   >
                     <span>📥</span> Import partners
                   </button>
+                  <div className="border-t border-gray-200 my-2"></div>
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Quick Actions</div>
+                  <button 
+                    onClick={handleBulkApprove} 
+                    className="w-full text-left px-3 py-2 text-sm text-green-600 hover:bg-green-50 rounded flex items-center gap-2"
+                    disabled={selectedPartners.length === 0}
+                  >
+                    <span>✅</span> Approve selected partners
+                    {selectedPartners.length > 0 && (
+                      <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                        {selectedPartners.length}
+                      </span>
+                    )}
+                  </button>
+                  <button 
+                    onClick={handleBulkReject} 
+                    className="w-full text-left px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 rounded flex items-center gap-2"
+                    disabled={selectedPartners.length === 0}
+                  >
+                    <span>❌</span> Reject selected partners
+                    {selectedPartners.length > 0 && (
+                      <span className="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                        {selectedPartners.length}
+                      </span>
+                    )}
+                  </button>
+                  <div className="border-t border-gray-200 my-2"></div>
                   <button 
                     onClick={handleChangeStatus} 
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded flex items-center gap-2"
@@ -5488,6 +5594,640 @@ function EmailsPage() {
   );
 }
 
+// Reports Page Component with Analytics Dashboard
+function ReportsPage() {
+  const [loading, setLoading] = useState(true);
+  const [activeReportTab, setActiveReportTab] = useState<'analytics' | 'reports' | 'leaderboard' | 'funnel'>('analytics');
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '12m' | 'custom'>('30d');
+  const [customDateStart, setCustomDateStart] = useState('');
+  const [customDateEnd, setCustomDateEnd] = useState('');
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [reportsData, setReportsData] = useState<any>(null);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv');
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedReportType, setSelectedReportType] = useState<'summary' | 'affiliates' | 'referrals' | 'commissions' | 'payouts'>('summary');
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [dateRange, customDateStart, customDateEnd]);
+
+  const getDaysFromRange = () => {
+    switch (dateRange) {
+      case '7d': return 7;
+      case '30d': return 30;
+      case '90d': return 90;
+      case '12m': return 365;
+      default: return 30;
+    }
+  };
+
+  const fetchAnalyticsData = async () => {
+    try {
+      setLoading(true);
+      const days = getDaysFromRange();
+      
+      const [analyticsRes, reportsRes] = await Promise.all([
+        fetch(`/api/admin/analytics?days=${days}`),
+        fetch(`/api/admin/reports?type=summary`)
+      ]);
+
+      const analyticsJson = await analyticsRes.json();
+      const reportsJson = await reportsRes.json();
+
+      if (analyticsJson.success) {
+        setAnalyticsData(analyticsJson.analytics);
+      }
+      if (reportsJson.success) {
+        setReportsData(reportsJson.report);
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportReport = async () => {
+    try {
+      const startDate = customDateStart || new Date(Date.now() - getDaysFromRange() * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const endDate = customDateEnd || new Date().toISOString().split('T')[0];
+      
+      if (exportFormat === 'csv') {
+        const response = await fetch(`/api/admin/reports?type=${selectedReportType}&format=csv&startDate=${startDate}&endDate=${endDate}`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${selectedReportType}-report-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        // PDF export - create printable view
+        const response = await fetch(`/api/admin/reports?type=${selectedReportType}&startDate=${startDate}&endDate=${endDate}`);
+        const data = await response.json();
+        
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>${selectedReportType} Report - Refferq</title>
+                <style>
+                  body { font-family: Arial, sans-serif; padding: 40px; }
+                  h1 { color: #1a1a1a; border-bottom: 2px solid #4F46E5; padding-bottom: 10px; }
+                  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                  th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                  th { background-color: #4F46E5; color: white; }
+                  tr:nth-child(even) { background-color: #f9f9f9; }
+                  .summary { background: #f0f4ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+                  .meta { color: #666; font-size: 12px; margin-bottom: 20px; }
+                </style>
+              </head>
+              <body>
+                <h1>${data.report?.type || 'Report'}</h1>
+                <div class="meta">Generated: ${new Date().toLocaleString()} | Period: ${startDate} to ${endDate}</div>
+                ${data.report?.summary ? `
+                  <div class="summary">
+                    <strong>Summary</strong><br/>
+                    Total Affiliates: ${data.report.summary.totalAffiliates}<br/>
+                    Total Referrals: ${data.report.summary.totalReferrals}<br/>
+                    Conversion Rate: ${data.report.summary.conversionRate}%<br/>
+                    Total Commissions: ₹${((data.report.summary.totalCommissionAmount || 0) / 100).toFixed(2)}
+                  </div>
+                ` : ''}
+                ${data.report?.data ? `
+                  <table>
+                    <thead>
+                      <tr>${Object.keys(data.report.data[0] || {}).map((k: string) => `<th>${k}</th>`).join('')}</tr>
+                    </thead>
+                    <tbody>
+                      ${data.report.data.map((row: any) => `<tr>${Object.values(row).map((v: any) => `<td>${v}</td>`).join('')}</tr>`).join('')}
+                    </tbody>
+                  </table>
+                ` : ''}
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+          printWindow.print();
+        }
+      }
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
+    }
+  };
+
+  const conversionFunnelData = analyticsData ? [
+    { stage: 'Clicks', value: analyticsData.overview?.totalReferrals * 3 || 0, color: '#818CF8' },
+    { stage: 'Leads', value: analyticsData.overview?.totalReferrals || 0, color: '#6366F1' },
+    { stage: 'Conversions', value: analyticsData.overview?.approvedReferrals || 0, color: '#4F46E5' },
+    { stage: 'Paid', value: analyticsData.commissionStats?.paid?.count || 0, color: '#4338CA' },
+  ] : [];
+
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-6">
+        <div className="h-12 bg-gray-200 rounded-xl w-1/3"></div>
+        <div className="grid grid-cols-4 gap-6">
+          {[1,2,3,4].map(i => <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>)}
+        </div>
+        <div className="h-96 bg-gray-200 rounded-xl"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Analytics & Reports</h2>
+          <p className="text-gray-500 mt-1">Track performance, generate reports, and export data</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Date Range Selector */}
+          <div className="flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden">
+            {['7d', '30d', '90d', '12m'].map((range) => (
+              <button
+                key={range}
+                onClick={() => setDateRange(range as any)}
+                className={`px-4 py-2 text-sm font-medium transition-all ${
+                  dateRange === range
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : range === '90d' ? '90 Days' : '12 Months'}
+              </button>
+            ))}
+            <button
+              onClick={() => setDateRange('custom')}
+              className={`px-4 py-2 text-sm font-medium transition-all ${
+                dateRange === 'custom'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Custom
+            </button>
+          </div>
+          
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-indigo-500/30 transition-all"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export Report
+          </button>
+        </div>
+      </div>
+
+      {/* Custom Date Range */}
+      {dateRange === 'custom' && (
+        <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-600">From:</label>
+            <input
+              type="date"
+              value={customDateStart}
+              onChange={(e) => setCustomDateStart(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-600">To:</label>
+            <input
+              type="date"
+              value={customDateEnd}
+              onChange={(e) => setCustomDateEnd(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <button
+            onClick={fetchAnalyticsData}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+          >
+            Apply
+          </button>
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-gray-200">
+        {[
+          { id: 'analytics', label: 'Analytics Dashboard', icon: '📊' },
+          { id: 'leaderboard', label: 'Top Performers', icon: '🏆' },
+          { id: 'funnel', label: 'Conversion Funnel', icon: '📈' },
+          { id: 'reports', label: 'Reports', icon: '📑' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveReportTab(tab.id as any)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all ${
+              activeReportTab === tab.id
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <span>{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Analytics Dashboard Tab */}
+      {activeReportTab === 'analytics' && (
+        <div className="space-y-6">
+          {/* Key Metrics */}
+          <div className="grid grid-cols-4 gap-6">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-indigo-100">Total Revenue</span>
+                <span className="text-3xl">💰</span>
+              </div>
+              <div className="text-3xl font-bold">₹{((analyticsData?.overview?.totalRevenue || 0) / 100).toFixed(2)}</div>
+              <div className="text-indigo-200 text-sm mt-2">Last {getDaysFromRange()} days</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-emerald-100">Conversion Rate</span>
+                <span className="text-3xl">📈</span>
+              </div>
+              <div className="text-3xl font-bold">{analyticsData?.overview?.conversionRate || 0}%</div>
+              <div className="text-emerald-200 text-sm mt-2">{analyticsData?.overview?.approvedReferrals || 0} / {analyticsData?.overview?.totalReferrals || 0} referrals</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-orange-100">Total Referrals</span>
+                <span className="text-3xl">👥</span>
+              </div>
+              <div className="text-3xl font-bold">{analyticsData?.overview?.totalReferrals || 0}</div>
+              <div className="text-orange-200 text-sm mt-2">{analyticsData?.overview?.approvedReferrals || 0} approved</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-blue-100">Pending Commissions</span>
+                <span className="text-3xl">⏳</span>
+              </div>
+              <div className="text-3xl font-bold">₹{((analyticsData?.overview?.pendingCommissions || 0) / 100).toFixed(2)}</div>
+              <div className="text-blue-200 text-sm mt-2">{analyticsData?.commissionStats?.pending?.count || 0} pending</div>
+            </div>
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Revenue Chart */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Revenue Over Time</h3>
+              <div className="h-64 flex items-end gap-2">
+                {(analyticsData?.dailyRevenue || []).slice(-14).map((day: any, index: number) => {
+                  const maxValue = Math.max(...(analyticsData?.dailyRevenue || []).map((d: any) => d.amount || 0), 1);
+                  const height = ((day.amount || 0) / maxValue) * 100;
+                  return (
+                    <div key={index} className="flex-1 flex flex-col items-center justify-end">
+                      <div
+                        className="w-full bg-gradient-to-t from-indigo-600 to-purple-500 rounded-t-lg transition-all hover:opacity-80"
+                        style={{ height: `${Math.max(height, 4)}%` }}
+                        title={`₹${((day.amount || 0) / 100).toFixed(2)}`}
+                      ></div>
+                      <div className="text-xs text-gray-400 mt-2 truncate w-full text-center">
+                        {new Date(day.date).toLocaleDateString('en-US', { day: 'numeric' })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Referral Status Breakdown */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Referral Status Breakdown</h3>
+              <div className="space-y-4">
+                {(analyticsData?.referralsByStatus || []).map((status: any, index: number) => {
+                  const total = (analyticsData?.referralsByStatus || []).reduce((sum: number, s: any) => sum + s.count, 0) || 1;
+                  const percentage = (status.count / total) * 100;
+                  const colors: any = {
+                    PENDING: 'bg-yellow-500',
+                    APPROVED: 'bg-green-500',
+                    REJECTED: 'bg-red-500'
+                  };
+                  return (
+                    <div key={index}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="font-medium text-gray-700">{status.status}</span>
+                        <span className="text-gray-500">{status.count} ({percentage.toFixed(1)}%)</span>
+                      </div>
+                      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${colors[status.status] || 'bg-gray-500'} transition-all`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Commission Stats */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Commission Statistics</h3>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="text-center p-4 bg-gray-50 rounded-xl">
+                <div className="text-3xl font-bold text-gray-900">
+                  {analyticsData?.commissionStats?.total?.count || 0}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">Total Commissions</div>
+                <div className="text-lg font-semibold text-indigo-600 mt-2">
+                  ₹{((analyticsData?.commissionStats?.total?.amount || 0) / 100).toFixed(2)}
+                </div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-xl">
+                <div className="text-3xl font-bold text-green-600">
+                  {analyticsData?.commissionStats?.paid?.count || 0}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">Paid Out</div>
+                <div className="text-lg font-semibold text-green-600 mt-2">
+                  ₹{((analyticsData?.commissionStats?.paid?.amount || 0) / 100).toFixed(2)}
+                </div>
+              </div>
+              <div className="text-center p-4 bg-yellow-50 rounded-xl">
+                <div className="text-3xl font-bold text-yellow-600">
+                  {analyticsData?.commissionStats?.pending?.count || 0}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">Pending</div>
+                <div className="text-lg font-semibold text-yellow-600 mt-2">
+                  ₹{((analyticsData?.commissionStats?.pending?.amount || 0) / 100).toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Performers Leaderboard Tab */}
+      {activeReportTab === 'leaderboard' && (
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900">🏆 Top Performing Affiliates</h3>
+            <p className="text-sm text-gray-500 mt-1">Ranked by total earnings and referrals</p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {(analyticsData?.topAffiliates || []).map((affiliate: any, index: number) => (
+              <div key={affiliate.id} className="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${
+                  index === 0 ? 'bg-yellow-100 text-yellow-600' :
+                  index === 1 ? 'bg-gray-100 text-gray-600' :
+                  index === 2 ? 'bg-orange-100 text-orange-600' :
+                  'bg-indigo-50 text-indigo-600'
+                }`}>
+                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                </div>
+                <div className="ml-4 flex-1">
+                  <div className="font-semibold text-gray-900">{affiliate.name}</div>
+                  <div className="text-sm text-gray-500">{affiliate.email}</div>
+                </div>
+                <div className="text-right mr-8">
+                  <div className="text-sm text-gray-500">Referrals</div>
+                  <div className="font-bold text-gray-900">{affiliate.totalReferrals}</div>
+                </div>
+                <div className="text-right mr-8">
+                  <div className="text-sm text-gray-500">Commissions</div>
+                  <div className="font-bold text-gray-900">{affiliate.totalCommissions}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-500">Total Earnings</div>
+                  <div className="font-bold text-green-600">₹{((affiliate.totalEarnings || 0) / 100).toFixed(2)}</div>
+                </div>
+              </div>
+            ))}
+            {(!analyticsData?.topAffiliates || analyticsData.topAffiliates.length === 0) && (
+              <div className="p-12 text-center">
+                <div className="text-4xl mb-4">🏆</div>
+                <div className="text-gray-500">No affiliate data available yet</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Conversion Funnel Tab */}
+      {activeReportTab === 'funnel' && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">📈 Conversion Funnel</h3>
+          <div className="flex items-center justify-center gap-4">
+            {conversionFunnelData.map((stage, index) => {
+              const maxValue = Math.max(...conversionFunnelData.map(s => s.value), 1);
+              const width = (stage.value / maxValue) * 100;
+              return (
+                <div key={stage.stage} className="flex-1 max-w-xs">
+                  <div className="text-center mb-4">
+                    <div className="text-2xl font-bold text-gray-900">{stage.value}</div>
+                    <div className="text-sm text-gray-500">{stage.stage}</div>
+                  </div>
+                  <div
+                    className="h-40 rounded-xl transition-all relative overflow-hidden"
+                    style={{ backgroundColor: stage.color, width: `${Math.max(width, 30)}%`, margin: '0 auto' }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                  </div>
+                  {index < conversionFunnelData.length - 1 && (
+                    <div className="text-center mt-4 text-sm text-gray-400">
+                      {conversionFunnelData[index + 1].value > 0 && stage.value > 0
+                        ? `${((conversionFunnelData[index + 1].value / stage.value) * 100).toFixed(1)}%`
+                        : '-'}
+                      <span className="block text-xs">conversion</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Funnel Insights */}
+          <div className="mt-8 grid grid-cols-3 gap-6">
+            <div className="bg-indigo-50 rounded-xl p-4">
+              <div className="text-sm text-indigo-600 font-medium">Click-to-Lead Rate</div>
+              <div className="text-2xl font-bold text-indigo-900 mt-1">
+                {conversionFunnelData[0]?.value > 0
+                  ? ((conversionFunnelData[1]?.value / conversionFunnelData[0]?.value) * 100).toFixed(1)
+                  : 0}%
+              </div>
+            </div>
+            <div className="bg-purple-50 rounded-xl p-4">
+              <div className="text-sm text-purple-600 font-medium">Lead-to-Conversion Rate</div>
+              <div className="text-2xl font-bold text-purple-900 mt-1">
+                {conversionFunnelData[1]?.value > 0
+                  ? ((conversionFunnelData[2]?.value / conversionFunnelData[1]?.value) * 100).toFixed(1)
+                  : 0}%
+              </div>
+            </div>
+            <div className="bg-green-50 rounded-xl p-4">
+              <div className="text-sm text-green-600 font-medium">Overall Conversion Rate</div>
+              <div className="text-2xl font-bold text-green-900 mt-1">
+                {conversionFunnelData[0]?.value > 0
+                  ? ((conversionFunnelData[3]?.value / conversionFunnelData[0]?.value) * 100).toFixed(1)
+                  : 0}%
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reports Tab */}
+      {activeReportTab === 'reports' && (
+        <div className="space-y-6">
+          {/* Report Type Selection */}
+          <div className="grid grid-cols-5 gap-4">
+            {[
+              { id: 'summary', label: 'Summary', icon: '📋', desc: 'Overall performance summary' },
+              { id: 'affiliates', label: 'Affiliates', icon: '👥', desc: 'Affiliate performance details' },
+              { id: 'referrals', label: 'Referrals', icon: '🔗', desc: 'All referral submissions' },
+              { id: 'commissions', label: 'Commissions', icon: '💰', desc: 'Commission breakdown' },
+              { id: 'payouts', label: 'Payouts', icon: '💳', desc: 'Payout history' },
+            ].map((report) => (
+              <button
+                key={report.id}
+                onClick={() => setSelectedReportType(report.id as any)}
+                className={`p-4 rounded-xl border-2 transition-all text-left ${
+                  selectedReportType === report.id
+                    ? 'border-indigo-500 bg-indigo-50'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div className="text-2xl mb-2">{report.icon}</div>
+                <div className="font-semibold text-gray-900">{report.label}</div>
+                <div className="text-xs text-gray-500 mt-1">{report.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Summary Report Display */}
+          {reportsData && selectedReportType === 'summary' && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-gray-900">{reportsData.type}</h3>
+                <span className="text-sm text-gray-500">Generated: {new Date(reportsData.generatedAt).toLocaleString()}</span>
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500">Total Affiliates</div>
+                  <div className="text-2xl font-bold text-gray-900">{reportsData.summary?.totalAffiliates || 0}</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500">Total Referrals</div>
+                  <div className="text-2xl font-bold text-gray-900">{reportsData.summary?.totalReferrals || 0}</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500">Conversion Rate</div>
+                  <div className="text-2xl font-bold text-gray-900">{reportsData.summary?.conversionRate || 0}%</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500">Total Commissions</div>
+                  <div className="text-2xl font-bold text-gray-900">₹{((reportsData.summary?.totalCommissionAmount || 0) / 100).toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Export Buttons */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => { setExportFormat('csv'); handleExportReport(); }}
+              className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+            >
+              <span>📄</span> Export as CSV
+            </button>
+            <button
+              onClick={() => { setExportFormat('pdf'); handleExportReport(); }}
+              className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+            >
+              <span>📑</span> Export as PDF
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Export Report</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                <select
+                  value={selectedReportType}
+                  onChange={(e) => setSelectedReportType(e.target.value as any)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg"
+                >
+                  <option value="summary">Summary Report</option>
+                  <option value="affiliates">Affiliates Report</option>
+                  <option value="referrals">Referrals Report</option>
+                  <option value="commissions">Commissions Report</option>
+                  <option value="payouts">Payouts Report</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="csv"
+                      checked={exportFormat === 'csv'}
+                      onChange={(e) => setExportFormat('csv')}
+                      className="text-indigo-600"
+                    />
+                    <span>CSV</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="pdf"
+                      checked={exportFormat === 'pdf'}
+                      onChange={(e) => setExportFormat('pdf')}
+                      className="text-indigo-600"
+                    />
+                    <span>PDF</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-200 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleExportReport}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
+                >
+                  Export
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const { user, loading, logout } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -5548,10 +6288,10 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -5559,136 +6299,163 @@ export default function AdminDashboard() {
 
   if (!user || user.role !== 'ADMIN') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h1>
-          <p className="text-gray-600">Admin role required</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">🔒</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-500">Admin role required</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-800">🎯 Affiliate Admin</h1>
-        </div>
-
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-            <span className="font-medium">🚀 Getting started</span>
-            <button className="text-gray-400 hover:text-gray-600">✕</button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
+      <div className="fixed left-0 top-0 h-full w-64 bg-white/80 backdrop-blur-xl border-r border-gray-200/50 flex flex-col shadow-xl shadow-gray-200/20">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <span className="text-white text-lg">🎯</span>
+            </div>
+            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">Affiliate Admin</h1>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-2">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between text-sm text-gray-500 mb-2 px-2">
+            <span className="font-medium flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Getting started
+            </span>
+            <button className="text-gray-400 hover:text-gray-600 transition-colors">✕</button>
+          </div>
+        </div>
+
+        <nav className="flex-1 px-4 py-2 space-y-1">
           <button
             onClick={() => setActivePage('home')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 ${
-              activePage === 'home' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
+              activePage === 'home' 
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>🏠</span>
+            <span className="text-lg">🏠</span>
             <span>Home</span>
           </button>
           
           <button
             onClick={() => setActivePage('partners')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 ${
-              activePage === 'partners' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
+              activePage === 'partners' 
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>👥</span>
+            <span className="text-lg">👥</span>
             <span>Partners</span>
           </button>
           
           <button
             onClick={() => setActivePage('customers')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 ${
-              activePage === 'customers' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
+              activePage === 'customers' 
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>👤</span>
+            <span className="text-lg">👤</span>
             <span>Customers</span>
           </button>
           
           <button
             onClick={() => setActivePage('payouts')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 ${
-              activePage === 'payouts' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
+              activePage === 'payouts' 
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>💳</span>
+            <span className="text-lg">💳</span>
             <span>Payouts</span>
           </button>
 
           <button
             onClick={() => setActivePage('emails')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 ${
-              activePage === 'emails' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
+              activePage === 'emails' 
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>📧</span>
+            <span className="text-lg">📧</span>
             <span>Emails</span>
           </button>
 
-          <div className="my-4 border-t border-gray-200"></div>
+          <div className="my-4 border-t border-gray-200/50"></div>
           
-          <div className="text-xs font-semibold text-gray-500 px-4 py-2">Configure</div>
+          <div className="text-xs font-semibold text-gray-400 px-4 py-2 uppercase tracking-wider">Configure</div>
           
           <button
             onClick={() => setActivePage('program-settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 ${
-              activePage === 'program-settings' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
+              activePage === 'program-settings' 
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>⚙️</span>
+            <span className="text-lg">⚙️</span>
             <span>Program settings</span>
           </button>
           
           <button
             onClick={() => setActivePage('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 ${
-              activePage === 'settings' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
+              activePage === 'settings' 
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>🔧</span>
+            <span className="text-lg">🔧</span>
             <span>Settings</span>
           </button>
           
           <button
             onClick={() => setActivePage('reports')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 ${
-              activePage === 'reports' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
+              activePage === 'reports' 
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span>📊</span>
+            <span className="text-lg">📊</span>
             <span className="flex items-center gap-2">
               Reports
-              <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">BETA</span>
+              <span className="px-2 py-0.5 text-[10px] bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full font-semibold shadow-sm">BETA</span>
             </span>
           </button>
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-3">
+        <div className="p-4 border-t border-gray-100">
+          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
             {user.profilePicture ? (
               <img
                 src={user.profilePicture}
                 alt="Profile"
-                className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                className="w-10 h-10 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30">
                 {user.name?.charAt(0).toUpperCase()}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">{user.name}</div>
+              <div className="text-sm font-semibold text-gray-900 truncate">{user.name}</div>
               <div className="text-xs text-gray-500 truncate">{user.email}</div>
             </div>
-            <button onClick={() => logout()} className="text-gray-400 hover:text-gray-600" title="Logout">
+            <button onClick={() => logout()} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Logout">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
@@ -5700,16 +6467,16 @@ export default function AdminDashboard() {
       <div className="ml-64 p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Good morning, {user.name}! 👋</h1>
-            <p className="text-gray-600">Welcome to your affiliate admin dashboard</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Good morning, {user.name}! <span className="inline-block animate-bounce">👋</span></h1>
+            <p className="text-gray-500">Welcome to your affiliate admin dashboard</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="p-2 text-gray-600 hover:text-gray-800">
+          <div className="flex items-center gap-2">
+            <button className="p-3 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
-            <button className="p-2 text-gray-600 hover:text-gray-800">
+            <button className="p-3 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -5719,35 +6486,38 @@ export default function AdminDashboard() {
         </div>
 
         {activePage === 'home' && (
-          <div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <span className="text-white text-xl">🎯</span>
+          <div className="animate-fadeIn">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8 mb-6">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                  <span className="text-white text-2xl">🎯</span>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Affiliate Program Dashboard</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Affiliate Program Dashboard</h2>
+                  <p className="text-gray-500 text-sm">Track your program performance</p>
+                </div>
               </div>
 
               <div className="grid grid-cols-4 gap-6 mb-6">
-                <div>
-                  <div className="text-sm text-gray-600 mb-2">Total estimated revenue</div>
-                  <div className="text-3xl font-bold text-gray-900">
+                <div className="group">
+                  <div className="text-sm text-gray-500 mb-2 font-medium">Total estimated revenue</div>
+                  <div className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
                     ₹{stats ? (stats.totalEstimatedRevenue / 100).toFixed(2) : '0.00'}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">From all affiliate leads</div>
-                  <div className="flex gap-2 mt-4">
-                    <button onClick={() => setActivePage('partners')} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                  <div className="text-xs text-gray-400 mt-2">From all affiliate leads</div>
+                  <div className="flex gap-2 mt-5">
+                    <button onClick={() => setActivePage('partners')} className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 font-medium transition-all">
                       View partners
                     </button>
-                    <button onClick={() => setActivePage('customers')} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                    <button onClick={() => setActivePage('customers')} className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 font-medium transition-all">
                       View customers
                     </button>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6">
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-100">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="text-sm text-gray-600">Actual revenue (transactions)</div>
+                    <div className="text-sm text-gray-600 font-medium">Actual revenue (transactions)</div>
                     <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
                       <span>💰</span>
                     </div>
@@ -5912,7 +6682,9 @@ export default function AdminDashboard() {
         
         {activePage === 'settings' && <AdminSettingsPage />}
 
-        {activePage !== 'home' && activePage !== 'partners' && activePage !== 'customers' && activePage !== 'payouts' && activePage !== 'emails' && activePage !== 'program-settings' && activePage !== 'settings' && (
+        {activePage === 'reports' && <ReportsPage />}
+
+        {activePage !== 'home' && activePage !== 'partners' && activePage !== 'customers' && activePage !== 'payouts' && activePage !== 'emails' && activePage !== 'program-settings' && activePage !== 'settings' && activePage !== 'reports' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               {activePage.charAt(0).toUpperCase() + activePage.slice(1)}

@@ -1,6 +1,7 @@
 {
   "name": "Refferq - Open Source Affiliate Platform",
   "short_name": "Refferq",
+  "version": "1.1.0",
   "description": "Open source affiliate marketing platform with comprehensive tracking, commission management, and payout automation.",
   "start_url": "/",
   "display": "standalone",

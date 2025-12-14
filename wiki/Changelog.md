@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2025-12-14
+
+### 🎨 UI Modernization & Analytics Release
+
+This release focuses on modernizing the user interface, adding comprehensive analytics/reporting, and implementing webhooks system.
+
+### ✨ Added
+
+#### Analytics & Reporting Dashboard
+- Real-time conversion tracking
+- Revenue attribution charts with visual graphs
+- Top performers leaderboard
+- Geographic analytics
+- Traffic source tracking
+- Conversion funnel visualization
+- Custom date range filtering (Today, 7 days, 30 days, 90 days, 1 year)
+- Export reports (CSV, PDF)
+- Performance comparisons
+- ROI calculator
+
+#### Webhooks System
+- Webhook management API (CRUD operations)
+- Support for 12 event types:
+  - affiliate.created, affiliate.approved, affiliate.rejected
+  - referral.submitted, referral.approved, referral.rejected
+  - commission.created, commission.approved, commission.paid
+  - payout.requested, payout.completed, payout.failed
+- Webhook signature verification (HMAC SHA-256)
+- Automatic retry logic with exponential backoff
+- Webhook logs and delivery tracking
+- Test webhook functionality
+- Auto-disable after 5 consecutive failures
+
+#### Admin Improvements
+- Bulk affiliate approval/rejection
+- Advanced search and filters
+- Activity audit logs
+- Quick actions toolbar
+- Enhanced partner management
+
+#### Admin Dashboard UI
+- Modern gradient backgrounds and glass-morphism effects
+- Improved sidebar with better visual hierarchy
+- Enhanced navigation with hover states and transitions
+- Refined card shadows and border styling
+- Better typography and spacing
+- Smooth animations and micro-interactions
+
+#### Affiliate Portal UI
+- Consistent modern design language
+- Improved stats cards with gradient accents
+- Better form styling and input states
+- Enhanced table designs with hover effects
+- Refined button styles and interactions
+
+#### Database
+- New `Webhook` model for webhook configurations
+- New `WebhookLog` model for delivery tracking
+- New `WebhookStatus` enum (PENDING, SUCCESS, FAILED, RETRYING)
+
+
+### 🔄 Changed
+
+#### Settings & Integration
+- Simplified integration provider to "Custom Integration" only
+- Removed third-party provider options (Tolt.io, Rewardful, Tapfiliate, PartnerStack)
+
+#### CSS & Styling
+- New CSS custom properties for consistent theming
+- Added utility classes for modern effects
+- Improved responsive breakpoints
+
+### 🗑️ Removed
+- Third-party integration provider options from Settings
+
+### 📦 Dependencies
+- All packages remain at latest stable versions
+
+---
+
 ## [1.0.0] - 2025-10-10
 
 ### 🎉 Initial Release

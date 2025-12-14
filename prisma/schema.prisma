@@ -306,6 +306,50 @@ model IntegrationSettings {
   @@map("integration_settings")
 }
 
+model Webhook {
+  id           String       @id @default(cuid())
+  name         String
+  url          String
+  secret       String
+  events       Json         @default("[]") // Array of event types
+  isActive     Boolean      @default(true) @map("is_active")
+  failureCount Int          @default(0) @map("failure_count")
+  lastTriggeredAt DateTime? @map("last_triggered_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  logs         WebhookLog[]
+
+  @@map("webhooks")
+}
+
+model WebhookLog {
+  id           String        @id @default(cuid())
+  webhookId    String        @map("webhook_id")
+  eventType    String        @map("event_type")
+  payload      Json          @default("{}")
+  status       WebhookStatus @default(PENDING)
+  statusCode   Int?          @map("status_code")
+  response     String?
+  error        String?
+  attempts     Int           @default(0)
+  nextRetryAt  DateTime?     @map("next_retry_at")
+  completedAt  DateTime?     @map("completed_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  webhook      Webhook       @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([eventType])
+  @@index([status])
+  @@map("webhook_logs")
+}
+
+enum WebhookStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RETRYING
+}
+
 enum Role {
   ADMIN
   AFFILIATE
