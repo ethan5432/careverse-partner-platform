@@ -271,7 +271,6 @@ To add analytics, insert before `</head>`:
 
 ## 🎉 Credits
 
-- **Design Inspiration**: [Tolt.io](https://tolt.io)
 - **Built By**: Refferq Team
 - **Community Contributors**: See [CONTRIBUTORS.md](../CONTRIBUTORS.md)
 

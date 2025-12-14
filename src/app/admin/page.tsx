@@ -2,6 +2,33 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  StatsCard,
+  GlassCard,
+  Button,
+  SearchInput,
+  StatusBadge,
+  Avatar,
+  ProgressBar,
+  AnimatedContainer,
+  SparklineChart,
+  DonutChart,
+  Tabs,
+  Modal,
+  EmptyState,
+  DataTable
+} from '@/components/ui/ModernUI';
+import {
+  RevenueCard,
+  MetricCard,
+  PartnerRow,
+  CustomerRow,
+  ActionCard,
+  SectionHeader,
+  FilterPill,
+  StatWithChart
+} from '@/components/ui/ModernComponents';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -6288,166 +6315,195 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">Loading dashboard...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-indigo-100 rounded-full"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-indigo-600 rounded-full animate-spin"></div>
+          </div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mt-6 text-gray-600 font-medium"
+          >
+            Loading your dashboard...
+          </motion.p>
+        </motion.div>
       </div>
     );
   }
 
   if (!user || user.role !== 'ADMIN') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
-        <div className="text-center bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🔒</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-500">Admin role required</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center bg-white/80 backdrop-blur-xl p-10 rounded-3xl shadow-2xl shadow-gray-200/50 border border-gray-100/80"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
+            className="w-20 h-20 bg-gradient-to-br from-red-100 to-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg"
+          >
+            <span className="text-4xl">🔒</span>
+          </motion.div>
+          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 mb-3">Access Denied</h1>
+          <p className="text-gray-500">You need admin privileges to access this page</p>
+          <motion.a
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            href="/login"
+            className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-shadow"
+          >
+            Go to Login
+          </motion.a>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
-      <div className="fixed left-0 top-0 h-full w-64 bg-white/80 backdrop-blur-xl border-r border-gray-200/50 flex flex-col shadow-xl shadow-gray-200/20">
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <span className="text-white text-lg">🎯</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/20 to-purple-50/20">
+      {/* Modern Sidebar */}
+      <motion.div
+        initial={{ x: -280 }}
+        animate={{ x: 0 }}
+        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+        className="fixed left-0 top-0 h-full w-72 bg-white/90 backdrop-blur-2xl border-r border-gray-200/50 flex flex-col shadow-2xl shadow-gray-200/30 z-50"
+      >
+        {/* Logo Section */}
+        <div className="p-6 border-b border-gray-100/80">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex items-center gap-3"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl shadow-indigo-500/40 animate-gradient">
+              <span className="text-white text-xl">🎯</span>
             </div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">Affiliate Admin</h1>
-          </div>
+            <div>
+              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Refferq</h1>
+              <p className="text-xs text-gray-500 font-medium">Admin Dashboard</p>
+            </div>
+          </motion.div>
         </div>
 
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between text-sm text-gray-500 mb-2 px-2">
-            <span className="font-medium flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Getting started
-            </span>
-            <button className="text-gray-400 hover:text-gray-600 transition-colors">✕</button>
+        {/* Quick Stats Banner */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          className="mx-4 mt-4 p-4 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-lg shadow-indigo-500/30"
+        >
+          <div className="flex items-center justify-between text-white">
+            <div>
+              <p className="text-xs text-white/70 font-medium">Total Revenue</p>
+              <p className="text-2xl font-bold">₹{stats ? (stats.totalEstimatedRevenue / 100).toFixed(0) : '0'}</p>
+            </div>
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <span className="text-2xl">💰</span>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
-        <nav className="flex-1 px-4 py-2 space-y-1">
-          <button
-            onClick={() => setActivePage('home')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
-              activePage === 'home' 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-lg">🏠</span>
-            <span>Home</span>
-          </button>
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-3">Main Menu</p>
           
-          <button
-            onClick={() => setActivePage('partners')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
-              activePage === 'partners' 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-lg">👥</span>
-            <span>Partners</span>
-          </button>
+          {[
+            { id: 'home', label: 'Dashboard', icon: '🏠' },
+            { id: 'partners', label: 'Partners', icon: '👥' },
+            { id: 'customers', label: 'Customers', icon: '👤' },
+            { id: 'payouts', label: 'Payouts', icon: '💳' },
+            { id: 'emails', label: 'Emails', icon: '📧' },
+          ].map((item, index) => (
+            <motion.button
+              key={item.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 * index }}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActivePage(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 ${
+                activePage === item.id 
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                  : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+              }`}
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span>{item.label}</span>
+              {activePage === item.id && (
+                <motion.div
+                  layoutId="nav-indicator"
+                  className="ml-auto w-2 h-2 rounded-full bg-white"
+                />
+              )}
+            </motion.button>
+          ))}
           
-          <button
-            onClick={() => setActivePage('customers')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
-              activePage === 'customers' 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-lg">👤</span>
-            <span>Customers</span>
-          </button>
+          <div className="my-6 border-t border-gray-200/50"></div>
           
-          <button
-            onClick={() => setActivePage('payouts')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
-              activePage === 'payouts' 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-lg">💳</span>
-            <span>Payouts</span>
-          </button>
-
-          <button
-            onClick={() => setActivePage('emails')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
-              activePage === 'emails' 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-lg">📧</span>
-            <span>Emails</span>
-          </button>
-
-          <div className="my-4 border-t border-gray-200/50"></div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-3">Configure</p>
           
-          <div className="text-xs font-semibold text-gray-400 px-4 py-2 uppercase tracking-wider">Configure</div>
-          
-          <button
-            onClick={() => setActivePage('program-settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
-              activePage === 'program-settings' 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-lg">⚙️</span>
-            <span>Program settings</span>
-          </button>
-          
-          <button
-            onClick={() => setActivePage('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
-              activePage === 'settings' 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-lg">🔧</span>
-            <span>Settings</span>
-          </button>
-          
-          <button
-            onClick={() => setActivePage('reports')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 font-medium transition-all duration-200 ${
-              activePage === 'reports' 
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-lg">📊</span>
-            <span className="flex items-center gap-2">
-              Reports
-              <span className="px-2 py-0.5 text-[10px] bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full font-semibold shadow-sm">BETA</span>
-            </span>
-          </button>
+          {[
+            { id: 'program-settings', label: 'Program Settings', icon: '⚙️' },
+            { id: 'settings', label: 'Settings', icon: '🔧' },
+            { id: 'reports', label: 'Reports', icon: '📊', badge: 'BETA' },
+          ].map((item, index) => (
+            <motion.button
+              key={item.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 * (index + 5) }}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActivePage(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 ${
+                activePage === item.id 
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30' 
+                  : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+              }`}
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.badge && (
+                <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
+                  activePage === item.id 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                }`}>
+                  {item.badge}
+                </span>
+              )}
+            </motion.button>
+          ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+        {/* User Profile Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="p-4 border-t border-gray-100/80"
+        >
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50/80 hover:bg-gray-100/80 transition-all cursor-pointer group">
             {user.profilePicture ? (
               <img
                 src={user.profilePicture}
                 alt="Profile"
-                className="w-10 h-10 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
+                className="w-11 h-11 rounded-xl object-cover border-2 border-white shadow-lg"
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30">
                 {user.name?.charAt(0).toUpperCase()}
               </div>
             )}
@@ -6455,220 +6511,302 @@ export default function AdminDashboard() {
               <div className="text-sm font-semibold text-gray-900 truncate">{user.name}</div>
               <div className="text-xs text-gray-500 truncate">{user.email}</div>
             </div>
-            <button onClick={() => logout()} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Logout">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => logout()}
+              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+              title="Logout"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-            </button>
+            </motion.button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="ml-64 p-8">
-        <div className="flex items-center justify-between mb-8">
+      {/* Main Content Area */}
+      <div className="ml-72 p-8">
+        {/* Top Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-8"
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Good morning, {user.name}! <span className="inline-block animate-bounce">👋</span></h1>
-            <p className="text-gray-500">Welcome to your affiliate admin dashboard</p>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
+              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user.name?.split(' ')[0]}! 
+              <motion.span 
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}
+                className="inline-block ml-2"
+              >
+                👋
+              </motion.span>
+            </h1>
+            <p className="text-gray-500 mt-1">Here's what's happening with your affiliate program</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="p-3 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative p-3 text-gray-500 hover:text-indigo-600 bg-white hover:bg-indigo-50 rounded-xl transition-all shadow-sm border border-gray-100"
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-            </button>
-            <button className="p-3 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-red-500 to-rose-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">3</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-3 text-gray-500 hover:text-indigo-600 bg-white hover:bg-indigo-50 rounded-xl transition-all shadow-sm border border-gray-100"
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
+        <AnimatePresence mode="wait">
         {activePage === 'home' && (
-          <div className="animate-fadeIn">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8 mb-6">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <span className="text-white text-2xl">🎯</span>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Affiliate Program Dashboard</h2>
-                  <p className="text-gray-500 text-sm">Track your program performance</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-6 mb-6">
-                <div className="group">
-                  <div className="text-sm text-gray-500 mb-2 font-medium">Total estimated revenue</div>
-                  <div className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-                    ₹{stats ? (stats.totalEstimatedRevenue / 100).toFixed(2) : '0.00'}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-2">From all affiliate leads</div>
-                  <div className="flex gap-2 mt-5">
-                    <button onClick={() => setActivePage('partners')} className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 font-medium transition-all">
-                      View partners
-                    </button>
-                    <button onClick={() => setActivePage('customers')} className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 font-medium transition-all">
-                      View customers
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-100">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-sm text-gray-600 font-medium">Actual revenue (transactions)</div>
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                      <span>💰</span>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold text-green-900">
-                    ₹{stats ? (stats.totalRevenue / 100).toFixed(2) : '0.00'}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">Confirmed customer payments</div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-sm text-gray-600">Total commission owed</div>
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                      <span>�</span>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold text-blue-900">
-                    ₹{stats ? (stats.totalEstimatedCommission / 100).toFixed(2) : '0.00'}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">To be paid to affiliates</div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-sm text-gray-600">Total affiliates</div>
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                      <span>👥</span>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold text-purple-900">{stats?.totalAffiliates || 0}</div>
-                  <div className="text-xs text-gray-500 mt-2">Active partners in program</div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-6 mb-6">
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-sm text-gray-600">Pending leads</div>
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                      <span>⏳</span>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold text-yellow-600">{stats?.pendingReferrals || 0}</div>
-                  <div className="text-xs text-gray-500 mt-2">Awaiting approval</div>
-                </div>
-
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-sm text-gray-600">Total leads</div>
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                      <span>👥</span>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">{stats?.totalLeads || 0}</div>
-                  <div className="text-xs text-gray-500 mt-2">All sign ups from partner links</div>
-                </div>
-
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-sm text-gray-600">Total referred customers</div>
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                      <span>🎯</span>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">{stats?.totalReferredCustomers || 0}</div>
-                  <div className="text-xs text-gray-500 mt-2">All paid referred customers</div>
-                </div>
-              </div>
+          <motion.div
+            key="home"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Stats Overview */}
+            <div className="grid grid-cols-4 gap-6 mb-8">
+              <StatsCard
+                title="Total Revenue"
+                value={`₹${stats ? (stats.totalEstimatedRevenue / 100).toFixed(2) : '0.00'}`}
+                icon="💰"
+                trend="up"
+                trendValue="+12%"
+                gradient="from-emerald-500 to-teal-600"
+                lightGradient="from-emerald-50 to-teal-50"
+                iconBg="from-emerald-500 to-teal-600"
+                delay={0.1}
+              />
+              <StatsCard
+                title="Actual Revenue"
+                value={`₹${stats ? (stats.totalRevenue / 100).toFixed(2) : '0.00'}`}
+                icon="💵"
+                gradient="from-blue-500 to-cyan-600"
+                lightGradient="from-blue-50 to-cyan-50"
+                iconBg="from-blue-500 to-cyan-600"
+                delay={0.2}
+              />
+              <StatsCard
+                title="Commission Owed"
+                value={`₹${stats ? (stats.totalEstimatedCommission / 100).toFixed(2) : '0.00'}`}
+                icon="💎"
+                gradient="from-purple-500 to-pink-600"
+                lightGradient="from-purple-50 to-pink-50"
+                iconBg="from-purple-500 to-pink-600"
+                delay={0.3}
+              />
+              <StatsCard
+                title="Total Partners"
+                value={stats?.totalAffiliates || 0}
+                icon="👥"
+                trend="up"
+                trendValue="+5"
+                gradient="from-indigo-500 to-purple-600"
+                lightGradient="from-indigo-50 to-purple-50"
+                iconBg="from-indigo-500 to-purple-600"
+                delay={0.4}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-gray-900">Top partners by revenue brought in</h3>
-                  <button onClick={() => setActivePage('partners')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    View all →
-                  </button>
-                </div>
-                
-                {topAffiliates.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-xs font-medium text-gray-500 uppercase pb-2 border-b">
-                      <div>Partner</div>
-                      <div className="text-right">Total revenue</div>
-                    </div>
-                    {topAffiliates.map((affiliate) => (
-                      <div key={affiliate.id} className="grid grid-cols-2 gap-4 items-center py-3 border-b border-gray-100 last:border-0">
-                        <div>
-                          <div className="font-medium text-gray-900">{affiliate.name}</div>
-                          <div className="text-sm text-gray-500">{affiliate.referralCode}</div>
-                        </div>
-                        <div className="text-right font-bold text-gray-900">
-                          ₹{(affiliate.totalRevenue / 100).toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="text-6xl mb-4">📊</div>
-                    <div className="text-gray-500">No partners data yet</div>
-                  </div>
-                )}
-              </div>
+            {/* Secondary Stats */}
+            <div className="grid grid-cols-3 gap-6 mb-8">
+              <MetricCard
+                label="Pending Leads"
+                value={stats?.pendingReferrals || 0}
+                icon="⏳"
+                color="amber"
+                delay={0.5}
+              />
+              <MetricCard
+                label="Total Leads"
+                value={stats?.totalLeads || 0}
+                icon="📊"
+                color="blue"
+                delay={0.6}
+              />
+              <MetricCard
+                label="Referred Customers"
+                value={stats?.totalReferredCustomers || 0}
+                icon="🎯"
+                color="emerald"
+                delay={0.7}
+              />
+            </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-gray-900">Recent referred customers</h3>
-                  <button onClick={() => setActivePage('customers')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    View all →
-                  </button>
-                </div>
-                
-                {recentCustomers.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-4 gap-4 text-xs font-medium text-gray-500 uppercase pb-2 border-b">
-                      <div>Referred at</div>
-                      <div>Email</div>
-                      <div>Partner</div>
-                      <div className="text-right">Status</div>
+            {/* Quick Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mb-8"
+            >
+              <SectionHeader title="Quick Actions" icon="⚡" />
+              <div className="grid grid-cols-4 gap-4">
+                <ActionCard
+                  title="View Partners"
+                  description="Manage your affiliate partners"
+                  icon="👥"
+                  onClick={() => setActivePage('partners')}
+                  color="indigo"
+                />
+                <ActionCard
+                  title="View Customers"
+                  description="See referred customers"
+                  icon="👤"
+                  onClick={() => setActivePage('customers')}
+                  color="emerald"
+                />
+                <ActionCard
+                  title="Process Payouts"
+                  description="Review pending payouts"
+                  icon="💳"
+                  onClick={() => setActivePage('payouts')}
+                  color="amber"
+                />
+                <ActionCard
+                  title="View Reports"
+                  description="Analytics & insights"
+                  icon="📊"
+                  onClick={() => setActivePage('reports')}
+                  color="rose"
+                />
+              </div>
+            </motion.div>
+
+            {/* Tables Section */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Top Partners */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <GlassCard className="p-6">
+                  <SectionHeader
+                    title="Top Partners"
+                    action={
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() => setActivePage('partners')}
+                        className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold"
+                      >
+                        View all →
+                      </motion.button>
+                    }
+                  />
+                  
+                  {topAffiliates.length > 0 ? (
+                    <div className="space-y-3">
+                      {topAffiliates.map((affiliate, index) => (
+                        <motion.div
+                          key={affiliate.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 * index }}
+                          whileHover={{ backgroundColor: 'rgba(249, 250, 251, 0.8)' }}
+                          className="flex items-center gap-4 p-3 rounded-xl transition-colors cursor-pointer"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg text-sm">
+                            {affiliate.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-900">{affiliate.name}</div>
+                            <div className="text-xs text-gray-500 font-mono">{affiliate.referralCode}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-gray-900">₹{(affiliate.totalRevenue / 100).toFixed(2)}</div>
+                            <div className="text-xs text-gray-500">{affiliate.totalReferrals} referrals</div>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                    {recentCustomers.map((customer) => (
-                      <div key={customer.id} className="grid grid-cols-4 gap-4 items-center py-3 border-b border-gray-100 last:border-0 text-sm">
-                        <div className="text-gray-600">
-                          {new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </div>
-                        <div className="text-gray-900 truncate">{customer.leadEmail}</div>
-                        <div className="text-gray-600 truncate">{customer.affiliateName}</div>
-                        <div className="text-right">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            customer.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                            customer.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
+                  ) : (
+                    <EmptyState
+                      icon="📊"
+                      title="No partners yet"
+                      description="Partners will appear here once they join your program"
+                    />
+                  )}
+                </GlassCard>
+              </motion.div>
+
+              {/* Recent Customers */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7 }}
+              >
+                <GlassCard className="p-6">
+                  <SectionHeader
+                    title="Recent Customers"
+                    action={
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() => setActivePage('customers')}
+                        className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold"
+                      >
+                        View all →
+                      </motion.button>
+                    }
+                  />
+                  
+                  {recentCustomers.length > 0 ? (
+                    <div className="space-y-3">
+                      {recentCustomers.slice(0, 5).map((customer, index) => (
+                        <motion.div
+                          key={customer.id}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 * index }}
+                          whileHover={{ backgroundColor: 'rgba(249, 250, 251, 0.8)' }}
+                          className="flex items-center gap-4 p-3 rounded-xl transition-colors cursor-pointer"
+                        >
+                          <div className="text-sm text-gray-600 w-16">
+                            {new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">{customer.leadEmail}</div>
+                            <div className="text-xs text-gray-500">via {customer.affiliateName}</div>
+                          </div>
+                          <span className={`px-2.5 py-1 text-xs rounded-full font-semibold ${
+                            customer.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' :
+                            customer.status === 'PENDING' ? 'bg-amber-50 text-amber-700' :
+                            'bg-red-50 text-red-700'
                           }`}>
                             {customer.status}
                           </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="text-6xl mb-4">👥</div>
-                    <div className="text-gray-500">No customers yet</div>
-                  </div>
-                )}
-              </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon="👥"
+                      title="No customers yet"
+                      description="Referred customers will appear here"
+                    />
+                  )}
+                </GlassCard>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
 
         {activePage === 'partners' && <PartnersPage />}
         
@@ -6685,12 +6823,16 @@ export default function AdminDashboard() {
         {activePage === 'reports' && <ReportsPage />}
 
         {activePage !== 'home' && activePage !== 'partners' && activePage !== 'customers' && activePage !== 'payouts' && activePage !== 'emails' && activePage !== 'program-settings' && activePage !== 'settings' && activePage !== 'reports' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-100 p-8"
+          >
+            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 mb-6">
               {activePage.charAt(0).toUpperCase() + activePage.slice(1)}
             </h2>
-            <p className="text-gray-600">This section is under development</p>
-          </div>
+            <p className="text-gray-500">This section is under development</p>
+          </motion.div>
         )}
       </div>
     </div>

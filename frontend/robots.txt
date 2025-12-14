@@ -1,5 +1,5 @@
 # Refferq - Open Source Affiliate Platform
-# https://refferq.com/
+# https://www.refferq.com
 
 User-agent: *
 Allow: /
@@ -22,7 +22,7 @@ Disallow: /profile/
 Disallow: /settings/
 
 # Sitemap
-Sitemap: https://refferq.com/sitemap.xml
+Sitemap: https://www.refferq.com/sitemap.xml
 
 # Crawl-delay for respectful crawling
 Crawl-delay: 5
