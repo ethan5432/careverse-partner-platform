@@ -286,6 +286,7 @@ See our [Roadmap](Roadmap) for upcoming features.
 
 | Version | Release Date | Highlights |
 |---------|--------------|------------|
+| 1.1.0 | 2025-12-14 | 🎨 UI Modernization, Analytics Dashboard, Webhooks System |
 | 1.0.0 | 2025-10-10 | 🎉 Initial release with core features |
 
 ---
@@ -430,5 +431,5 @@ Stay informed about new releases:
 </p>
 
 <p align="center">
-  Last Updated: October 10, 2025
+  Last Updated: December 14, 2025
 </p>
