@@ -4956,10 +4956,6 @@ function AdminSettingsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="custom">Custom Integration</option>
-                  <option value="tolt">Tolt.io</option>
-                  <option value="rewardful">Rewardful</option>
-                  <option value="tapfiliate">Tapfiliate</option>
-                  <option value="partnerstack">PartnerStack</option>
                 </select>
               </div>
 
