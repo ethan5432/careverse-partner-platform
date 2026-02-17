@@ -86,7 +86,7 @@
 
 ### Technology Stack
 
-- **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui
 - **Backend:** Next.js App Router, API Routes
 - **Database:** PostgreSQL with Prisma ORM
 - **Authentication:** JWT with OTP verification
@@ -157,18 +157,19 @@ Refferq is perfect for:
 
 ## 📊 Current Status
 
-**Version:** 1.0.0  
+**Version:** 1.2.0  
 **Status:** Production Ready ✅  
-**Last Updated:** October 2025  
+**Last Updated:** February 2026  
 **License:** MIT  
 
-### Recent Updates
-- ✅ Email notification system with Resend
-- ✅ OTP-based authentication
-- ✅ Affiliate status management (PENDING/ACTIVE)
-- ✅ Batch operations for admin
-- ✅ Comprehensive API documentation
-- ✅ Production deployment guides
+### Recent Updates (v1.2.0)
+- ✅ Complete UI redesign with shadcn/ui component library (50+ components)
+- ✅ New login page with OTP-based 2-step flow
+- ✅ New register page with 3-step affiliate onboarding
+- ✅ Admin dashboard redesigned with stat cards, progress bars, quick actions
+- ✅ 61 TypeScript errors resolved — zero compilation errors
+- ✅ Prisma client regeneration for full type safety
+- ✅ Stale backup files cleaned up
 
 ### Upcoming Features
 See our **[Roadmap](Roadmap)** for planned features and timeline.

@@ -52,3 +52,6 @@ logs
 
 # Copilot
 .github/copilot-instructions.md
+
+# Scripts
+/scripts/

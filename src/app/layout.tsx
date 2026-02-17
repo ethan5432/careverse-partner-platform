@@ -1,4 +1,5 @@
 import React from 'react';
+import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
 export const metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         {children}
+        <Toaster />
       </body>
     </html>
   );

@@ -3,6 +3,62 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import {
+  ArrowLeft,
+  Users,
+  Wallet,
+  IndianRupee,
+  CreditCard,
+  Copy,
+  ExternalLink,
+  Loader2,
+  MousePointerClick,
+  Target,
+  TrendingUp,
+  Plus,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Ban,
+} from 'lucide-react';
 
 interface Partner {
   id: string;
@@ -48,15 +104,12 @@ interface Payout {
   processedAt?: string;
 }
 
-type TabType = 'overview' | 'customers' | 'commissions' | 'payouts';
-
 export default function PartnerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const partnerId = params.id as string;
 
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [partner, setPartner] = useState<Partner | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
@@ -74,7 +127,6 @@ export default function PartnerDetailPage() {
       router.push('/login');
       return;
     }
-
     if (user && partnerId) {
       fetchPartnerData();
       fetchCustomers();
@@ -89,11 +141,9 @@ export default function PartnerDetailPage() {
       const res = await fetch('/api/admin/affiliates', {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (res.ok) {
         const data = await res.json();
         const affiliate = data.affiliates?.find((a: any) => a.id === partnerId);
-        
         if (affiliate) {
           setPartner({
             id: affiliate.id,
@@ -123,7 +173,6 @@ export default function PartnerDetailPage() {
       const res = await fetch('/api/admin/referrals', {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (res.ok) {
         const data = await res.json();
         const partnerCustomers = data.referrals
@@ -149,7 +198,6 @@ export default function PartnerDetailPage() {
       const res = await fetch(`/api/admin/transactions?affiliateId=${partnerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (res.ok) {
         const data = await res.json();
         const comms = data.transactions?.map((txn: any) => ({
@@ -175,7 +223,6 @@ export default function PartnerDetailPage() {
       const res = await fetch(`/api/admin/payouts?affiliateId=${partnerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (res.ok) {
         const data = await res.json();
         setPayouts(data.payouts || []);
@@ -190,23 +237,14 @@ export default function PartnerDetailPage() {
       alert('Please select at least one commission to create a payout');
       return;
     }
-
     setPayoutLoading(true);
-
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('/api/admin/payouts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          affiliateId: partnerId,
-          commissionIds: selectedCommissions,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ affiliateId: partnerId, commissionIds: selectedCommissions }),
       });
-
       if (res.ok) {
         alert('Payout created successfully!');
         setShowPayoutModal(false);
@@ -227,22 +265,14 @@ export default function PartnerDetailPage() {
 
   const handleUpdatePayoutStatus = async () => {
     if (!editingPayout) return;
-
     setPayoutLoading(true);
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('/api/admin/payouts', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          id: editingPayout.id,
-          status: newStatus,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: editingPayout.id, status: newStatus }),
       });
-
       if (res.ok) {
         alert('Payout status updated successfully!');
         setShowStatusModal(false);
@@ -268,607 +298,572 @@ export default function PartnerDetailPage() {
 
   const toggleCommissionSelection = (commissionId: string) => {
     setSelectedCommissions((prev) =>
-      prev.includes(commissionId)
-        ? prev.filter((id) => id !== commissionId)
-        : [...prev, commissionId]
+      prev.includes(commissionId) ? prev.filter((id) => id !== commissionId) : [...prev, commissionId]
     );
   };
 
-  const formatCurrency = (cents: number) => {
-    return `₹${(cents / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = (cents: number) =>
+    `\u20B9${(cents / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-      case 'PAID':
-      case 'Active':
-        return 'bg-green-100 text-green-800';
-      case 'PENDING':
-      case 'PROCESSING':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'FAILED':
-      case 'REFUNDED':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-blue-100 text-blue-800';
-    }
-  };
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 
   const pendingCommissions = commissions.filter((c) => c.status === 'PENDING');
   const pendingAmount = pendingCommissions.reduce((sum, c) => sum + c.amountCents, 0);
   const paidCommissions = commissions.filter((c) => c.status === 'PAID');
   const paidAmount = paidCommissions.reduce((sum, c) => sum + c.amountCents, 0);
 
-  if (authLoading || loading) {
+  const getStatusBadge = (status: string) => {
+    const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ElementType }> = {
+      COMPLETED: { variant: 'default', icon: CheckCircle2 },
+      PAID: { variant: 'default', icon: CheckCircle2 },
+      ACTIVE: { variant: 'default', icon: CheckCircle2 },
+      APPROVED: { variant: 'default', icon: CheckCircle2 },
+      PENDING: { variant: 'secondary', icon: Clock },
+      PROCESSING: { variant: 'secondary', icon: Loader2 },
+      FAILED: { variant: 'destructive', icon: AlertCircle },
+      REFUNDED: { variant: 'destructive', icon: Ban },
+      REJECTED: { variant: 'destructive', icon: Ban },
+    };
+    const { variant, icon: Icon } = map[status] || { variant: 'outline' as const, icon: Clock };
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading partner details...</p>
-        </div>
-      </div>
+      <Badge variant={variant} className="gap-1 text-xs">
+        <Icon className="h-3 w-3" />
+        {status}
+      </Badge>
     );
+  };
+
+  if (authLoading || loading) {
+    return <DetailSkeleton />;
   }
 
   if (!partner) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800">Partner not found</h2>
-          <button
-            onClick={() => router.push('/admin')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Back to Dashboard
-          </button>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+          <Users className="h-7 w-7 text-muted-foreground" />
         </div>
+        <h2 className="mt-4 text-xl font-bold">Partner not found</h2>
+        <p className="mt-1 text-sm text-muted-foreground">This partner may have been removed</p>
+        <Button className="mt-6" onClick={() => router.push('/admin/partners')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Partners
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <button
-          onClick={() => router.push('/admin')}
-          className="text-blue-600 hover:text-blue-800 mb-4 flex items-center"
-        >
-          ← Back to Dashboard
-        </button>
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{partner.name}</h1>
-            <p className="text-gray-600 mt-1">{partner.email}</p>
-            <div className="flex gap-4 mt-2">
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                {partner.referralCode}
-              </span>
-              {partner.partnerGroup && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                  {partner.partnerGroup}
-                </span>
-              )}
-              <span className="text-sm text-gray-500">
-                Commission: {(partner.commissionRate * 100).toFixed(0)}%
-              </span>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-3">
+          <Button variant="ghost" size="sm" className="-ml-2" onClick={() => router.push('/admin/partners')}>
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Partners
+          </Button>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14">
+              <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
+                {partner.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{partner.name}</h1>
+              <p className="text-sm text-muted-foreground">{partner.email}</p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="font-mono text-xs gap-1">
+                  <Copy className="h-3 w-3" />
+                  {partner.referralCode}
+                </Badge>
+                {partner.partnerGroup && (
+                  <Badge variant="secondary" className="text-xs">
+                    {partner.partnerGroup}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-xs">
+                  {(partner.commissionRate * 100).toFixed(0)}% commission
+                </Badge>
+              </div>
             </div>
           </div>
-          <button
-            onClick={() => setShowPayoutModal(true)}
-            disabled={pendingCommissions.length === 0}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            + Create Payout
-          </button>
         </div>
+        <Button
+          onClick={() => setShowPayoutModal(true)}
+          disabled={pendingCommissions.length === 0}
+          className="gap-1.5"
+        >
+          <Plus className="h-4 w-4" />
+          Create Payout
+        </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Total Customers</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{customers.length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Pending Commissions</div>
-          <div className="text-2xl font-bold text-yellow-600 mt-1">
-            {formatCurrency(pendingAmount)}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Paid Out</div>
-          <div className="text-2xl font-bold text-green-600 mt-1">
-            {formatCurrency(paidAmount)}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Total Payouts</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{payouts.length}</div>
-        </div>
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                <Users className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{customers.length}</p>
+                <p className="text-xs text-muted-foreground">Customers</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                <Clock className="h-4 w-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-amber-600">{formatCurrency(pendingAmount)}</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-emerald-600">{formatCurrency(paidAmount)}</p>
+                <p className="text-xs text-muted-foreground">Paid Out</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
+                <CreditCard className="h-4 w-4 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{payouts.length}</p>
+                <p className="text-xs text-muted-foreground">Payouts</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
-                activeTab === 'overview'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('customers')}
-              className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
-                activeTab === 'customers'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
-              }`}
-            >
-              Customers ({customers.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('commissions')}
-              className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
-                activeTab === 'commissions'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
-              }`}
-            >
-              Commissions ({commissions.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('payouts')}
-              className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
-                activeTab === 'payouts'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
-              }`}
-            >
-              Payouts ({payouts.length})
-            </button>
-          </nav>
-        </div>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="customers">Customers ({customers.length})</TabsTrigger>
+          <TabsTrigger value="commissions">Commissions ({commissions.length})</TabsTrigger>
+          <TabsTrigger value="payouts">Payouts ({payouts.length})</TabsTrigger>
+        </TabsList>
 
-        <div className="p-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Partner Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm text-gray-600">Partner Name</div>
-                    <div className="font-medium">{partner.name}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Email</div>
-                    <div className="font-medium">{partner.email}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Referral Code</div>
-                    <div className="font-medium font-mono">{partner.referralCode}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Partner Group</div>
-                    <div className="font-medium">{partner.partnerGroup || 'Default'}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Commission Rate</div>
-                    <div className="font-medium">{(partner.commissionRate * 100).toFixed(0)}%</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Partner Since</div>
-                    <div className="font-medium">{formatDate(partner.createdAt)}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Performance Summary</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-sm text-gray-600">Total Clicks</div>
-                    <div className="text-2xl font-bold">{partner.totalClicks}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Total Leads</div>
-                    <div className="text-2xl font-bold">{partner.totalLeads}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Total Revenue</div>
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(partner.totalRevenue * 100)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Commission Summary</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-sm text-gray-600">Total Commissions</div>
-                    <div className="text-2xl font-bold">{commissions.length}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Pending Amount</div>
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {formatCurrency(pendingAmount)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Paid Amount</div>
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(paidAmount)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Customers Tab */}
-          {activeTab === 'customers' && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Referred Customers</h3>
-              {customers.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No customers yet</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Paid</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {customers.map((customer) => (
-                        <tr key={customer.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {customer.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {customer.email}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(customer.status)}`}>
-                              {customer.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatCurrency(customer.totalPaid * 100)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(customer.createdAt)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => router.push(`/admin/customers/${customer.id}`)}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              View Details
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Commissions Tab */}
-          {activeTab === 'commissions' && (
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Commission History</h3>
-                <div className="flex items-center gap-4">
-                  <div className="text-sm text-gray-600">
-                    Pending: {formatCurrency(pendingAmount)} | Paid: {formatCurrency(paidAmount)}
-                  </div>
-                  {pendingCommissions.length > 0 && (
-                    <button
-                      onClick={() => setShowPayoutModal(true)}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                    >
-                      Create Payout
-                    </button>
-                  )}
-                </div>
-              </div>
-              {commissions.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No commissions yet</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rate</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {commissions.map((comm) => (
-                        <tr key={comm.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(comm.createdAt)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {comm.customerName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                            {formatCurrency(comm.amountCents)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {(comm.rate * 100).toFixed(0)}%
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(comm.status)}`}>
-                              {comm.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Payouts Tab */}
-          {activeTab === 'payouts' && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Payout History</h3>
-              {payouts.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No payouts yet</p>
-                  {pendingCommissions.length > 0 && (
-                    <button
-                      onClick={() => setShowPayoutModal(true)}
-                      className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                    >
-                      Create First Payout
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commissions</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Processed</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {payouts.map((payout) => (
-                        <tr key={payout.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(payout.createdAt)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                            {formatCurrency(payout.amountCents)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {payout.commissionCount}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(payout.status)}`}>
-                              {payout.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {payout.method || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {payout.processedAt ? formatDate(payout.processedAt) : '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => openStatusModal(payout)}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              Update Status
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Create Payout Modal */}
-      {showPayoutModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Create Payout</h2>
-                <button
-                  onClick={() => {
-                    setShowPayoutModal(false);
-                    setSelectedCommissions([]);
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                <div className="text-sm text-gray-700">
-                  Select commissions to include in this payout
-                </div>
-                <div className="text-lg font-bold text-blue-600 mt-1">
-                  Total: {formatCurrency(
-                    selectedCommissions.reduce((sum, id) => {
-                      const comm = pendingCommissions.find((c) => c.id === id);
-                      return sum + (comm?.amountCents || 0);
-                    }, 0)
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {pendingCommissions.map((comm) => (
-                  <div
-                    key={comm.id}
-                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedCommissions.includes(comm.id)}
-                      onChange={() => toggleCommissionSelection(comm.id)}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <div className="flex-grow">
-                      <div className="font-medium">{comm.customerName}</div>
-                      <div className="text-sm text-gray-600">
-                        {formatDate(comm.createdAt)} • {(comm.rate * 100).toFixed(0)}% commission
-                      </div>
-                    </div>
-                    <div className="font-bold text-blue-600">
-                      {formatCurrency(comm.amountCents)}
-                    </div>
+        {/* Overview */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Partner Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[
+                  { label: 'Name', value: partner.name },
+                  { label: 'Email', value: partner.email },
+                  { label: 'Referral Code', value: partner.referralCode, mono: true },
+                  { label: 'Partner Group', value: partner.partnerGroup || 'Default' },
+                  { label: 'Commission Rate', value: `${(partner.commissionRate * 100).toFixed(0)}%` },
+                  { label: 'Partner Since', value: formatDate(partner.createdAt) },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">{item.label}</span>
+                    <span className={`text-sm font-medium ${item.mono ? 'font-mono' : ''}`}>{item.value}</span>
                   </div>
                 ))}
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPayoutModal(false);
-                    setSelectedCommissions([]);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreatePayout}
-                  disabled={payoutLoading || selectedCommissions.length === 0}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400"
-                >
-                  {payoutLoading ? 'Creating...' : `Create Payout (${selectedCommissions.length})`}
-                </button>
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Performance</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-lg bg-muted">
+                      <MousePointerClick className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="mt-2 text-xl font-bold">{partner.totalClicks}</p>
+                    <p className="text-xs text-muted-foreground">Clicks</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-lg bg-muted">
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="mt-2 text-xl font-bold">{partner.totalLeads}</p>
+                    <p className="text-xs text-muted-foreground">Leads</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-lg bg-muted">
+                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <p className="mt-2 text-xl font-bold text-emerald-600">
+                      {formatCurrency(partner.totalRevenue * 100)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Revenue</p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Total Commissions</span>
+                    <span className="text-sm font-bold">{commissions.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Pending Amount</span>
+                    <span className="text-sm font-bold text-amber-600">{formatCurrency(pendingAmount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Paid Amount</span>
+                    <span className="text-sm font-bold text-emerald-600">{formatCurrency(paidAmount)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Update Payout Status Modal */}
-      {showStatusModal && editingPayout && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Update Payout Status</h2>
-                <button
-                  onClick={() => {
-                    setShowStatusModal(false);
-                    setEditingPayout(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
+        {/* Customers */}
+        <TabsContent value="customers">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Referred Customers</CardTitle>
+              <CardDescription>{customers.length} customer{customers.length !== 1 ? 's' : ''} referred</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {customers.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Total Paid</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead className="w-20">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {customers.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-medium">{customer.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.email}</TableCell>
+                        <TableCell>{getStatusBadge(customer.status)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(customer.totalPaid * 100)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{formatDate(customer.createdAt)}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/customers/${customer.id}`)}>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Users className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No customers yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Commissions */}
+        <TabsContent value="commissions">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Commission History</CardTitle>
+                <CardDescription>
+                  Pending: {formatCurrency(pendingAmount)} · Paid: {formatCurrency(paidAmount)}
+                </CardDescription>
+              </div>
+              {pendingCommissions.length > 0 && (
+                <Button size="sm" onClick={() => setShowPayoutModal(true)}>
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Create Payout
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent className="p-0">
+              {commissions.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Rate</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {commissions.map((comm) => (
+                      <TableRow key={comm.id}>
+                        <TableCell className="text-muted-foreground text-sm">{formatDate(comm.createdAt)}</TableCell>
+                        <TableCell className="font-medium">{comm.customerName}</TableCell>
+                        <TableCell className="text-right font-semibold text-primary">{formatCurrency(comm.amountCents)}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{(comm.rate * 100).toFixed(0)}%</TableCell>
+                        <TableCell>{getStatusBadge(comm.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <IndianRupee className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No commissions yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Payouts */}
+        <TabsContent value="payouts">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Payout History</CardTitle>
+                <CardDescription>{payouts.length} payout{payouts.length !== 1 ? 's' : ''}</CardDescription>
+              </div>
+              {pendingCommissions.length > 0 && (
+                <Button size="sm" onClick={() => setShowPayoutModal(true)}>
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Create Payout
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent className="p-0">
+              {payouts.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Commissions</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Processed</TableHead>
+                      <TableHead className="w-24">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payouts.map((payout) => (
+                      <TableRow key={payout.id}>
+                        <TableCell className="text-muted-foreground text-sm">{formatDate(payout.createdAt)}</TableCell>
+                        <TableCell className="text-right font-semibold text-emerald-600">{formatCurrency(payout.amountCents)}</TableCell>
+                        <TableCell className="text-right">{payout.commissionCount}</TableCell>
+                        <TableCell>{getStatusBadge(payout.status)}</TableCell>
+                        <TableCell className="text-muted-foreground">{payout.method || '\u2014'}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {payout.processedAt ? formatDate(payout.processedAt) : '\u2014'}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm" onClick={() => openStatusModal(payout)}>
+                            Update
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Wallet className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No payouts yet</p>
+                  {pendingCommissions.length > 0 && (
+                    <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowPayoutModal(true)}>
+                      Create First Payout
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Create Payout Dialog */}
+      <Dialog open={showPayoutModal} onOpenChange={(open) => {
+        setShowPayoutModal(open);
+        if (!open) setSelectedCommissions([]);
+      }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Payout</DialogTitle>
+            <DialogDescription>Select commissions to include in this payout</DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-lg bg-muted/50 p-4">
+            <p className="text-sm text-muted-foreground">Selected total</p>
+            <p className="text-2xl font-bold text-primary">
+              {formatCurrency(
+                selectedCommissions.reduce((sum, id) => {
+                  const comm = pendingCommissions.find((c) => c.id === id);
+                  return sum + (comm?.amountCents || 0);
+                }, 0)
+              )}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {selectedCommissions.length} of {pendingCommissions.length} commissions
+            </p>
+          </div>
+
+          <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+            {pendingCommissions.map((comm) => (
+              <div
+                key={comm.id}
+                className={`flex items-center gap-3 rounded-lg border p-3 transition-colors cursor-pointer ${
+                  selectedCommissions.includes(comm.id)
+                    ? 'border-primary/50 bg-primary/5'
+                    : 'hover:bg-muted/50'
+                }`}
+                onClick={() => toggleCommissionSelection(comm.id)}
+              >
+                <Checkbox
+                  checked={selectedCommissions.includes(comm.id)}
+                  onCheckedChange={() => toggleCommissionSelection(comm.id)}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{comm.customerName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(comm.createdAt)} · {(comm.rate * 100).toFixed(0)}%
+                  </p>
+                </div>
+                <span className="text-sm font-semibold text-primary shrink-0">
+                  {formatCurrency(comm.amountCents)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowPayoutModal(false); setSelectedCommissions([]); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreatePayout} disabled={payoutLoading || selectedCommissions.length === 0}>
+              {payoutLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Payout ({selectedCommissions.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Status Dialog */}
+      <Dialog open={showStatusModal} onOpenChange={(open) => {
+        setShowStatusModal(open);
+        if (!open) setEditingPayout(null);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Payout Status</DialogTitle>
+            <DialogDescription>Change the processing status of this payout</DialogDescription>
+          </DialogHeader>
+
+          {editingPayout && (
+            <>
+              <div className="rounded-lg bg-muted/50 p-4">
+                <p className="text-sm text-muted-foreground">Payout Amount</p>
+                <p className="text-2xl font-bold text-emerald-600">{formatCurrency(editingPayout.amountCents)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {editingPayout.commissionCount} commissions · Created {formatDate(editingPayout.createdAt)}
+                </p>
               </div>
 
-              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600">Payout Amount</div>
-                <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(editingPayout.amountCents)}
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  {editingPayout.commissionCount} commissions • Created {formatDate(editingPayout.createdAt)}
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Status
-                </label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value as 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="PENDING">PENDING - Awaiting processing</option>
-                  <option value="PROCESSING">PROCESSING - Payment in progress</option>
-                  <option value="COMPLETED">COMPLETED - Payment successful</option>
-                  <option value="FAILED">FAILED - Payment failed</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
+              <div className="space-y-2">
+                <Label>New Status</Label>
+                <Select value={newStatus} onValueChange={(v) => setNewStatus(v as typeof newStatus)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDING">Pending \u2014 Awaiting processing</SelectItem>
+                    <SelectItem value="PROCESSING">Processing \u2014 Payment in progress</SelectItem>
+                    <SelectItem value="COMPLETED">Completed \u2014 Payment successful</SelectItem>
+                    <SelectItem value="FAILED">Failed \u2014 Payment failed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
                   {newStatus === 'COMPLETED' && 'Affiliate will be notified of payment completion'}
                   {newStatus === 'PROCESSING' && 'Payout is being processed'}
                   {newStatus === 'FAILED' && 'Payment failed, may need manual intervention'}
                   {newStatus === 'PENDING' && 'Payout is waiting to be processed'}
                 </p>
               </div>
+            </>
+          )}
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowStatusModal(false);
-                    setEditingPayout(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdatePayoutStatus}
-                  disabled={payoutLoading}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
-                >
-                  {payoutLoading ? 'Updating...' : 'Update Status'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowStatusModal(false); setEditingPayout(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdatePayoutStatus} disabled={payoutLoading}>
+              {payoutLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Update Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function DetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-14 w-14 rounded-full" />
+        <div>
+          <Skeleton className="h-7 w-48 mb-1" />
+          <Skeleton className="h-4 w-32" />
         </div>
-      )}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div>
+                  <Skeleton className="h-7 w-20 mb-1" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Skeleton className="h-10 w-96" />
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

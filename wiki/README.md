@@ -91,8 +91,8 @@ Step-by-step setup guide covering:
 
 ### Roadmap.md (2,800+ words)
 Comprehensive roadmap including:
-- v1.0.0 features (current)
-- v1.1.0 - v2.0.0 planned features
+- v1.0.0 - v1.2.0 released features
+- v1.3.0 - v2.0.0 planned features
 - Priority matrix
 - Release schedule
 - Community input process

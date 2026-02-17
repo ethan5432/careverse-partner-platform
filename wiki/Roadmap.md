@@ -95,12 +95,28 @@ To become the **most comprehensive, developer-friendly, and feature-rich open-so
 
 ---
 
-## 🚀 Version 1.2.0 (Q1 2026)
+## ✅ Version 1.2.0 (Q1 2026)
 
-**Target:** January 2026  
-**Focus:** Advanced Reporting & API Enhancements
+**Status:** Released (February 17, 2026)  
+**Focus:** shadcn/ui Redesign & Code Quality
 
-### Planned Features
+### Completed Features
+
+#### shadcn/ui Redesign
+- [x] Complete UI redesign with shadcn/ui component library (50+ components)
+- [x] New login page with OTP-based 2-step verification flow
+- [x] New register page with 3-step affiliate onboarding
+- [x] Admin dashboard redesigned (stat cards, progress bars, quick actions)
+- [x] Consistent design tokens via CSS custom properties
+
+#### Code Quality
+- [x] Resolved all 61 TypeScript compilation errors
+- [x] Fixed tailwind.config.ts duplicate properties
+- [x] Updated react-resizable-panels imports for v3
+- [x] Regenerated Prisma client for full type exports
+- [x] Cleaned up stale backup files
+
+### Deferred to v1.3.0
 
 #### Advanced Reporting
 - [ ] Automated weekly/monthly reports
@@ -108,14 +124,6 @@ To become the **most comprehensive, developer-friendly, and feature-rich open-so
 - [ ] Email report delivery
 - [ ] Cohort analysis
 
-#### Admin Improvements
-- [ ] Admin notification preferences
-- [ ] Dashboard customization
-
-#### API Enhancements
-- [ ] API rate limiting
-- [ ] API key management
-- [ ] API usage analytics
 #### API Enhancements
 - [ ] API rate limiting
 - [ ] API key management

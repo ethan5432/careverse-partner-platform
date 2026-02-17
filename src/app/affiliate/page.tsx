@@ -1,8 +1,63 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  IndianRupee,
+  MousePointerClick,
+  Target,
+  Users,
+  Copy,
+  Check,
+  Link,
+  Plus,
+  Loader2,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Ban,
+  Wallet,
+  Settings,
+  CreditCard,
+} from 'lucide-react';
 
 interface AffiliateStats {
   totalEarnings: number;
@@ -34,529 +89,18 @@ interface Payout {
   paidAt?: string;
 }
 
-// Dashboard Page Component
-function DashboardPage({ stats, referrals }: { stats: AffiliateStats | null; referrals: Referral[] }) {
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  return (
-    <div className="space-y-6 animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500 font-medium">Total Earnings</span>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-              <span className="text-white">💰</span>
-            </div>
-          </div>
-          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-            ₹{((stats?.totalEarnings || 0) / 100).toFixed(2)}
-          </p>
-          <p className="text-xs text-gray-400 mt-2">Lifetime earnings</p>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500 font-medium">Total Clicks</span>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
-              <span className="text-white">👆</span>
-            </div>
-          </div>
-          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">{stats?.totalClicks || 0}</p>
-          <p className="text-xs text-gray-400 mt-2">Link clicks</p>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500 font-medium">Total Leads</span>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
-              <span className="text-white">📊</span>
-            </div>
-          </div>
-          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">{stats?.totalLeads || 0}</p>
-          <p className="text-xs text-gray-400 mt-2">Submitted leads</p>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500 font-medium">Customers</span>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
-              <span className="text-white">✅</span>
-            </div>
-          </div>
-          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">{stats?.totalReferredCustomers || 0}</p>
-          <p className="text-xs text-gray-400 mt-2">Converted customers</p>
-        </div>
-      </div>
-
-      {/* Links Section */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-5">Your Referral Links</h3>
-        
-        {!stats?.referralCode ? (
-          <div className="text-center py-10">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">🔗</span>
-            </div>
-            <p className="text-gray-600 mb-2 font-medium">No referral code found</p>
-            <p className="text-sm text-gray-400 mb-5">
-              Generate your referral code to start earning commissions
-            </p>
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/affiliate/generate-code', { method: 'POST' });
-                  const data = await response.json();
-                  if (data.success) {
-                    window.location.reload();
-                  } else {
-                    alert('Failed to generate code: ' + data.error);
-                  }
-                } catch (error) {
-                  console.error('Failed to generate code:', error);
-                  alert('Failed to generate code. Please try again.');
-                }
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 font-medium transition-all duration-300"
-            >
-              Generate Referral Code
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">Referral Link</label>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  readOnly
-                  value={stats?.referralLink || ''}
-                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                />
-                <button
-                  onClick={() => copyToClipboard(stats?.referralLink || '')}
-                  className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 text-sm font-semibold transition-all duration-300"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">Referral Code</label>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  readOnly
-                  value={stats?.referralCode || ''}
-                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                />
-                <button
-                  onClick={() => copyToClipboard(stats?.referralCode || '')}
-                  className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 text-sm font-semibold transition-all duration-300"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Recent Referrals */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-5">Recent Referrals</h3>
-        {referrals.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">📋</span>
-            </div>
-            <p className="font-medium">No referrals yet</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/50">
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {referrals.slice(0, 5).map((ref) => (
-                  <tr key={ref.id} className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors">
-                    <td className="py-4 px-5 text-sm font-medium text-gray-900">{ref.leadName}</td>
-                    <td className="py-4 px-5 text-sm text-gray-500">{ref.leadEmail}</td>
-                    <td className="py-4 px-5">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        ref.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
-                        ref.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                        'bg-amber-100 text-amber-700'
-                      }`}>
-                        {ref.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-sm text-gray-500">
-                      {new Date(ref.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-4 px-5 text-sm font-semibold text-gray-900 text-right">
-                      ₹{(Number(ref.estimatedValue) || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Referrals Page Component
-function ReferralsPage({ referrals, onSubmitLead }: { referrals: Referral[]; onSubmitLead: () => void }) {
-  const [activeTab, setActiveTab] = useState<'all' | 'submitted'>('all');
-
-  const filteredReferrals = activeTab === 'submitted' 
-    ? referrals.filter(r => r.status === 'PENDING')
-    : referrals;
-
-  return (
-    <div className="space-y-6 animate-fadeIn">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Referrals</h2>
-        <button
-          onClick={onSubmitLead}
-          className="px-5 py-2.5 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:shadow-lg hover:shadow-gray-900/20 font-medium flex items-center gap-2 transition-all duration-300"
-        >
-          <span className="text-lg">+</span>
-          <span>Submit lead</span>
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <div className="flex gap-6">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`pb-3 px-1 border-b-2 font-semibold text-sm transition-all ${
-              activeTab === 'all'
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            Referrals ({referrals.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('submitted')}
-            className={`pb-3 px-1 border-b-2 font-semibold text-sm transition-all ${
-              activeTab === 'submitted'
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            Submitted Leads ({referrals.filter(r => r.status === 'PENDING').length})
-          </button>
-        </div>
-      </div>
-
-      {/* Referrals Table */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100">
-        {filteredReferrals.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">📋</span>
-            </div>
-            <p className="text-gray-600 mb-2 font-medium text-lg">No referrals yet</p>
-            <p className="text-gray-400 mb-6">Start submitting leads to earn commissions</p>
-            <button
-              onClick={onSubmitLead}
-              className="px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:shadow-lg font-medium transition-all duration-300"
-            >
-              Submit your first lead
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/80">
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lead Name</th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Est. Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredReferrals.map((ref) => (
-                  <tr key={ref.id} className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors">
-                    <td className="py-4 px-5 text-sm font-medium text-gray-900">{ref.leadName}</td>
-                    <td className="py-4 px-5 text-sm text-gray-500">{ref.leadEmail}</td>
-                    <td className="py-4 px-5 text-sm text-gray-500">{ref.company || '-'}</td>
-                    <td className="py-4 px-5">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        ref.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
-                        ref.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                        'bg-amber-100 text-amber-700'
-                      }`}>
-                        {ref.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-sm text-gray-500">
-                      {new Date(ref.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-4 px-5 text-sm font-semibold text-gray-900 text-right">
-                      ₹{(Number(ref.estimatedValue) || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Payouts Page Component
-function PayoutsPage({ stats, payouts }: { stats: AffiliateStats | null; payouts: Payout[] }) {
-  const totalPaid = payouts
-    .filter(p => p.status === 'COMPLETED')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  const pendingAmount = payouts
-    .filter(p => p.status === 'PENDING')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  return (
-    <div className="space-y-6 animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-900">Payouts</h2>
-
-      {/* Earnings Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
-          <p className="text-sm text-gray-500 font-medium mb-2">Total Earned</p>
-          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-            ₹{((stats?.totalEarnings || 0) / 100).toFixed(2)}
-          </p>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
-          <p className="text-sm text-gray-500 font-medium mb-2">Total Paid</p>
-          <p className="text-3xl font-bold text-emerald-600">
-            ₹{(totalPaid / 100).toFixed(2)}
-          </p>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
-          <p className="text-sm text-gray-500 font-medium mb-2">Pending</p>
-          <p className="text-3xl font-bold text-amber-600">
-            ₹{(pendingAmount / 100).toFixed(2)}
-          </p>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
-          <p className="text-sm text-gray-600 mb-2">Next Payout</p>
-          <p className="text-lg font-bold text-gray-900">Jan 1, 2026</p>
-          <p className="text-xs text-gray-500 mt-1">Monthly cycle</p>
-        </div>
-      </div>
-
-      {/* Payout History */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Payout History</h3>
-        {payouts.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No payouts yet</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Method</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payouts.map((payout) => (
-                  <tr key={payout.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm text-gray-900">
-                      {new Date(payout.paidAt || payout.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{payout.method}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        payout.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                        payout.status === 'FAILED' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {payout.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-900 text-right font-medium">
-                      ₹{(payout.amount / 100).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Settings Page Component
-function SettingsPage({ 
-  settingsForm, 
-  setSettingsForm, 
-  onUpdate 
-}: { 
-  settingsForm: any; 
-  setSettingsForm: (form: any) => void;
-  onUpdate: (field: string) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-
-      {/* Personal Details */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Personal Details</h3>
-          <button
-            onClick={() => onUpdate('Personal Details')}
-            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 text-sm font-medium"
-          >
-            Update
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-            <input
-              type="text"
-              value={settingsForm.name}
-              onChange={(e) => setSettingsForm({ ...settingsForm, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="John Doe"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
-            <input
-              type="text"
-              value={settingsForm.company}
-              onChange={(e) => setSettingsForm({ ...settingsForm, company: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Company Name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input
-              type="email"
-              value={settingsForm.email}
-              onChange={(e) => setSettingsForm({ ...settingsForm, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="john@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-            <select
-              value={settingsForm.country}
-              onChange={(e) => setSettingsForm({ ...settingsForm, country: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="India">India</option>
-              <option value="USA">United States</option>
-              <option value="UK">United Kingdom</option>
-              <option value="Canada">Canada</option>
-              <option value="Australia">Australia</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Payment Details */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Payment Details</h3>
-          <button
-            onClick={() => onUpdate('Payment Details')}
-            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 text-sm font-medium"
-          >
-            Update
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-            <select
-              value={settingsForm.paymentMethod}
-              onChange={(e) => setSettingsForm({ ...settingsForm, paymentMethod: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="PayPal">PayPal</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Stripe">Stripe</option>
-              <option value="Wire Transfer">Wire Transfer</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Payment Email / Account</label>
-            <input
-              type="text"
-              value={settingsForm.paymentEmail}
-              onChange={(e) => setSettingsForm({ ...settingsForm, paymentEmail: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="payment@example.com"
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-800">
-            <strong>Note:</strong> Payouts are processed on the 1st of each month for the previous month's earnings. 
-            Minimum payout threshold is ₹1,000.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function AffiliateDashboard() {
-  const { user, loading: authLoading, logout } = useAuth();
-  const [activePage, setActivePage] = useState('dashboard');
+  const { user, loading: authLoading } = useAuth();
   const [stats, setStats] = useState<AffiliateStats | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [copied, setCopied] = useState<'link' | 'code' | null>(null);
 
   // Referral form state
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [submitForm, setSubmitForm] = useState({
     leadName: '',
     leadEmail: '',
@@ -568,7 +112,7 @@ export default function AffiliateDashboard() {
     name: '',
     company: '',
     email: '',
-    country: '',
+    country: 'India',
     paymentMethod: 'PayPal',
     paymentEmail: '',
   });
@@ -584,7 +128,7 @@ export default function AffiliateDashboard() {
       setLoading(true);
       const response = await fetch('/api/affiliate/profile');
       const data = await response.json();
-      
+
       if (data.success) {
         setStats({
           totalEarnings: data.affiliate?.balanceCents || 0,
@@ -595,8 +139,7 @@ export default function AffiliateDashboard() {
           referralCode: data.affiliate?.referralCode || '',
         });
         setReferrals(data.referrals || []);
-        
-        // Load user settings
+
         setSettingsForm({
           name: user?.name || '',
           company: '',
@@ -606,8 +149,7 @@ export default function AffiliateDashboard() {
           paymentEmail: user?.email || '',
         });
       }
-      
-      // Load payouts
+
       const payoutsRes = await fetch('/api/affiliate/payouts');
       if (payoutsRes.ok) {
         const payoutsData = await payoutsRes.json();
@@ -622,7 +164,8 @@ export default function AffiliateDashboard() {
 
   const handleSubmitLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setSubmitLoading(true);
+
     try {
       const response = await fetch('/api/affiliate/referrals', {
         method: 'POST',
@@ -635,20 +178,20 @@ export default function AffiliateDashboard() {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
-        setNotification({ type: 'success', message: 'Lead submitted successfully! Waiting for admin approval.' });
+        showNotification('success', 'Lead submitted successfully! Waiting for admin approval.');
         setShowSubmitModal(false);
         setSubmitForm({ leadName: '', leadEmail: '', estimatedValue: '0' });
         loadDashboardData();
       } else {
-        setNotification({ type: 'error', message: data.error || 'Failed to submit lead' });
+        showNotification('error', data.error || 'Failed to submit lead');
       }
     } catch (error) {
-      setNotification({ type: 'error', message: 'An error occurred while submitting lead' });
+      showNotification('error', 'An error occurred while submitting lead');
+    } finally {
+      setSubmitLoading(false);
     }
-
-    setTimeout(() => setNotification(null), 5000);
   };
 
   const handleUpdateSettings = async (field: string) => {
@@ -660,460 +203,622 @@ export default function AffiliateDashboard() {
       });
 
       if (response.ok) {
-        setNotification({ type: 'success', message: `${field} updated successfully!` });
+        showNotification('success', `${field} updated successfully!`);
       } else {
-        setNotification({ type: 'error', message: `Failed to update ${field}` });
+        showNotification('error', `Failed to update ${field}`);
       }
     } catch (error) {
-      setNotification({ type: 'error', message: 'An error occurred' });
+      showNotification('error', 'An error occurred');
     }
+  };
 
+  const handleGenerateCode = async () => {
+    try {
+      const response = await fetch('/api/affiliate/generate-code', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) {
+        window.location.reload();
+      } else {
+        showNotification('error', 'Failed to generate code: ' + data.error);
+      }
+    } catch (error) {
+      showNotification('error', 'Failed to generate code. Please try again.');
+    }
+  };
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/30 to-teal-50/30">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-emerald-100 rounded-full"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-emerald-600 rounded-full animate-spin"></div>
-          </div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mt-6 text-gray-600 font-medium"
-          >
-            Loading your dashboard...
-          </motion.p>
-        </motion.div>
-      </div>
-    );
-  }
+  const copyToClipboard = (text: string, type: 'link' | 'code') => {
+    navigator.clipboard.writeText(text);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
-  if (!user || !user.hasAffiliate) {
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  const formatCurrency = (cents: number) =>
+    `\u20B9${(cents / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const getStatusBadge = (status: string) => {
+    const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ElementType }> = {
+      APPROVED: { variant: 'default', icon: CheckCircle2 },
+      COMPLETED: { variant: 'default', icon: CheckCircle2 },
+      PAID: { variant: 'default', icon: CheckCircle2 },
+      PENDING: { variant: 'secondary', icon: Clock },
+      PROCESSING: { variant: 'secondary', icon: Loader2 },
+      REJECTED: { variant: 'destructive', icon: Ban },
+      FAILED: { variant: 'destructive', icon: AlertCircle },
+    };
+    const { variant, icon: Icon } = map[status] || { variant: 'outline' as const, icon: Clock };
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/30 to-teal-50/30">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center bg-white/80 backdrop-blur-xl p-10 rounded-3xl shadow-2xl shadow-gray-200/50 border border-gray-100/80"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-            className="w-20 h-20 bg-gradient-to-br from-red-100 to-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg"
-          >
-            <span className="text-4xl">🔒</span>
-          </motion.div>
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 mb-3">Access Denied</h1>
-          <p className="text-gray-500">Affiliate account required to access this page</p>
-          <motion.a
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            href="/login"
-            className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-shadow"
-          >
-            Go to Login
-          </motion.a>
-        </motion.div>
-      </div>
+      <Badge variant={variant} className="gap-1 text-xs">
+        <Icon className="h-3 w-3" />
+        {status}
+      </Badge>
     );
+  };
+
+  const totalPaid = payouts.filter((p) => p.status === 'COMPLETED').reduce((sum, p) => sum + p.amount, 0);
+  const pendingPayout = payouts.filter((p) => p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0);
+
+  if (authLoading || loading) {
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/20 to-teal-50/20">
+    <div className="space-y-6">
       {/* Notification */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, x: 20 }}
-            animate={{ opacity: 1, y: 0, x: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border backdrop-blur-sm ${
-              notification.type === 'success' 
-                ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800' 
-                : 'bg-red-50/90 border-red-200 text-red-800'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                notification.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'
-              }`}>
-                <span>{notification.type === 'success' ? '✓' : '⚠'}</span>
-              </div>
-              <span className="text-sm font-medium">{notification.message}</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {notification && (
+        <Alert variant={notification.type === 'error' ? 'destructive' : 'default'}>
+          {notification.type === 'success' ? (
+            <CheckCircle2 className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
+          <AlertDescription>{notification.message}</AlertDescription>
+        </Alert>
+      )}
 
-      {/* Modern Sidebar */}
-      <motion.div
-        initial={{ x: -280 }}
-        animate={{ x: 0 }}
-        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-        className="fixed left-0 top-0 h-full w-72 bg-white/90 backdrop-blur-2xl border-r border-gray-200/50 flex flex-col shadow-2xl shadow-gray-200/30 z-50"
-      >
-        {/* Logo Section */}
-        <div className="p-6 border-b border-gray-100/80">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex items-center gap-3"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center shadow-xl shadow-emerald-500/40 animate-gradient">
-              <span className="text-white text-xl">💎</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-600">Refferq</h1>
-              <p className="text-xs text-gray-500 font-medium">Affiliate Portal</p>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Quick Earnings Banner */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mx-4 mt-4 p-4 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl shadow-lg shadow-emerald-500/30"
-        >
-          <div className="flex items-center justify-between text-white">
-            <div>
-              <p className="text-xs text-white/70 font-medium">Total Earnings</p>
-              <p className="text-2xl font-bold">₹{stats ? (stats.totalEarnings / 100).toFixed(0) : '0'}</p>
-            </div>
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <span className="text-2xl">💰</span>
-            </div>
+      {/* Commission Banner */}
+      <Card className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0">
+        <CardContent className="flex items-center gap-4 p-5">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+            <IndianRupee className="h-6 w-6" />
           </div>
-        </motion.div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-3">Main Menu</p>
-          
-          {[
-            { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-            { id: 'referrals', label: 'Referrals', icon: '👥' },
-            { id: 'resources', label: 'Resources', icon: '📚' },
-            { id: 'payouts', label: 'Payouts', icon: '💳' },
-            { id: 'reports', label: 'Reports', icon: '📊', badge: 'BETA' },
-          ].map((item, index) => (
-            <motion.button
-              key={item.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * index }}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActivePage(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 ${
-                activePage === item.id 
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30' 
-                  : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span className="flex-1 text-left">{item.label}</span>
-              {item.badge && (
-                <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
-                  activePage === item.id 
-                    ? 'bg-white/20 text-white' 
-                    : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
-                }`}>
-                  {item.badge}
-                </span>
-              )}
-              {activePage === item.id && (
-                <motion.div
-                  layoutId="affiliate-nav-indicator"
-                  className="w-2 h-2 rounded-full bg-white"
-                />
-              )}
-            </motion.button>
-          ))}
-          
-          <div className="my-6 border-t border-gray-200/50"></div>
-          
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-3">Account</p>
-          
-          <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
-            whileHover={{ x: 4 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setActivePage('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 ${
-              activePage === 'settings' 
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30' 
-                : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-xl">⚙️</span>
-            <span>Settings</span>
-          </motion.button>
-        </nav>
-
-        {/* User Profile Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="p-4 border-t border-gray-100/80"
-        >
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50/80 hover:bg-gray-100/80 transition-all cursor-pointer group">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/30">
-              {user.name?.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-gray-900 truncate">{user.name}</div>
-              <div className="text-xs text-gray-500 truncate">{user.email}</div>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={logout}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-              title="Sign Out"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </motion.button>
-          </div>
-        </motion.div>
-      </motion.div>
-
-      {/* Main Content Area */}
-      <div className="ml-72 p-8">
-        {/* Top Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
           <div>
-            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
-              Welcome back, {user.name?.split(' ')[0]}! 
-              <motion.span 
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}
-                className="inline-block ml-2"
-              >
-                👋
-              </motion.span>
-            </h1>
-            <p className="text-gray-500 mt-1">Track your referrals and earnings</p>
+            <p className="text-sm text-white/80 font-medium">Earn 20% commission on all paid customers</p>
+            <p className="text-lg font-bold mt-0.5">Start referring today and grow your earnings!</p>
           </div>
-          <div className="flex items-center gap-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative p-3 text-gray-500 hover:text-emerald-600 bg-white hover:bg-emerald-50 rounded-xl transition-all shadow-sm border border-gray-100"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </motion.button>
-          </div>
-        </motion.div>
+        </CardContent>
+      </Card>
 
-        {/* Earnings Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl p-6 mb-8 shadow-2xl shadow-emerald-500/20 overflow-hidden relative"
-        >
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-          <div className="relative flex items-center gap-4 text-white">
-            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-              <span className="text-3xl">💰</span>
-            </div>
+      {/* Main Tabs */}
+      <Tabs defaultValue="dashboard" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="referrals">Referrals</TabsTrigger>
+          <TabsTrigger value="payouts">Payouts</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+
+        {/* ── Dashboard Tab ───────────────────────────────── */}
+        <TabsContent value="dashboard" className="space-y-6">
+          {/* Stats */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <IndianRupee className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-emerald-600">{formatCurrency(stats?.totalEarnings || 0)}</p>
+                    <p className="text-xs text-muted-foreground">Total Earnings</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                    <MousePointerClick className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats?.totalClicks || 0}</p>
+                    <p className="text-xs text-muted-foreground">Total Clicks</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                    <Target className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats?.totalLeads || 0}</p>
+                    <p className="text-xs text-muted-foreground">Total Leads</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
+                    <Users className="h-4 w-4 text-violet-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats?.totalReferredCustomers || 0}</p>
+                    <p className="text-xs text-muted-foreground">Customers</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Referral Links */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Link className="h-4 w-4" />
+                Your Referral Links
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!stats?.referralCode ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-4">
+                    <Link className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="font-medium">No referral code found</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Generate your referral code to start earning commissions
+                  </p>
+                  <Button className="mt-4" onClick={handleGenerateCode}>
+                    Generate Referral Code
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label>Referral Link</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={stats?.referralLink || ''} className="font-mono text-sm" />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => copyToClipboard(stats?.referralLink || '', 'link')}
+                      >
+                        {copied === 'link' ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Referral Code</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={stats?.referralCode || ''} className="font-mono text-sm" />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => copyToClipboard(stats?.referralCode || '', 'code')}
+                      >
+                        {copied === 'code' ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Referrals */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recent Referrals</CardTitle>
+              <CardDescription>Latest 5 referrals</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {referrals.length === 0 ? (
+                <EmptyState icon={Users} message="No referrals yet" />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {referrals.slice(0, 5).map((ref) => (
+                      <TableRow key={ref.id}>
+                        <TableCell className="font-medium">{ref.leadName}</TableCell>
+                        <TableCell className="text-muted-foreground">{ref.leadEmail}</TableCell>
+                        <TableCell>{getStatusBadge(ref.status)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{formatDate(ref.createdAt)}</TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {`\u20B9${(Number(ref.estimatedValue) || 0).toFixed(2)}`}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Referrals Tab ───────────────────────────────── */}
+        <TabsContent value="referrals" className="space-y-6">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/80 text-sm font-medium">Earn 20% commission on all paid customers</p>
-              <p className="text-xl font-bold mt-1">Start referring today and grow your earnings!</p>
+              <h2 className="text-xl font-bold tracking-tight">Referrals</h2>
+              <p className="text-sm text-muted-foreground">{referrals.length} total referrals</p>
             </div>
+            <Button onClick={() => setShowSubmitModal(true)} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              Submit Lead
+            </Button>
           </div>
-        </motion.div>
 
-        <AnimatePresence mode="wait">
-          {/* Dashboard Page */}
-          {activePage === 'dashboard' && (
-            <motion.div
-              key="dashboard"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <DashboardPage stats={stats} referrals={referrals} />
-            </motion.div>
-          )}
+          <Card>
+            <CardContent className="p-0">
+              {referrals.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-4">
+                    <Users className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                  <p className="font-medium text-lg">No referrals yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Start submitting leads to earn commissions</p>
+                  <Button className="mt-4" onClick={() => setShowSubmitModal(true)}>
+                    Submit your first lead
+                  </Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Lead Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Est. Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {referrals.map((ref) => (
+                      <TableRow key={ref.id}>
+                        <TableCell className="font-medium">{ref.leadName}</TableCell>
+                        <TableCell className="text-muted-foreground">{ref.leadEmail}</TableCell>
+                        <TableCell className="text-muted-foreground">{ref.company || '\u2014'}</TableCell>
+                        <TableCell>{getStatusBadge(ref.status)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{formatDate(ref.createdAt)}</TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {`\u20B9${(Number(ref.estimatedValue) || 0).toFixed(2)}`}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          {/* Referrals Page */}
-          {activePage === 'referrals' && (
-            <motion.div
-              key="referrals"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ReferralsPage 
-                referrals={referrals} 
-                onSubmitLead={() => setShowSubmitModal(true)} 
-              />
-            </motion.div>
-          )}
+        {/* ── Payouts Tab ─────────────────────────────────── */}
+        <TabsContent value="payouts" className="space-y-6">
+          <h2 className="text-xl font-bold tracking-tight">Payouts</h2>
 
-          {/* Payouts Page */}
-          {activePage === 'payouts' && (
-            <motion.div
-              key="payouts"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <PayoutsPage stats={stats} payouts={payouts} />
-            </motion.div>
-          )}
+          {/* Earnings summary */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <IndianRupee className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{formatCurrency(stats?.totalEarnings || 0)}</p>
+                    <p className="text-xs text-muted-foreground">Total Earned</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalPaid)}</p>
+                    <p className="text-xs text-muted-foreground">Total Paid</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                    <Clock className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-amber-600">{formatCurrency(pendingPayout)}</p>
+                    <p className="text-xs text-muted-foreground">Pending</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
+                    <CreditCard className="h-4 w-4 text-violet-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">Jan 1, 2026</p>
+                    <p className="text-xs text-muted-foreground">Next Payout</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Settings Page */}
-          {activePage === 'settings' && (
-            <motion.div
-              key="settings"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <SettingsPage 
-                settingsForm={settingsForm} 
-                setSettingsForm={setSettingsForm}
-                onUpdate={handleUpdateSettings}
-              />
-            </motion.div>
-          )}
+          {/* Payout History */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Payout History</CardTitle>
+              <CardDescription>{payouts.length} payout{payouts.length !== 1 ? 's' : ''}</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {payouts.length === 0 ? (
+                <EmptyState icon={Wallet} message="No payouts yet" />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payouts.map((payout) => (
+                      <TableRow key={payout.id}>
+                        <TableCell className="text-sm">{formatDate(payout.paidAt || payout.createdAt)}</TableCell>
+                        <TableCell className="text-muted-foreground">{payout.method}</TableCell>
+                        <TableCell>{getStatusBadge(payout.status)}</TableCell>
+                        <TableCell className="text-right font-semibold">{formatCurrency(payout.amount)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          {/* Other Pages */}
-          {(activePage === 'resources' || activePage === 'reports') && (
-            <motion.div
-              key={activePage}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-8">
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 mb-4">
-                  {activePage.charAt(0).toUpperCase() + activePage.slice(1)}
-                </h2>
-                <p className="text-gray-600">This section is under development. Check back soon for updates!</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+        {/* ── Settings Tab ────────────────────────────────── */}
+        <TabsContent value="settings" className="space-y-6">
+          <h2 className="text-xl font-bold tracking-tight">Settings</h2>
 
-      {/* Submit Lead Modal */}
-      <AnimatePresence>
-        {showSubmitModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl"
-            >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">Submit lead</h3>
-              <button
-                onClick={() => setShowSubmitModal(false)}
-                className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all"
-              >
-                <span className="text-xl">&times;</span>
-              </button>
-            </div>
-
-            <p className="text-sm text-gray-500 mb-8">
-              Enter the details below to submit a lead. Ensure all information is accurate for proper tracking and follow-up.
-            </p>
-
-            <form onSubmit={handleSubmitLead} className="space-y-5">
+          {/* Personal Details */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  What's the lead's name?*
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={submitForm.leadName}
-                  onChange={(e) => setSubmitForm({ ...submitForm, leadName: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
-                  placeholder="Full name"
-                />
+                <CardTitle className="text-base">Personal Details</CardTitle>
+                <CardDescription>Manage your account information</CardDescription>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  What is the main contact's email address?*
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={submitForm.leadEmail}
-                  onChange={(e) => setSubmitForm({ ...submitForm, leadEmail: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
-                  placeholder="email@example.com"
-                />
+              <Button size="sm" onClick={() => handleUpdateSettings('Personal Details')}>
+                Update
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input
+                    value={settingsForm.name}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, name: e.target.value })}
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Company</Label>
+                  <Input
+                    value={settingsForm.company}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, company: e.target.value })}
+                    placeholder="Company Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={settingsForm.email}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, email: e.target.value })}
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Country</Label>
+                  <Select
+                    value={settingsForm.country}
+                    onValueChange={(v) => setSettingsForm({ ...settingsForm, country: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="India">India</SelectItem>
+                      <SelectItem value="USA">United States</SelectItem>
+                      <SelectItem value="UK">United Kingdom</SelectItem>
+                      <SelectItem value="Canada">Canada</SelectItem>
+                      <SelectItem value="Australia">Australia</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+            </CardContent>
+          </Card>
 
+          {/* Payment Details */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  What is the estimated deal size for this lead? (Type 0 if unsure)*
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-3.5 text-gray-400 font-medium">₹</span>
-                  <input
-                    type="number"
-                    required
-                    value={submitForm.estimatedValue}
-                    onChange={(e) => setSubmitForm({ ...submitForm, estimatedValue: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
-                    placeholder="0"
+                <CardTitle className="text-base">Payment Details</CardTitle>
+                <CardDescription>Configure how you receive payouts</CardDescription>
+              </div>
+              <Button size="sm" onClick={() => handleUpdateSettings('Payment Details')}>
+                Update
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Payment Method</Label>
+                  <Select
+                    value={settingsForm.paymentMethod}
+                    onValueChange={(v) => setSettingsForm({ ...settingsForm, paymentMethod: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PayPal">PayPal</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Stripe">Stripe</SelectItem>
+                      <SelectItem value="Wire Transfer">Wire Transfer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Payment Email / Account</Label>
+                  <Input
+                    value={settingsForm.paymentEmail}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, paymentEmail: e.target.value })}
+                    placeholder="payment@example.com"
                   />
                 </div>
               </div>
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Note:</strong> Payouts are processed on the 1st of each month for the previous month&apos;s
+                  earnings. Minimum payout threshold is ₹1,000.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-              <button
-                type="submit"
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 font-semibold transition-all duration-300"
-              >
-                Submit lead
-              </button>
-            </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Submit Lead Modal */}
+      <Dialog open={showSubmitModal} onOpenChange={setShowSubmitModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Submit Lead</DialogTitle>
+            <DialogDescription>
+              Enter the details below to submit a lead. Ensure all information is accurate for proper tracking.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmitLead} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Lead&apos;s Name *</Label>
+              <Input
+                required
+                value={submitForm.leadName}
+                onChange={(e) => setSubmitForm({ ...submitForm, leadName: e.target.value })}
+                placeholder="Full name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Contact Email *</Label>
+              <Input
+                type="email"
+                required
+                value={submitForm.leadEmail}
+                onChange={(e) => setSubmitForm({ ...submitForm, leadEmail: e.target.value })}
+                placeholder="email@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Estimated Deal Size (₹) *</Label>
+              <Input
+                type="number"
+                required
+                value={submitForm.estimatedValue}
+                onChange={(e) => setSubmitForm({ ...submitForm, estimatedValue: e.target.value })}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground">Type 0 if unsure</p>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowSubmitModal(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitLoading}>
+                {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit Lead
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, message }: { icon: React.ElementType; message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Icon className="h-10 w-10 text-muted-foreground/40 mb-3" />
+      <p className="text-sm font-medium text-muted-foreground">{message}</p>
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-20 w-full rounded-xl" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div>
+                  <Skeleton className="h-7 w-20 mb-1" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -30,7 +30,7 @@ https://yourdomain.com/api  # Production
 
 ### API Version
 
-Current version: **v1.0.0**
+Current version: **v1.2.0**
 
 ---
 
@@ -38,16 +38,40 @@ Current version: **v1.0.0**
 
 Refferq uses **JWT (JSON Web Tokens)** for authentication.
 
-### Getting a Token
+### Authentication Flow (OTP-Based)
 
-**Endpoint:** `POST /api/auth/login`
+Refferq uses a passwordless OTP (One-Time Password) authentication flow:
+
+**Step 1: Request OTP**
+
+**Endpoint:** `POST /api/auth/send-otp`
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:3000/api/auth/send-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com"
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "OTP sent to your email"
+}
+```
+
+**Step 2: Verify OTP**
+
+**Endpoint:** `POST /api/auth/verify-otp`
+
+```bash
+curl -X POST http://localhost:3000/api/auth/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
-    "password": "your-password"
+    "otp": "123456"
   }'
 ```
 
@@ -56,7 +80,6 @@ curl -X POST http://localhost:3000/api/auth/login \
 {
   "success": true,
   "message": "Login successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "123",
     "email": "user@example.com",
@@ -66,18 +89,20 @@ curl -X POST http://localhost:3000/api/auth/login \
 }
 ```
 
+The JWT token is set automatically as an HTTP-only cookie (`auth-token`).
+
 ### Using the Token
 
-Include the JWT token in the `Authorization` header:
+The `auth-token` cookie is sent automatically with browser requests. For programmatic access:
 
 ```bash
 curl -X GET http://localhost:3000/api/auth/me \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  --cookie "auth-token=YOUR_JWT_TOKEN"
 ```
 
 ### Token Expiration
 
-Tokens expire after **7 days**. You'll need to re-authenticate after expiration.
+Tokens expire after **24 hours**. You'll need to re-authenticate via OTP after expiration.
 
 ---
 
@@ -495,21 +520,39 @@ curl -X POST http://localhost:3000/api/test/email \
 
 ---
 
-## Webhooks (Coming v1.1.0)
+## Webhooks
 
-Subscribe to events:
-- `affiliate.created`
-- `affiliate.approved`
-- `referral.submitted`
-- `referral.approved`
-- `commission.created`
-- `payout.completed`
+Webhooks are available since v1.1.0. Subscribe to 12 event types:
+- `affiliate.created`, `affiliate.approved`, `affiliate.rejected`
+- `referral.submitted`, `referral.approved`, `referral.rejected`
+- `commission.created`, `commission.approved`, `commission.paid`
+- `payout.requested`, `payout.completed`, `payout.failed`
+
+Manage webhooks via the Admin API:
+- `GET /api/admin/webhooks` - List webhooks
+- `POST /api/admin/webhooks` - Create, test, or trigger webhooks
+- `PUT /api/admin/webhooks` - Update webhook
+- `DELETE /api/admin/webhooks` - Delete webhook
+
+All webhook deliveries include HMAC SHA-256 signatures for verification.
 
 See [Webhook API](Webhook-API) for details.
 
 ---
 
 ## API Changelog
+
+### v1.2.0 (February 2026)
+- OTP-based authentication (passwordless)
+- JWT stored in HTTP-only cookies (`auth-token`)
+- Token expiry: 24 hours
+- All admin/affiliate endpoints unchanged
+
+### v1.1.0 (December 2025)
+- Webhooks API (CRUD + test + trigger)
+- 12 webhook event types
+- HMAC SHA-256 signature verification
+- Webhook logs and retry logic
 
 ### v1.0.0 (October 2025)
 - Initial API release

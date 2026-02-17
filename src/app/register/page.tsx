@@ -1,274 +1,348 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from '@/components/ui/input-otp';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Target, User, Mail, ShieldCheck, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+
+type Step = 'details' | 'otp' | 'success';
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-  });
+  const router = useRouter();
+  const [step, setStep] = useState<Step>('details');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const router = useRouter();
+  const [message, setMessage] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
-    setSuccess('');
-
-    if (!formData.name || !formData.email) {
-      setError('All fields are required');
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
+      // Step 1: Register the user
+      const registerRes = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          role: 'AFFILIATE'
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, role: 'AFFILIATE' }),
       });
 
-      const data = await response.json();
+      const registerData = await registerRes.json();
 
-      if (data.success) {
-        setSuccess('Registration successful! Redirecting to login...');
+      if (!registerRes.ok) {
+        setError(registerData.message || 'Registration failed');
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Send OTP
+      const otpRes = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const otpData = await otpRes.json();
+
+      if (otpRes.ok) {
+        setStep('otp');
+        setMessage('Account created! A verification code has been sent to your email.');
+      } else {
+        // Registration succeeded but OTP failed - still move to OTP step
+        setStep('otp');
+        setError(otpData.error || 'Failed to send code. Try resending.');
+      }
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length < 6) {
+      setError('Please enter the full 6-digit code');
+      return;
+    }
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, code: otp }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setStep('success');
+        // Redirect after a short delay
         setTimeout(() => {
-          router.push('/login');
+          const user = data.user;
+          if (user.role === 'ADMIN') {
+            router.push('/admin');
+          } else {
+            router.push('/affiliate');
+          }
         }, 2000);
       } else {
-        setError(data.message || 'Registration failed');
+        setError(data.error || 'Invalid verification code');
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
+    } catch {
+      setError('Verification failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setError('');
+    setMessage('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        setMessage('A new verification code has been sent.');
+      } else {
+        setError('Failed to resend code. Please try again.');
+      }
+    } catch {
+      setError('Failed to resend code.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0aDR2NGgtNHptMC0xMGg0djRoLTR6bTEwIDEwaDR2NGgtNHptLTIwIDBoNHY0aC00em0xMC0yMGg0djRoLTR6bTEwIDBoNHY0aC00em0tMTAgMTBoNHY0aC00em0tMTAgMGg0djRoLTR6bTAtMTBoNHY0aC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md px-8 relative z-10"
-      >
-        {/* Glass Card */}
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 shadow-2xl p-8">
-          {/* Logo */}
-          <motion.div 
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-center mb-8"
-          >
-            <div className="inline-flex items-center justify-center mb-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/30 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                <span className="text-3xl">🚀</span>
-              </div>
-            </div>
-            <h2 className="text-2xl font-bold text-white">Join Refferq</h2>
-            <p className="text-white/60 text-sm mt-1">Start earning with affiliate marketing</p>
-          </motion.div>
-
-          {/* Messages */}
-          <AnimatePresence>
-            {success && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                className="mb-6 bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 rounded-xl p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center">
-                    <span>✓</span>
-                  </div>
-                  <p className="text-sm text-emerald-200">{success}</p>
-                </div>
-              </motion.div>
-            )}
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                className="mb-6 bg-red-500/20 backdrop-blur-sm border border-red-400/30 rounded-xl p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-red-500/30 flex items-center justify-center">
-                    <span>!</span>
-                  </div>
-                  <p className="text-sm text-red-200">{error}</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <motion.form
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            onSubmit={handleSubmit}
-            className="space-y-5"
-          >
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-white/80 mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all text-white placeholder-white/30"
-                  placeholder="Enter your full name"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-white/80 mb-2">
-                Email address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all text-white placeholder-white/30"
-                  placeholder="name@company.com"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            {/* Features Box */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 backdrop-blur-sm border border-indigo-400/20 rounded-xl p-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/30 flex items-center justify-center flex-shrink-0">
-                  <span>✨</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white/90 mb-1">What you'll get:</p>
-                  <ul className="text-xs text-white/60 space-y-1">
-                    <li className="flex items-center gap-2">
-                      <span className="text-emerald-400">→</span> Unique referral link & dashboard
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-emerald-400">→</span> Track commissions in real-time
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-emerald-400">→</span> Secure OTP-based login
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold py-3.5 px-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating account...
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  Create Account
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </span>
-              )}
-            </motion.button>
-
-            <div className="text-center pt-4">
-              <p className="text-sm text-white/50">
-                Already have an account?{' '}
-                <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
-                  Sign in →
-                </Link>
-              </p>
-            </div>
-          </motion.form>
-
-          {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <p className="text-xs text-white/30 text-center">
-              By signing up, you agree to our{' '}
-              <a href="#" className="text-white/50 hover:text-white/70 underline">Terms</a>
-              {' '}and{' '}
-              <a href="#" className="text-white/50 hover:text-white/70 underline">Privacy Policy</a>
-            </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Logo */}
+        <div className="text-center space-y-2">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/25">
+            <Target className="h-7 w-7 text-primary-foreground" />
           </div>
+          <h1 className="text-2xl font-bold tracking-tight">Refferq</h1>
+          <p className="text-sm text-muted-foreground">
+            Affiliate Marketing Platform
+          </p>
         </div>
 
-        {/* Bottom Glow */}
-        <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 w-3/4 h-20 bg-emerald-500/20 blur-3xl rounded-full"></div>
-      </motion.div>
+        {/* Card */}
+        <Card className="border-0 shadow-xl shadow-black/5">
+          {step === 'details' && (
+            <>
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-xl">Create your account</CardTitle>
+                <CardDescription>
+                  Join as an affiliate partner and start earning
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleRegister}>
+                <CardContent className="space-y-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Your name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="pl-10"
+                        required
+                        autoFocus
+                        autoComplete="name"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        required
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex-col gap-4">
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                    disabled={loading || !name || !email}
+                  >
+                    {loading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    {loading ? 'Creating account...' : 'Create Account'}
+                  </Button>
+                </CardFooter>
+              </form>
+            </>
+          )}
+
+          {step === 'otp' && (
+            <>
+              <CardHeader className="text-center pb-4">
+                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <ShieldCheck className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-xl">Verify your email</CardTitle>
+                <CardDescription>
+                  Enter the 6-digit code sent to <span className="font-medium text-foreground">{email}</span>
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleVerifyOTP}>
+                <CardContent className="space-y-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  {message && (
+                    <Alert>
+                      <AlertDescription>{message}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      value={otp}
+                      onChange={(value) => setOtp(value)}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                      </InputOTPGroup>
+                      <InputOTPSeparator />
+                      <InputOTPGroup>
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex-col gap-3">
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                    disabled={loading || otp.length < 6}
+                  >
+                    {loading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                    )}
+                    {loading ? 'Verifying...' : 'Verify & Continue'}
+                  </Button>
+                  <div className="flex items-center justify-between w-full">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setStep('details');
+                        setOtp('');
+                        setError('');
+                        setMessage('');
+                      }}
+                    >
+                      <ArrowLeft className="mr-1 h-3 w-3" />
+                      Back
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResendOTP}
+                      disabled={loading}
+                    >
+                      Resend code
+                    </Button>
+                  </div>
+                </CardFooter>
+              </form>
+            </>
+          )}
+
+          {step === 'success' && (
+            <CardContent className="py-12">
+              <div className="text-center space-y-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Welcome aboard, {name}!</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your account has been created. Redirecting to your dashboard...
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Footer */}
+        {step !== 'success' && (
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link href="/login" className="font-medium text-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
+        )}
+      </div>
     </div>
   );
 }

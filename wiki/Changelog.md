@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-02-17
+
+### 🎨 shadcn/ui Redesign & Code Quality Release
+
+This release focuses on a complete UI redesign using the shadcn/ui component library, improving code quality, and resolving all TypeScript compilation errors.
+
+### ✨ Added
+
+#### shadcn/ui Component Library
+- Integrated 50+ shadcn/ui components (new-york style)
+- Card, Button, Badge, Avatar, Progress, Separator, Tooltip, Skeleton
+- InputOTP for OTP verification flows
+- Alert components for form feedback
+- Dialog, Tabs, Table for data management
+- SidebarProvider with inset layout for admin
+
+#### Login Page (New)
+- Built from scratch with shadcn/ui Card and InputOTP
+- 2-step OTP-based flow: email entry → 6-digit OTP verification
+- Responsive design with branded gradient background
+- Real-time form validation and error alerts
+
+#### Register Page (New)
+- 3-step registration flow: details → OTP → success
+- Calls `/api/auth/register` then OTP verification
+- Role auto-set to AFFILIATE on registration
+- Consistent design language with login page
+
+#### Admin Dashboard Redesign
+- Stat cards with tooltips (Revenue, Commission, Partners, Referrals)
+- Activity overview with Progress bar visualization
+- Quick actions grid for common admin tasks
+- Top partners list with Avatar and earnings
+- Recent customers list with status badges
+- Skeleton loading states during data fetch
+- EmptyState component for zero-data scenarios
+
+### 🔄 Changed
+
+#### UI Framework
+- Migrated from raw HTML/Tailwind to shadcn/ui components throughout
+- Admin layout already using shadcn Sidebar (preserved)
+- Partners list page using shadcn Tabs, Table, Dialog (preserved)
+- Consistent design tokens via CSS custom properties
+
+#### Dependencies
+- Updated `react-resizable-panels` imports for v3 API (`Group`, `Panel`, `Separator`)
+- Regenerated Prisma Client for proper type exports
+
+### 🐛 Fixed
+
+#### TypeScript Errors (61 resolved)
+- **tailwind.config.ts** - Removed 6 duplicate property keys (sidebar colors, accordion keyframes/animations)
+- **src/lib/auth.ts** - Fixed `User`, `Role`, `UserStatus` imports via Prisma client regeneration
+- **src/components/ui/resizable.tsx** - Updated to named imports for react-resizable-panels v3
+- **11 API route files** - Resolved 46 implicit `any` type errors via Prisma client regeneration
+- **src/app/api/admin/referrals/route.ts** - Fixed `name`/`rate` property access on Map values
+- **src/app/api/admin/dashboard/route.ts** - Fixed arithmetic operation type for `commissionRate`
+
+#### Cleanup
+- Removed stale backup files (`page.tsx.old`, `page.tsx.bak`, `page.tsx.backup`)
+
+### 🔧 Technical
+- Zero TypeScript errors (`npx tsc --noEmit` passes cleanly)
+- All existing functionality preserved — no API or data changes
+- Currency remains INR (₹) with cents-based storage
+
+---
+
 ## [1.1.0] - 2025-12-14
 
 ### 🎨 UI Modernization & Analytics Release
@@ -286,6 +355,7 @@ See our [Roadmap](Roadmap) for upcoming features.
 
 | Version | Release Date | Highlights |
 |---------|--------------|------------|
+| 1.2.0 | 2026-02-17 | 🎨 shadcn/ui Redesign, Login/Register Pages, 61 TS Fixes |
 | 1.1.0 | 2025-12-14 | 🎨 UI Modernization, Analytics Dashboard, Webhooks System |
 | 1.0.0 | 2025-10-10 | 🎉 Initial release with core features |
 
@@ -416,7 +486,9 @@ Stay informed about new releases:
 
 | Version | Status | Support Until |
 |---------|--------|---------------|
-| 1.0.x | Current | Ongoing |
+| 1.2.x | Current | Ongoing |
+| 1.1.x | Previous | Security updates (6 months) |
+| 1.0.x | Legacy | Upgrade recommended |
 
 ### Support Policy
 - **Current Version:** Full support with updates
@@ -431,5 +503,5 @@ Stay informed about new releases:
 </p>
 
 <p align="center">
-  Last Updated: December 14, 2025
+  Last Updated: February 17, 2026
 </p>
