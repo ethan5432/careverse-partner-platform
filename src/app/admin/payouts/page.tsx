@@ -69,11 +69,7 @@ export default function PayoutsPage() {
 
   const fetchPayouts = async () => {
     try {
-      const res = await fetch('/api/admin/payouts', {
-        headers: {
-          'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0] || ''}`,
-        },
-      });
+      const res = await fetch('/api/admin/payouts');
       const data = await res.json();
       if (data.success) {
         setPayouts(data.payouts || []);

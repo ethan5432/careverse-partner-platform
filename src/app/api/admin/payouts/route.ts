@@ -14,13 +14,12 @@ interface JWTPayload {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get token from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get token from cookie
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const decoded = payload as any;
 
@@ -87,13 +86,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get token from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get token from cookie
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const decoded = payload as any;
 
@@ -233,12 +231,12 @@ export async function POST(request: NextRequest) {
 // PUT - Update payout status
 export async function PUT(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get token from cookie
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const decoded = payload as any;
 
@@ -335,12 +333,12 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete payout
 export async function DELETE(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get token from cookie
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const decoded = payload as any;
 

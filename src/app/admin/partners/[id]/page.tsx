@@ -137,10 +137,7 @@ export default function PartnerDetailPage() {
 
   const fetchPartnerData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/admin/affiliates', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch('/api/admin/affiliates');
       if (res.ok) {
         const data = await res.json();
         const affiliate = data.affiliates?.find((a: any) => a.id === partnerId);
@@ -169,10 +166,7 @@ export default function PartnerDetailPage() {
 
   const fetchCustomers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/admin/referrals', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch('/api/admin/referrals');
       if (res.ok) {
         const data = await res.json();
         const partnerCustomers = data.referrals
@@ -194,10 +188,7 @@ export default function PartnerDetailPage() {
 
   const fetchCommissions = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/admin/transactions?affiliateId=${partnerId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`/api/admin/transactions?affiliateId=${partnerId}`);
       if (res.ok) {
         const data = await res.json();
         const comms = data.transactions?.map((txn: any) => ({
@@ -219,10 +210,7 @@ export default function PartnerDetailPage() {
 
   const fetchPayouts = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/admin/payouts?affiliateId=${partnerId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`/api/admin/payouts?affiliateId=${partnerId}`);
       if (res.ok) {
         const data = await res.json();
         setPayouts(data.payouts || []);
@@ -239,10 +227,9 @@ export default function PartnerDetailPage() {
     }
     setPayoutLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch('/api/admin/payouts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ affiliateId: partnerId, commissionIds: selectedCommissions }),
       });
       if (res.ok) {
@@ -267,10 +254,9 @@ export default function PartnerDetailPage() {
     if (!editingPayout) return;
     setPayoutLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch('/api/admin/payouts', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: editingPayout.id, status: newStatus }),
       });
       if (res.ok) {
@@ -366,7 +352,7 @@ export default function PartnerDetailPage() {
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14">
               <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
-                {partner.name.charAt(0).toUpperCase()}
+                {(partner.name || 'P').charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
