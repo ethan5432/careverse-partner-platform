@@ -9,11 +9,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2026-02-17
 
-### 🎨 shadcn/ui Redesign & Code Quality Release
+### 🎨 shadcn/ui Redesign, Advanced Reporting & API Enhancements
 
-This release focuses on a complete UI redesign using the shadcn/ui component library, improving code quality, and resolving all TypeScript compilation errors.
+This release delivers a complete UI redesign using the shadcn/ui component library, advanced reporting with scheduled/email delivery and cohort analysis, a full API key management system with rate limiting and usage analytics, and resolves all TypeScript compilation errors.
 
 ### ✨ Added
+
+#### Advanced Reporting
+- Scheduled reports with configurable frequency (Daily, Weekly, Biweekly, Monthly)
+- Custom report builder — save and load report configurations with column and filter selection
+- Email report delivery — generate and send HTML-formatted reports to multiple recipients via Resend
+- Cohort analysis — analyze affiliate retention and performance grouped by join week or month
+- New Reports page with 4 tabs: Generate, Scheduled, Saved, Cohort
+
+#### API Key Management
+- Full API key lifecycle: create, list (masked), toggle active, revoke
+- Secure key generation with `rfq_` prefix + 32 random hex bytes (shown only once on creation)
+- Scope-based permissions (read, write, admin)
+- Configurable rate limits per key and optional expiration dates
+- API Keys admin page with stats, key table, and inline authentication docs
+
+#### API Rate Limiting & Analytics
+- Sliding-window rate limiter backed by database (multi-instance safe)
+- API key validation middleware with scope checking and usage logging
+- API Analytics dashboard: stat cards, daily request chart, top endpoints, status distribution, per-key breakdown, recent logs
+- `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` response headers
+
+#### Database Models (5 new)
+- `ScheduledReport` — automated report configurations with frequency and recipients
+- `SavedReport` — saved custom report builder configurations
+- `ApiKey` — API keys with scopes, rate limits, and expiration
+- `ApiUsageLog` — per-request usage logging with response times
+- `RateLimitEntry` — sliding window rate limit tracking
+- `ReportFrequency` enum (DAILY, WEEKLY, BIWEEKLY, MONTHLY)
+
+#### New API Routes (6 endpoints)
+- `GET/POST/PUT/DELETE /api/admin/scheduled-reports` — Scheduled report CRUD
+- `GET/POST/PUT/DELETE /api/admin/saved-reports` — Saved report CRUD
+- `GET/POST/PUT/DELETE /api/admin/api-keys` — API key management
+- `GET /api/admin/api-usage` — Usage analytics with period filtering
+- `GET /api/admin/reports/cohort` — Cohort analysis endpoint
+- `POST /api/admin/reports/email` — Email report delivery
+
+#### New Admin Pages (3 pages)
+- `/admin/reports` — Expanded with Scheduled, Saved, and Cohort tabs
+- `/admin/api-keys` — API key management UI
+- `/admin/api-analytics` — API usage analytics dashboard
 
 #### shadcn/ui Component Library
 - Integrated 50+ shadcn/ui components (new-york style)
@@ -71,8 +112,12 @@ This release focuses on a complete UI redesign using the shadcn/ui component lib
 
 ### 🔧 Technical
 - Zero TypeScript errors (`npx tsc --noEmit` passes cleanly)
-- All existing functionality preserved — no API or data changes
+- All existing functionality preserved — no breaking changes
 - Currency remains INR (₹) with cents-based storage
+- New `src/lib/rate-limit.ts` library with `withRateLimit` middleware helper
+- Admin sidebar updated with API Keys and API Analytics navigation items
+- 5 new Prisma models synced to database via `prisma db push`
+- API key authentication via `x-api-key` header
 
 ---
 
@@ -355,7 +400,7 @@ See our [Roadmap](Roadmap) for upcoming features.
 
 | Version | Release Date | Highlights |
 |---------|--------------|------------|
-| 1.2.0 | 2026-02-17 | 🎨 shadcn/ui Redesign, Login/Register Pages, 61 TS Fixes |
+| 1.2.0 | 2026-02-17 | 🎨 shadcn/ui Redesign, Advanced Reporting, API Keys & Analytics, 61 TS Fixes |
 | 1.1.0 | 2025-12-14 | 🎨 UI Modernization, Analytics Dashboard, Webhooks System |
 | 1.0.0 | 2025-10-10 | 🎉 Initial release with core features |
 

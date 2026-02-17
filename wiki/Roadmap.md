@@ -116,18 +116,16 @@ To become the **most comprehensive, developer-friendly, and feature-rich open-so
 - [x] Regenerated Prisma client for full type exports
 - [x] Cleaned up stale backup files
 
-### Deferred to v1.3.0
-
 #### Advanced Reporting
-- [ ] Automated weekly/monthly reports
-- [ ] Custom report builder
-- [ ] Email report delivery
-- [ ] Cohort analysis
+- [x] Automated weekly/monthly reports (scheduled reports with DAILY/WEEKLY/BIWEEKLY/MONTHLY frequency)
+- [x] Custom report builder (save/load report configurations with column & filter selection)
+- [x] Email report delivery (send HTML reports via Resend to multiple recipients)
+- [x] Cohort analysis (affiliate retention & performance by join date)
 
 #### API Enhancements
-- [ ] API rate limiting
-- [ ] API key management
-- [ ] API usage analytics
+- [x] API rate limiting (sliding window rate limiter with DB-backed tracking)
+- [x] API key management (create, revoke, scope-based permissions, expiration)
+- [x] API usage analytics (daily breakdown, top endpoints, status distribution, per-key usage)
 
 ---
 
@@ -135,6 +133,8 @@ To become the **most comprehensive, developer-friendly, and feature-rich open-so
 
 **Target:** April 2026  
 **Focus:** Customization & White-Label
+
+> **Note:** Advanced Reporting and API Enhancements originally planned here were completed early and shipped in v1.2.0.
 
 ### Planned Features
 

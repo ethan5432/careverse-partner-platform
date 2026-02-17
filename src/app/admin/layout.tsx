@@ -41,6 +41,8 @@ import {
   LogOut,
   ChevronsUpDown,
   Bell,
+  KeyRound,
+  Activity,
 } from 'lucide-react';
 
 const mainNavItems = [
@@ -54,7 +56,9 @@ const mainNavItems = [
 const configNavItems = [
   { title: 'Program Settings', url: '/admin/program-settings', icon: Sliders },
   { title: 'Settings', url: '/admin/settings', icon: Settings },
-  { title: 'Reports', url: '/admin/reports', icon: BarChart3, badge: 'BETA' },
+  { title: 'Reports', url: '/admin/reports', icon: BarChart3 },
+  { title: 'API Keys', url: '/admin/api-keys', icon: KeyRound },
+  { title: 'API Analytics', url: '/admin/api-analytics', icon: Activity, badge: 'NEW' },
 ];
 
 function AdminSidebar() {

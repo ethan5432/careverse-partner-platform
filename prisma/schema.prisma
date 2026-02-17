@@ -435,3 +435,99 @@ enum EmailStatus {
   FAILED
   BOUNCED
 }
+
+// ───────────────────────────────────────────────
+// Advanced Reporting & API Management Models
+// ───────────────────────────────────────────────
+
+model ScheduledReport {
+  id            String                @id @default(cuid())
+  name          String
+  reportType    String                @map("report_type") // summary, affiliates, referrals, commissions, payouts, cohort
+  frequency     ReportFrequency       @default(WEEKLY)
+  recipients    Json                  @default("[]") // array of email addresses
+  filters       Json                  @default("{}") // date range, status filters, etc.
+  format        String                @default("csv") // csv, json
+  isActive      Boolean               @default(true) @map("is_active")
+  lastRunAt     DateTime?             @map("last_run_at")
+  nextRunAt     DateTime?             @map("next_run_at")
+  createdBy     String                @map("created_by")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+
+  @@map("scheduled_reports")
+}
+
+model SavedReport {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  reportType  String   @map("report_type")
+  columns     Json     @default("[]") // selected columns
+  filters     Json     @default("{}") // saved filters
+  sortBy      String?  @map("sort_by")
+  sortOrder   String?  @default("desc") @map("sort_order")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("saved_reports")
+}
+
+model ApiKey {
+  id          String      @id @default(cuid())
+  name        String
+  key         String      @unique
+  prefix      String      // first 8 chars for display
+  userId      String      @map("user_id")
+  scopes      Json        @default("[\"read\"]") // read, write, admin
+  rateLimit   Int         @default(100) @map("rate_limit") // requests per minute
+  isActive    Boolean     @default(true) @map("is_active")
+  lastUsedAt  DateTime?   @map("last_used_at")
+  expiresAt   DateTime?   @map("expires_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  usageLogs   ApiUsageLog[]
+
+  @@index([key])
+  @@index([userId])
+  @@map("api_keys")
+}
+
+model ApiUsageLog {
+  id          String   @id @default(cuid())
+  apiKeyId    String   @map("api_key_id")
+  endpoint    String
+  method      String
+  statusCode  Int      @map("status_code")
+  responseMs  Int      @map("response_ms") // response time in milliseconds
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+  apiKey      ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId])
+  @@index([createdAt])
+  @@index([endpoint])
+  @@map("api_usage_logs")
+}
+
+model RateLimitEntry {
+  id          String   @id @default(cuid())
+  identifier  String   // API key or IP address
+  endpoint    String
+  windowStart DateTime @map("window_start")
+  requestCount Int     @default(0) @map("request_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([identifier, endpoint, windowStart])
+  @@index([identifier])
+  @@map("rate_limit_entries")
+}
+
+enum ReportFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
