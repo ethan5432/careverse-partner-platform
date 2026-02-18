@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 async function verifyAdmin(request: NextRequest) {
@@ -87,10 +87,17 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Program ID required' }, { status: 400 });
+    }
+
+    // Only allow specific fields (prevent mass assignment)
+    const allowedFields = ['name', 'description', 'commissionType', 'commissionValue', 'cookieDuration', 'isActive', 'terms'];
+    const updates: Record<string, any> = {};
+    for (const key of allowedFields) {
+      if (key in body && body[key] !== undefined) updates[key] = body[key];
     }
 
     const program = await prisma.program.update({

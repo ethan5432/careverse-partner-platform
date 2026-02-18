@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 export async function GET(request: NextRequest) {
@@ -132,7 +132,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate password if not provided
-    const userPassword = password || `AF${Math.random().toString(36).substr(2, 8)}`;
+    const crypto = await import('crypto');
+    const userPassword = password || `AF${crypto.randomBytes(12).toString('base64url')}`;
 
     // Hash password with bcrypt
     const hashedPassword = await (await import('bcryptjs')).hash(userPassword, 12);
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
     const affiliate = await prisma.affiliate.create({
       data: {
         userId: newUser.id,
-        referralCode: `AF${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
+        referralCode: `AF${Date.now()}${(await import('crypto')).randomBytes(3).toString('hex').toUpperCase().slice(0, 4)}`,
         balanceCents: 0,
         payoutDetails: {}
       }
@@ -170,7 +171,9 @@ export async function POST(request: NextRequest) {
         balanceCents: affiliate.balanceCents,
         createdAt: affiliate.createdAt
       },
-      password: userPassword // Return password to show to admin
+      // Note: Password is sent to admin once and should be communicated
+      // securely to the affiliate. It is not stored in logs.
+      temporaryPassword: userPassword
     });
   } catch (error) {
     console.error('Create affiliate API error:', error);

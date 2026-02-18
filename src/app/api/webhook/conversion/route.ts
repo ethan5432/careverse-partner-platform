@@ -1,9 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/prisma';
+import { db, prisma } from '@/lib/prisma';
+import crypto from 'crypto';
+
+// ─── Webhook Signature Verification ────────────────────────────
+function verifyWebhookSignature(payload: string, signature: string | null, secret: string): boolean {
+  if (!signature) return false;
+  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  const sig = signature.startsWith('sha256=') ? signature.slice(7) : signature;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
+async function verifyApiKey(request: NextRequest): Promise<boolean> {
+  const apiKey = request.headers.get('x-api-key');
+  if (!apiKey) return false;
+
+  // Check against stored API keys
+  const hashedKey = crypto.createHash('sha256').update(apiKey).digest('hex');
+  const key = await prisma.apiKey.findFirst({
+    where: { keyHash: hashedKey, isActive: true }
+  }).catch(() => null);
+
+  return !!key;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // ─── Authentication: Require API key OR webhook signature ───
+    const rawBody = await request.text();
+    const webhookSecret = process.env.WEBHOOK_SECRET;
+    const signature = request.headers.get('x-webhook-signature') || request.headers.get('x-refferq-signature');
+
+    let authenticated = false;
+
+    // Method 1: API key authentication
+    const apiKey = request.headers.get('x-api-key');
+    if (apiKey) {
+      authenticated = await verifyApiKey(request);
+    }
+
+    // Method 2: Webhook signature verification
+    if (!authenticated && webhookSecret && signature) {
+      authenticated = verifyWebhookSignature(rawBody, signature, webhookSecret);
+    }
+
+    if (!authenticated) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized: Valid API key or webhook signature required' },
+        { status: 401 }
+      );
+    }
+
+    const body = JSON.parse(rawBody);
     const {
       event_type,
       amount_cents,

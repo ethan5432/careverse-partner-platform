@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { otpService } from '@/lib/otp';
 import { SignJWT } from 'jose';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 verify attempts per minute per IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown';
+    const rateLimit = await checkRateLimit(ip, 'auth/verify-otp', 5, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many verification attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': Math.ceil((rateLimit.resetAt.getTime() - Date.now()) / 1000).toString() } }
+      );
+    }
+
     const { email, code } = await request.json();
 
     if (!email || !code) {
@@ -57,7 +70,8 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 86400 // 24 hours
+      maxAge: 86400, // 24 hours
+      path: '/'
     });
 
     return response;

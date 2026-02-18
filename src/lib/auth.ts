@@ -2,6 +2,7 @@
 import { type User, Role, UserStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 export interface AuthSession {
   user: User;
@@ -26,7 +27,7 @@ class AuthService {
   private readonly TOKEN_EXPIRY_HOURS = 24;
 
   private generateToken(): string {
-    return `token_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
+    return `token_${Date.now()}_${crypto.randomBytes(24).toString('hex')}`;
   }
 
   private getExpiryDate(): string {
@@ -37,7 +38,7 @@ class AuthService {
 
   private generateReferralCode(name: string): string {
     const cleanName = name.replace(/[^a-zA-Z]/g, '').toUpperCase();
-    const random = Math.random().toString(36).substr(2, 4).toUpperCase();
+    const random = crypto.randomBytes(3).toString('hex').toUpperCase().slice(0, 4);
     return `${cleanName.substr(0, 6)}-${random}`;
   }
 

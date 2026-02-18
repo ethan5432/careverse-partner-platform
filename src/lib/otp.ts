@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { resend } from './email';
+import crypto from 'crypto';
 
 export class OTPService {
-  // Generate a 6-digit OTP
+  // Generate a cryptographically secure 6-digit OTP
   private generateOTP(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return crypto.randomInt(100000, 999999).toString();
   }
 
   // Generate and send OTP via email

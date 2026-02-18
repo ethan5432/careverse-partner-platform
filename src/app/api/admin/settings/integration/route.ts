@@ -3,24 +3,26 @@ import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
+
+// Verify admin auth with DB check
+async function verifyAdmin(req: NextRequest) {
+  const token = req.cookies.get('auth-token')?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: String(payload.userId) } });
+    if (!user || user.role !== 'ADMIN' || user.status !== 'ACTIVE') return null;
+    return user;
+  } catch { return null; }
+}
 
 // GET /api/admin/settings/integration - Get integration settings
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('auth-token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'No authentication token' },
-        { status: 401 }
-      );
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    
-    if (payload.role !== 'ADMIN') {
+    const user = await verifyAdmin(req);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
     }
 
     const integration = await prisma.integrationSettings.findUnique({
-      where: { userId: String(payload.userId) },
+      where: { userId: user.id },
     });
 
     return NextResponse.json({
@@ -47,18 +49,8 @@ export async function GET(req: NextRequest) {
 // POST /api/admin/settings/integration - Create or update integration settings
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get('auth-token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'No authentication token' },
-        { status: 401 }
-      );
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    
-    if (payload.role !== 'ADMIN') {
+    const user = await verifyAdmin(req);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -78,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     // Check if integration settings already exist
     const existingIntegration = await prisma.integrationSettings.findUnique({
-      where: { userId: String(payload.userId) },
+      where: { userId: user.id },
     });
 
     let integration;
@@ -86,7 +78,7 @@ export async function POST(req: NextRequest) {
     if (existingIntegration) {
       // Update existing integration
       integration = await prisma.integrationSettings.update({
-        where: { userId: String(payload.userId) },
+        where: { userId: user.id },
         data: {
           provider,
           apiKey: apiKey || null,
@@ -102,7 +94,7 @@ export async function POST(req: NextRequest) {
       // Create new integration
       integration = await prisma.integrationSettings.create({
         data: {
-          userId: String(payload.userId),
+          userId: user.id,
           provider,
           apiKey: apiKey || null,
           publicKey: publicKey || null,
@@ -131,18 +123,8 @@ export async function POST(req: NextRequest) {
 // DELETE /api/admin/settings/integration - Delete integration settings
 export async function DELETE(req: NextRequest) {
   try {
-    const token = req.cookies.get('auth-token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'No authentication token' },
-        { status: 401 }
-      );
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    
-    if (payload.role !== 'ADMIN') {
+    const user = await verifyAdmin(req);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -150,7 +132,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     const integration = await prisma.integrationSettings.findUnique({
-      where: { userId: String(payload.userId) },
+      where: { userId: user.id },
     });
 
     if (!integration) {
@@ -161,7 +143,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     await prisma.integrationSettings.delete({
-      where: { userId: String(payload.userId) },
+      where: { userId: user.id },
     });
 
     return NextResponse.json({

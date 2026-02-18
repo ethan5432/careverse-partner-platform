@@ -2,13 +2,33 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 login attempts per minute per IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown';
+    const rateLimit = await checkRateLimit(ip, 'auth/login', 5, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, message: 'Too many login attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetAt.getTime() - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+          }
+        }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 

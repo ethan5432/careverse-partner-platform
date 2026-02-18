@@ -1,6 +1,29 @@
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
+// ─── SSRF Protection ──────────────────────────────────────────
+const BLOCKED_HOSTNAMES = [
+  'localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]',
+  'metadata.google.internal', '169.254.169.254',
+];
+
+const PRIVATE_IP_RANGES = [
+  /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./,
+  /^127\./, /^0\./, /^169\.254\./, /^fc00:/i, /^fe80:/i, /^::1$/,
+];
+
+function isUrlSafe(urlString: string): boolean {
+  try {
+    const parsed = new URL(urlString);
+    const hostname = parsed.hostname.toLowerCase();
+    if (BLOCKED_HOSTNAMES.includes(hostname)) return false;
+    if (PRIVATE_IP_RANGES.some(r => r.test(hostname))) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Webhook event types
 export type WebhookEventType = 
   | 'affiliate.created'
@@ -58,6 +81,13 @@ export async function triggerWebhook(eventType: WebhookEventType, eventData: any
     });
 
     for (const webhook of subscribedWebhooks) {
+      // SSRF protection: skip webhooks with unsafe URLs
+      if (!isUrlSafe(webhook.url)) {
+        console.warn(`Webhook ${webhook.id} skipped: URL targets a private/internal address`);
+        results.push({ webhookId: webhook.id, success: false, error: 'URL targets a blocked address' });
+        continue;
+      }
+
       const payload = JSON.stringify({
         event: eventType,
         data: eventData,

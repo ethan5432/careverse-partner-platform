@@ -3,24 +3,26 @@ import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
+
+// Verify admin auth with DB check
+async function verifyAdmin(req: NextRequest) {
+  const token = req.cookies.get('auth-token')?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: String(payload.userId) } });
+    if (!user || user.role !== 'ADMIN' || user.status !== 'ACTIVE') return null;
+    return user;
+  } catch { return null; }
+}
 
 // GET /api/admin/settings/profile - Get current user profile
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('auth-token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'No authentication token' },
-        { status: 401 }
-      );
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    
-    if (payload.role !== 'ADMIN') {
+    const user = await verifyAdmin(req);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
     }
 
     const userData = await prisma.user.findUnique({
-      where: { id: String(payload.userId) },
+      where: { id: user.id },
       select: {
         id: true,
         name: true,
@@ -63,18 +65,8 @@ export async function GET(req: NextRequest) {
 // PUT /api/admin/settings/profile - Update user profile
 export async function PUT(req: NextRequest) {
   try {
-    const token = req.cookies.get('auth-token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'No authentication token' },
-        { status: 401 }
-      );
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    
-    if (payload.role !== 'ADMIN') {
+    const user = await verifyAdmin(req);
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -93,12 +85,12 @@ export async function PUT(req: NextRequest) {
     }
 
     // Check if email is already taken by another user
-    if (email !== payload.email) {
+    if (email !== user.email) {
       const existingUser = await prisma.user.findUnique({
         where: { email },
       });
 
-      if (existingUser && existingUser.id !== String(payload.userId)) {
+      if (existingUser && existingUser.id !== user.id) {
         return NextResponse.json(
           { success: false, error: 'Email is already in use' },
           { status: 400 }
@@ -108,7 +100,7 @@ export async function PUT(req: NextRequest) {
 
     // Update user profile
     const updatedUser = await prisma.user.update({
-      where: { id: String(payload.userId) },
+      where: { id: user.id },
       data: {
         name,
         email,

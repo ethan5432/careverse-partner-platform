@@ -81,11 +81,11 @@ export async function checkRateLimit(
     };
   } catch (error) {
     console.error('Rate limit check error:', error);
-    // On error, allow the request (fail open)
+    // On error, deny the request (fail closed for security)
     return {
-      allowed: true,
+      allowed: false,
       limit: maxRequests,
-      remaining: maxRequests,
+      remaining: 0,
       resetAt: new Date(now.getTime() + windowMs),
     };
   }

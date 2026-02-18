@@ -24,11 +24,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Only allow AFFILIATE role for self-registration
-    const userRole = role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'AFFILIATE';
+    // SECURITY: Never allow self-registration as admin
+    const userRole = 'AFFILIATE';
 
-    // Generate a random password (won't be used since we use OTP)
-    const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    // Generate a cryptographically secure random password
+    const crypto = await import('crypto');
+    const randomPassword = crypto.randomBytes(24).toString('base64url');
 
     const result = await auth.register({
       email: email.toLowerCase().trim(),

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 function generateReferralCode(name: string): string {
   const cleanName = name.replace(/[^a-zA-Z]/g, '').toUpperCase();
-  const random = Math.random().toString(36).substr(2, 4).toUpperCase();
+  const random = crypto.randomBytes(3).toString('hex').toUpperCase().slice(0, 4);
   return `${cleanName.substr(0, 6)}-${random}`;
 }
 

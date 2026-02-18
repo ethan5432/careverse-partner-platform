@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// ─── Open Redirect Protection ─────────────────────────────────
+function isAllowedRedirectUrl(url: string, appUrl: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const appParsed = new URL(appUrl);
+    // Only allow redirects to the same domain or subdomains of the app
+    const allowedDomains = [appParsed.hostname];
+    // Also allow the marketing site domain
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (siteUrl) {
+      try { allowedDomains.push(new URL(siteUrl).hostname); } catch {}
+    }
+    return (
+      (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+      allowedDomains.some(domain =>
+        parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
@@ -10,7 +33,12 @@ export async function GET(
     const referralCode = code;
     const searchParams = request.nextUrl.searchParams;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.refferq.com';
-    const targetUrl = searchParams.get('target') || appUrl;
+    const rawTarget = searchParams.get('target');
+
+    // Validate redirect target to prevent open redirect attacks
+    const targetUrl = (rawTarget && isAllowedRedirectUrl(rawTarget, appUrl))
+      ? rawTarget
+      : appUrl;
 
     // Find affiliate by referral code using Prisma
     const affiliate = await prisma.affiliate.findUnique({
@@ -98,8 +126,8 @@ export async function GET(
   } catch (error) {
     console.error('Referral tracking error:', error);
 
-    // Fallback redirect on error
-    const targetUrl = request.nextUrl.searchParams.get('target') || process.env.NEXT_PUBLIC_APP_URL || 'https://app.refferq.com';
-    return NextResponse.redirect(targetUrl);
+    // Fallback redirect on error (safe — always redirects to app URL)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.refferq.com';
+    return NextResponse.redirect(appUrl);
   }
 }

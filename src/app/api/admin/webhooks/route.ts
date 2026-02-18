@@ -5,8 +5,68 @@ import crypto from 'crypto';
 import { AVAILABLE_EVENTS, triggerWebhook, type WebhookEventType } from '@/lib/webhooks';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
+
+// ─── SSRF Protection: Validate webhook URLs ────────────────────
+const BLOCKED_HOSTNAMES = [
+  'localhost',
+  '127.0.0.1',
+  '0.0.0.0',
+  '::1',
+  '[::1]',
+  'metadata.google.internal',
+  'metadata.google',
+  '169.254.169.254',       // AWS/GCP metadata
+  'metadata.internal',
+];
+
+const PRIVATE_IP_RANGES = [
+  /^10\./,                 // 10.0.0.0/8
+  /^172\.(1[6-9]|2\d|3[01])\./,  // 172.16.0.0/12
+  /^192\.168\./,           // 192.168.0.0/16
+  /^127\./,                // 127.0.0.0/8
+  /^0\./,                  // 0.0.0.0/8
+  /^169\.254\./,           // Link-local
+  /^fc00:/i,               // IPv6 unique local
+  /^fe80:/i,               // IPv6 link-local
+  /^::1$/,                 // IPv6 loopback
+];
+
+function validateWebhookUrl(urlString: string): { valid: boolean; error?: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(urlString);
+  } catch {
+    return { valid: false, error: 'Invalid URL format' };
+  }
+
+  // Only allow HTTPS (and HTTP in development)
+  const allowedProtocols = process.env.NODE_ENV === 'development'
+    ? ['https:', 'http:']
+    : ['https:'];
+  if (!allowedProtocols.includes(parsed.protocol)) {
+    return { valid: false, error: 'Only HTTPS webhook URLs are allowed' };
+  }
+
+  // Block known internal hostnames
+  const hostname = parsed.hostname.toLowerCase();
+  if (BLOCKED_HOSTNAMES.includes(hostname)) {
+    return { valid: false, error: 'Webhook URL must not point to internal or loopback addresses' };
+  }
+
+  // Block private IP ranges
+  if (PRIVATE_IP_RANGES.some(range => range.test(hostname))) {
+    return { valid: false, error: 'Webhook URL must not point to private network addresses' };
+  }
+
+  // Block URLs without a valid TLD (e.g., http://intranet)
+  if (!hostname.includes('.') && hostname !== 'localhost') {
+    return { valid: false, error: 'Webhook URL must use a fully qualified domain name' };
+  }
+
+  return { valid: true };
+}
 
 // Helper: Verify admin auth
 async function verifyAdminAuth(request: NextRequest) {
@@ -127,12 +187,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validate URL
-      try {
-        new URL(url);
-      } catch {
+      // Validate URL (SSRF protection)
+      const urlValidation = validateWebhookUrl(url);
+      if (!urlValidation.valid) {
         return NextResponse.json(
-          { error: 'Invalid webhook URL' },
+          { error: urlValidation.error },
           { status: 400 }
         );
       }
@@ -200,6 +259,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // SSRF protection: validate the test URL
+      const testUrlValidation = validateWebhookUrl(webhookUrl);
+      if (!testUrlValidation.valid) {
+        return NextResponse.json(
+          { error: testUrlValidation.error },
+          { status: 400 }
+        );
+      }
+
       const testPayload = {
         event: 'test',
         timestamp: new Date().toISOString(),
@@ -262,7 +330,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: false,
-          message: `Webhook test failed: ${error.message}`
+          message: 'Webhook test failed: connection error'
         });
       }
     }
@@ -341,15 +409,14 @@ export async function PUT(request: NextRequest) {
 
     if (name !== undefined) updateData.name = name;
     if (url !== undefined) {
-      try {
-        new URL(url);
-        updateData.url = url;
-      } catch {
+      const updateUrlValidation = validateWebhookUrl(url);
+      if (!updateUrlValidation.valid) {
         return NextResponse.json(
-          { error: 'Invalid webhook URL' },
+          { error: updateUrlValidation.error },
           { status: 400 }
         );
       }
+      updateData.url = url;
     }
     if (events !== undefined) updateData.events = events;
     if (isActive !== undefined) updateData.isActive = isActive;

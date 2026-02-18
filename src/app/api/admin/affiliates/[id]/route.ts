@@ -4,7 +4,7 @@ import { UserStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 // Update affiliate status

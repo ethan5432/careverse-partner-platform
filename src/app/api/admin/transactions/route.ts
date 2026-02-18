@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 // GET - Fetch all transactions (Admin only)

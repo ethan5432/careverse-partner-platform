@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 interface JWTPayload {
@@ -12,19 +12,31 @@ interface JWTPayload {
   role: string;
 }
 
+// Helper: Verify admin auth from DB (not just JWT payload)
+async function verifyAdmin(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value;
+  if (!token) {
+    return { error: 'Unauthorized', status: 401 };
+  }
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId as string }
+    });
+    if (!user || user.role !== 'ADMIN' || user.status !== 'ACTIVE') {
+      return { error: 'Forbidden', status: 403 };
+    }
+    return { user };
+  } catch {
+    return { error: 'Invalid token', status: 401 };
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // Get token from cookie
-    const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const decoded = payload as any;
-
-    if (decoded.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     // Get query parameters
@@ -78,7 +90,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Payouts API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch payouts' },
+      { error: 'Failed to fetch payouts' },
       { status: 500 }
     );
   }
@@ -86,17 +98,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get token from cookie
-    const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const decoded = payload as any;
-
-    if (decoded.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const body = await request.json();
@@ -222,7 +226,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Process payouts API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create payout' },
+      { error: 'Failed to create payout' },
       { status: 500 }
     );
   }
@@ -231,17 +235,9 @@ export async function POST(request: NextRequest) {
 // PUT - Update payout status
 export async function PUT(request: NextRequest) {
   try {
-    // Get token from cookie
-    const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const decoded = payload as any;
-
-    if (decoded.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const body = await request.json();
@@ -324,7 +320,7 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     console.error('Error updating payout:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to update payout' },
+      { error: 'Failed to update payout' },
       { status: 500 }
     );
   }
@@ -333,17 +329,9 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete payout
 export async function DELETE(request: NextRequest) {
   try {
-    // Get token from cookie
-    const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const decoded = payload as any;
-
-    if (decoded.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const { searchParams } = new URL(request.url);
@@ -365,7 +353,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error: any) {
     console.error('Error deleting payout:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to delete payout' },
+      { error: 'Failed to delete payout' },
       { status: 500 }
     );
   }

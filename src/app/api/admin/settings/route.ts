@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 );
 
 export async function GET(request: NextRequest) {
@@ -124,10 +124,23 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    // Update program settings
+    // Update program settings — only allow specific fields (prevent mass assignment)
+    const allowedFields = [
+      'programName', 'productName', 'websiteUrl', 'currency', 'portalSubdomain',
+      'companyName', 'companyLogo', 'primaryColor', 'secondaryColor',
+      'cookieDuration', 'minimumPayout', 'payoutFrequency', 'autoApprove',
+      'commissionType', 'commissionValue', 'brandingEnabled',
+    ];
+    const sanitizedData: Record<string, any> = {};
+    for (const key of allowedFields) {
+      if (key in body && body[key] !== undefined) {
+        sanitizedData[key] = body[key];
+      }
+    }
+
     const updatedSettings = await prisma.programSettings.update({
       where: { id: programSettings.id },
-      data: body
+      data: sanitizedData
     });
 
     return NextResponse.json({
