@@ -23,6 +23,20 @@ export class OTPService {
         };
       }
 
+      // Check user status
+      if (user.status === 'PENDING') {
+        return {
+          success: false,
+          message: 'Your account is pending approval. Please wait for admin activation.'
+        };
+      }
+      if (user.status === 'INACTIVE' || user.status === 'SUSPENDED') {
+        return {
+          success: false,
+          message: 'Your account is not active. Please contact support.'
+        };
+      }
+
       // Check for recent OTP attempts (rate limiting)
       const recentOTP = await (prisma as any).OTP.findFirst({
         where: {
