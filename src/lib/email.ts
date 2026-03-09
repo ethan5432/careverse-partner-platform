@@ -252,7 +252,7 @@ class EmailService {
     `;
   }
 
-  private generatePayoutNotificationHTML(data: PayoutNotificationData): string {
+  private generatePayoutNotificationHTML(data: PayoutNotificationData, symbol: string): string {
     return `
     <!DOCTYPE html>
     <html>
@@ -277,7 +277,7 @@ class EmailService {
         
         <div class="details">
           <h3>Payout Details:</h3>
-          <p><strong>Amount:</strong> $${(data.amount / 100).toFixed(2)}</p>
+          <p><strong>Amount:</strong> ${this.formatAmount(data.amount, symbol)}</p>
           <p><strong>Method:</strong> ${data.method === 'stripe_connect' ? 'Stripe Connect' : 'Bank Transfer'}</p>
           <p><strong>Processing Date:</strong> ${data.processingDate}</p>
         </div>
@@ -301,8 +301,137 @@ class EmailService {
     `;
   }
 
+  // New private method for Conversion Notification HTML
+  private generateConversionNotificationHTML(data: ConversionNotificationData, symbol: string): string {
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Referral Converted!</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+        .details { background: white; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #10b981; }
+        .button { display: inline-block; background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🎉 Referral Converted!</h1>
+      </div>
+      <div class="content">
+        <h2>Hello ${data.affiliateName}!</h2>
+        <p>Great news! Your referred lead, <strong>${data.leadName}</strong>, has successfully converted!</p>
+        
+        <div class="details">
+          <h3>Conversion Details:</h3>
+          <p><strong>Lead Name:</strong> ${data.leadName}</p>
+          <p><strong>Lead Email:</strong> ${data.leadEmail}</p>
+          ${data.company ? `<p><strong>Company:</strong> ${data.company}</p>` : ''}
+          <p><strong>Converted Amount:</strong> ${this.formatAmount(data.convertedAmountCents, symbol)}</p>
+          <p><strong>Your Commission:</strong> ${this.formatAmount(data.commissionCents, symbol)}</p>
+        </div>
+        
+        <p>The commission for this conversion has been added to your pending earnings.</p>
+        
+        <div style="text-align: center;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/affiliate" class="button">View Your Dashboard</a>
+        </div>
+        
+        <p>Keep up the fantastic work!</p>
+        
+        <p>Best regards,<br>The Refferq Team</p>
+      </div>
+    </body>
+    </html>
+    `;
+  }
+
+  // New private method for Commission Notification HTML
+  private generateCommissionNotificationHTML(data: CommissionNotificationData, symbol: string): string {
+    const amount = this.formatAmount(data.amountCents, symbol);
+    const commission = this.formatAmount(data.commissionCents, symbol);
+    const rate = (data.commissionRate * 100).toFixed(0);
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>New Commission Earned!</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+          .amount-box { background: white; border: 2px solid #10b981; border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0; }
+          .commission { font-size: 36px; font-weight: bold; color: #10b981; }
+          .button { display: inline-block; background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .details { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; }
+          .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>💰 New Commission Earned!</h1>
+        </div>
+        <div class="content">
+          <h2>Great news, ${data.affiliateName}!</h2>
+          <p>A customer you referred has made a payment, and you've earned a commission!</p>
+          
+          <div class="amount-box">
+            <div style="font-size: 14px; color: #666; margin-bottom: 10px;">You earned</div>
+            <div class="commission">${commission}</div>
+            <div style="font-size: 14px; color: #666; margin-top: 10px;">${rate}% commission</div>
+          </div>
+          
+          <div class="details">
+            <h3 style="margin-top: 0;">Transaction Details</h3>
+            <div class="detail-row">
+              <span>Customer:</span>
+              <strong>${data.customerName}</strong>
+            </div>
+            <div class="detail-row">
+              <span>Transaction Amount:</span>
+              <strong>${amount}</strong>
+            </div>
+            <div class="detail-row">
+              <span>Your Commission:</span>
+              <strong style="color: #10b981;">${commission}</strong>
+            </div>
+            <div class="detail-row">
+              <span>Commission Rate:</span>
+              <strong>${rate}%</strong>
+            </div>
+            <div class="detail-row" style="border-bottom: none;">
+              <span>Transaction ID:</span>
+              <strong style="font-size: 12px;">${data.transactionId}</strong>
+            </div>
+          </div>
+          
+          <p>This commission is currently <strong>pending</strong> and will be included in your next payout.</p>
+          
+          <div style="text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/affiliate" class="button">View Your Dashboard</a>
+          </div>
+          
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            Keep up the great work! Continue referring customers to earn more commissions.
+          </p>
+          
+          <p>Best regards,<br>The Refferq Team</p>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
   async sendWelcomeEmail(data: WelcomeEmailData): Promise<{ success: boolean; message: string }> {
     try {
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
       const result = await resend.emails.send({
         from: this.defaultFrom,
         to: data.email,
@@ -320,15 +449,17 @@ class EmailService {
 
   async sendReferralNotification(data: ReferralNotificationData): Promise<{ success: boolean; message: string }> {
     try {
+      const symbol = await this.getCurrencySymbol();
+      const html = this.generateReferralNotificationHTML(data, symbol);
+
       // Get admin emails from environment or database
       const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['admin@yourdomain.com'];
 
       const promises = adminEmails.map(email =>
-        resend.emails.send({
-          from: this.defaultFrom,
+        this.sendEmail({
           to: email.trim(),
           subject: `New Referral Submission from ${data.affiliateName}`,
-          html: this.generateReferralNotificationHTML(data),
+          html: html,
         })
       );
 
@@ -343,11 +474,17 @@ class EmailService {
 
   async sendApprovalEmail(affiliateEmail: string, data: ApprovalEmailData): Promise<{ success: boolean; message: string }> {
     try {
+      const symbol = await this.getCurrencySymbol();
+      const html = this.generateApprovalEmailHTML(data, symbol);
+
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
       const result = await resend.emails.send({
         from: this.defaultFrom,
         to: affiliateEmail,
         subject: `Referral ${data.status === 'approved' ? 'Approved' : 'Rejected'} - ${data.leadName}`,
-        html: this.generateApprovalEmailHTML(data),
+        html: html,
       });
 
       console.log('Approval email sent:', result);
@@ -358,21 +495,36 @@ class EmailService {
     }
   }
 
-  async sendPayoutNotification(affiliateEmail: string, data: PayoutNotificationData): Promise<{ success: boolean; message: string }> {
-    try {
-      const result = await resend.emails.send({
-        from: this.defaultFrom,
-        to: affiliateEmail,
-        subject: `Payout Processed - $${(data.amount / 100).toFixed(2)}`,
-        html: this.generatePayoutNotificationHTML(data),
-      });
+  async sendPayoutNotification(data: PayoutNotificationData): Promise<{ success: boolean; message: string }> {
+    const symbol = await this.getCurrencySymbol();
+    const html = this.generatePayoutNotificationHTML(data, symbol);
+    return this.sendEmail({
+      to: data.affiliateEmail,
+      subject: `Payout Processed - ${this.formatAmount(data.amount, symbol)}`,
+      html,
+    });
+  }
 
-      console.log('Payout notification sent:', result);
-      return { success: true, message: 'Payout notification sent successfully' };
-    } catch (error) {
-      console.error('Failed to send payout notification:', error);
-      return { success: false, message: 'Failed to send payout notification' };
-    }
+  // New method for Conversion Notification
+  async sendConversionNotification(data: ConversionNotificationData): Promise<{ success: boolean; message: string }> {
+    const symbol = await this.getCurrencySymbol();
+    const html = this.generateConversionNotificationHTML(data, symbol);
+    return this.sendEmail({
+      to: data.affiliateEmail,
+      subject: `🎉 Your Referral for ${data.leadName} Converted!`,
+      html,
+    });
+  }
+
+  // New method for Commission Notification
+  async sendCommissionNotification(data: CommissionNotificationData): Promise<{ success: boolean; message: string }> {
+    const symbol = await this.getCurrencySymbol();
+    const html = this.generateCommissionNotificationHTML(data, symbol);
+    return this.sendEmail({
+      to: data.affiliateEmail,
+      subject: `💰 New Commission: ${this.formatAmount(data.commissionCents, symbol)} Earned!`,
+      html,
+    });
   }
 
   async sendPasswordResetEmail(email: string, resetToken: string): Promise<{ success: boolean; message: string }> {
@@ -422,6 +574,9 @@ class EmailService {
       </body>
       </html>
       `;
+
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
 
       const result = await resend.emails.send({
         from: this.defaultFrom,
@@ -478,6 +633,9 @@ class EmailService {
       </html>
       `;
 
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
       const result = await resend.emails.send({
         from: this.defaultFrom,
         to: email,
@@ -505,8 +663,9 @@ class EmailService {
     }
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const amount = (data.amountCents / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const commission = (data.commissionCents / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const symbol = await this.getCurrencySymbol();
+      const amount = this.formatAmount(data.amountCents, symbol);
+      const commission = this.formatAmount(data.commissionCents, symbol);
       const rate = (data.commissionRate * 100).toFixed(0);
 
       const html = `
@@ -536,7 +695,7 @@ class EmailService {
           
           <div class="amount-box">
             <div style="font-size: 14px; color: #666; margin-bottom: 10px;">You earned</div>
-            <div class="commission">₹${commission}</div>
+            <div class="commission">${commission}</div>
             <div style="font-size: 14px; color: #666; margin-top: 10px;">${rate}% commission</div>
           </div>
           
@@ -548,11 +707,11 @@ class EmailService {
             </div>
             <div class="detail-row">
               <span>Transaction Amount:</span>
-              <strong>₹${amount}</strong>
+              <strong>${amount}</strong>
             </div>
             <div class="detail-row">
               <span>Your Commission:</span>
-              <strong style="color: #10b981;">₹${commission}</strong>
+              <strong style="color: #10b981;">${commission}</strong>
             </div>
             <div class="detail-row">
               <span>Commission Rate:</span>
@@ -580,10 +739,13 @@ class EmailService {
       </html>
       `;
 
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
       const result = await resend.emails.send({
         from: this.defaultFrom,
         to: affiliateEmail,
-        subject: `💰 New Commission: ₹${commission} Earned!`,
+        subject: `💰 New Commission: ${commission} Earned!`,
         html,
       });
 
