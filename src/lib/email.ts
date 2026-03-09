@@ -62,6 +62,30 @@ export interface PayoutNotificationData {
 class EmailService {
   private defaultFrom = process.env.RESEND_FROM_EMAIL || 'Refferq <noreply@refferq.com>';
 
+  private async getCurrencySymbol(): Promise<string> {
+    try {
+      const { db } = await import('./prisma');
+      const settings = await db.getPlatformSettings();
+      const currency = settings?.currency || 'USD';
+
+      // Simple map for common symbols
+      const symbols: Record<string, string> = {
+        'USD': '$',
+        'INR': '₹',
+        'EUR': '€',
+        'GBP': '£',
+      };
+
+      return symbols[currency] || currency;
+    } catch {
+      return '$'; // Fallback
+    }
+  }
+
+  private formatAmount(cents: number, symbol: string): string {
+    return `${symbol}${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
   private generateWelcomeEmailHTML(data: WelcomeEmailData): string {
     return `
     <!DOCTYPE html>

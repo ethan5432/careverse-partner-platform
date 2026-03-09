@@ -352,6 +352,18 @@ export class DatabaseService {
     });
   }
 
+  // Settings operations
+  async getPlatformSettings() {
+    // Return the first program's settings as default
+    return await prisma.programSettings.findFirst();
+  }
+
+  async getProgramSettings(programId: string) {
+    return await prisma.programSettings.findUnique({
+      where: { programId },
+    });
+  }
+
   // Analytics and statistics
   async getAffiliateStats(affiliateId: string) {
     const affiliate = await this.getAffiliateByUserId(affiliateId);
