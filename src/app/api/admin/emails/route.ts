@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 
 
 async function verifyAuth(request: Request) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token');
-
-  if (!token) {
-    return null;
-  }
-
   try {
-    const { payload } = await jwtVerify(token.value, JWT_SECRET);
-    return payload;
-  } catch (error) {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) return null;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.role !== 'ADMIN') return null;
+    return user;
+  } catch (_e) {
     return null;
   }
 }

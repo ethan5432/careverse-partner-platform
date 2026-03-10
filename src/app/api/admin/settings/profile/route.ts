@@ -4,11 +4,10 @@ import { prisma } from '@/lib/prisma';
 
 // Verify admin auth with DB check
 async function verifyAdmin(req: NextRequest) {
-  const token = req.cookies.get('auth-token')?.value;
-  if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const user = await prisma.user.findUnique({ where: { id: String(payload.userId) } });
+    const userId = req.headers.get('x-user-id');
+    if (!userId) return null;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'ADMIN' || user.status !== 'ACTIVE') return null;
     return user;
   } catch (_e) { return null; }
