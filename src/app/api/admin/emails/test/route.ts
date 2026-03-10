@@ -49,19 +49,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get admin user email
-    const adminUser = await prisma.user.findUnique({
-      where: { id: user.userId as string },
-    });
-
-    if (!adminUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    const recipientEmail = email || adminUser.email;
+    // Get admin user email — user is already fetched from DB
+    const recipientEmail = email || user.email;
 
     // Replace variables with test data
     let testSubject = template.subject;
