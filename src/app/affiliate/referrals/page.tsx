@@ -115,7 +115,7 @@ export default function ReferralsPage() {
       } else {
         showNotification('error', data.error || 'Failed to submit lead');
       }
-    } catch {
+    } catch (_e) {
       showNotification('error', 'An error occurred while submitting lead');
     } finally {
       setSubmitLoading(false);

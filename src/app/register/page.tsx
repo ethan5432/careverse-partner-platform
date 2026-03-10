@@ -73,7 +73,7 @@ export default function RegisterPage() {
         setStep('otp');
         setError(otpData.error || 'Failed to send code. Try resending.');
       }
-    } catch {
+    } catch (_e) {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -113,7 +113,7 @@ export default function RegisterPage() {
       } else {
         setError(data.error || 'Invalid verification code');
       }
-    } catch {
+    } catch (_e) {
       setError('Verification failed. Please try again.');
     } finally {
       setLoading(false);
@@ -137,7 +137,7 @@ export default function RegisterPage() {
       } else {
         setError('Failed to resend code. Please try again.');
       }
-    } catch {
+    } catch (_e) {
       setError('Failed to resend code.');
     } finally {
       setLoading(false);

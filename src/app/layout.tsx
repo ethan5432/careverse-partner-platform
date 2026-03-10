@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { Toaster } from '@/components/ui/sonner';
 import { db } from '@/lib/prisma';

@@ -13,12 +13,12 @@ function isAllowedRedirectUrl(url: string, appUrl: string, websiteUrl?: string):
     // Also allow the marketing site domain if defined
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
     if (siteUrl) {
-      try { allowedDomains.push(new URL(siteUrl).hostname); } catch { }
+      try { allowedDomains.push(new URL(siteUrl).hostname); } catch (_e) { }
     }
 
     // IMPORTANT: Allow the program's configured website URL
     if (websiteUrl) {
-      try { allowedDomains.push(new URL(websiteUrl).hostname); } catch { }
+      try { allowedDomains.push(new URL(websiteUrl).hostname); } catch (_e) { }
     }
 
     return (
@@ -27,7 +27,7 @@ function isAllowedRedirectUrl(url: string, appUrl: string, websiteUrl?: string):
         parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
       )
     );
-  } catch {
+  } catch (_e) {
     return false;
   }
 }

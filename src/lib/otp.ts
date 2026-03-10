@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { db } from './prisma';
 import { EmailService } from './email';
 import crypto from 'crypto';

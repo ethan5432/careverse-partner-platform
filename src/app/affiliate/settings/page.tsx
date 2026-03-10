@@ -95,7 +95,7 @@ export default function SettingsPage() {
         const data = await res.json();
         showNotification('error', data.error || 'Failed to update settings');
       }
-    } catch {
+    } catch (_e) {
       showNotification('error', 'An error occurred');
     } finally {
       setSaving(false);
@@ -112,7 +112,7 @@ export default function SettingsPage() {
       } else {
         showNotification('error', 'Failed to generate code: ' + data.error);
       }
-    } catch {
+    } catch (_e) {
       showNotification('error', 'Failed to generate code');
     }
   };

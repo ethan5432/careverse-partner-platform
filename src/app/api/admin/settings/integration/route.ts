@@ -11,7 +11,7 @@ async function verifyAdmin(req: NextRequest) {
     const user = await prisma.user.findUnique({ where: { id: String(payload.userId) } });
     if (!user || user.role !== 'ADMIN' || user.status !== 'ACTIVE') return null;
     return user;
-  } catch { return null; }
+  } catch (_e) { return null; }
 }
 
 // GET /api/admin/settings/integration - Get integration settings

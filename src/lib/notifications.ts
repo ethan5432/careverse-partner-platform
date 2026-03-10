@@ -21,7 +21,7 @@ class NotificationService {
     try {
       const data = localStorage.getItem(this.STORAGE_KEY);
       return data ? JSON.parse(data) : [];
-    } catch {
+    } catch (_e) {
       return [];
     }
   }

@@ -10,7 +10,7 @@ function verifyWebhookSignature(payload: string, signature: string | null, secre
     const sig = signature.startsWith('sha256=') ? signature.slice(7) : signature;
     try {
         return crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
-    } catch {
+    } catch (_e) {
         return false;
     }
 }
@@ -41,8 +41,9 @@ export async function POST(request: NextRequest) {
         let authenticated = false;
 
         if (apiKey) {
+            const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
             const key = await prisma.apiKey.findFirst({
-                where: { key: apiKey, isActive: true },
+                where: { keyHash, isActive: true },
             }).catch(() => null);
             authenticated = !!key;
         }

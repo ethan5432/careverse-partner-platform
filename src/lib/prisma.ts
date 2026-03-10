@@ -1,7 +1,5 @@
-// @ts-nocheck
 import { PrismaClient } from '@prisma/client';
 import { unstable_cache } from 'next/cache';
-// @ts-ignore
 import * as bcrypt from 'bcryptjs';
 
 const globalForPrisma = globalThis as unknown as {

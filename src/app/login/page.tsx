@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import React, { useState } from 'react';
@@ -55,7 +54,7 @@ export default function LoginPage() {
       } else {
         setError(otpData.message || 'Failed to send verification code');
       }
-    } catch {
+    } catch (_e) {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -91,7 +90,7 @@ export default function LoginPage() {
       } else {
         setError(data.error || 'Invalid verification code');
       }
-    } catch {
+    } catch (_e) {
       setError('Verification failed. Please try again.');
     } finally {
       setLoading(false);
@@ -115,7 +114,7 @@ export default function LoginPage() {
       } else {
         setError('Failed to resend code. Please try again.');
       }
-    } catch {
+    } catch (_e) {
       setError('Failed to resend code.');
     } finally {
       setLoading(false);

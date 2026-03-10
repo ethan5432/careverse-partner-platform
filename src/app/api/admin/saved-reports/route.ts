@@ -9,7 +9,7 @@ async function verifyAdmin(request: NextRequest) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'ADMIN') return null;
     return user;
-  } catch {
+  } catch (_e) {
     return null;
   }
 }

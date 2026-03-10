@@ -33,7 +33,7 @@ function validateWebhookUrl(urlString: string): { valid: boolean; error?: string
   let parsed: URL;
   try {
     parsed = new URL(urlString);
-  } catch {
+  } catch (_e) {
     return { valid: false, error: 'Invalid URL format' };
   }
 
@@ -66,7 +66,8 @@ function validateWebhookUrl(urlString: string): { valid: boolean; error?: string
 
 // Helper: Verify admin auth
 async function verifyAdminAuth(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')!;
+  try {
+    const userId = request.headers.get('x-user-id')!;
     
     const user = await prisma.user.findUnique({
       where: { id: userId }
@@ -77,7 +78,7 @@ async function verifyAdminAuth(request: NextRequest) {
     }
 
     return { user };
-  } catch {
+  } catch (_error) {
     return { error: 'Invalid token', status: 401 };
   }
 }

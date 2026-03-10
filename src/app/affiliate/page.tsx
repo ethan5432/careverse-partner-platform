@@ -154,7 +154,7 @@ export default function AffiliateDashboard() {
       } else {
         showNotification('error', data.error || 'Failed to submit lead');
       }
-    } catch {
+    } catch (_e) {
       showNotification('error', 'An error occurred while submitting lead');
     } finally {
       setSubmitLoading(false);
@@ -170,7 +170,7 @@ export default function AffiliateDashboard() {
       } else {
         showNotification('error', 'Failed to generate code: ' + data.error);
       }
-    } catch {
+    } catch (_e) {
       showNotification('error', 'Failed to generate code. Please try again.');
     }
   };

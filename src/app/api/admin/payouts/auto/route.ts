@@ -10,7 +10,7 @@ async function verifyAdmin(request: NextRequest) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'ADMIN') return null;
     return user;
-  } catch { return null; }
+  } catch (_e) { return null; }
 }
 
 // POST - Process auto-payouts for all eligible affiliates

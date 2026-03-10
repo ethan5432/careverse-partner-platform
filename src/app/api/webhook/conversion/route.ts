@@ -9,7 +9,7 @@ function verifyWebhookSignature(payload: string, signature: string | null, secre
   const sig = signature.startsWith('sha256=') ? signature.slice(7) : signature;
   try {
     return crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
-  } catch {
+  } catch (_e) {
     return false;
   }
 }

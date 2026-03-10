@@ -5,8 +5,9 @@ import { prisma } from '@/lib/prisma';
 
 // Only allow in development, or require admin auth in production
 async function requireAdminOrDev(request: NextRequest): Promise<{ error?: string; status?: number }> {
-  // Block entirely in production unless authenticated as admin
-  const userId = request.headers.get('x-user-id')!;
+  try {
+    // Block entirely in production unless authenticated as admin
+    const userId = request.headers.get('x-user-id')!;
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -14,7 +15,7 @@ async function requireAdminOrDev(request: NextRequest): Promise<{ error?: string
       return { error: 'Admin access required', status: 403 };
     }
     return {};
-  } catch {
+  } catch (_error) {
     return { error: 'Invalid token', status: 401 };
   }
 }

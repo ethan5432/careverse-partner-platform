@@ -19,7 +19,7 @@ function isUrlSafe(urlString: string): boolean {
     if (BLOCKED_HOSTNAMES.includes(hostname)) return false;
     if (PRIVATE_IP_RANGES.some(r => r.test(hostname))) return false;
     return true;
-  } catch {
+  } catch (_e) {
     return false;
   }
 }

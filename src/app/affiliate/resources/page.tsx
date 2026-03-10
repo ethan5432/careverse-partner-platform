@@ -85,7 +85,7 @@ export default function ResourcesPage() {
     // Track download
     try {
       await fetch(`/api/affiliate/resources?id=${resource.id}`, { method: 'POST' });
-    } catch { /* ignore tracking errors */ }
+    } catch (_e) { /* ignore tracking errors */ }
 
     // Open/download file
     window.open(resource.fileUrl, '_blank');
