@@ -3,7 +3,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Buy Me a Coffee](https://img.shields.io/badge/☕-Buy%20me%20a%20coffee-ffdd00?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/refferq)
 # Refferq - Open Source Affiliate Management Platform
-
+[![Open Collective](https://img.shields.io/badge/OpenCollective-Support%20Us-3385FF?style=for-the-badge&logo=open-collective&logoColor=white)](https://opencollective.com/reffer-q)
 <p align="center">
   <img src="./public/images/github-banner.svg" alt="Refferq Logo" width="200"/>
 </p>
