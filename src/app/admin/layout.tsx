@@ -2,282 +2,184 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useMockAuth } from '@/hooks/useMockAuth';
+import { CareverseMark } from '@/components/shared/CareverseLogo';
+import { Avatar } from '@/components/shared/StatusBadge';
+import { LayoutDashboard, Users, Store, ArrowLeftRight, Percent, Wallet, Network, Package, MessageSquare, Mail, ChartBar as BarChart3, Settings, LogOut, ChevronsUpDown, Bell } from 'lucide-react';
 import {
-  SidebarProvider,
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarInset,
-  SidebarTrigger,
-  SidebarRail,
-} from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import {
-  LayoutDashboard,
-  Users,
-  UserCheck,
-  Wallet,
-  Mail,
-  Settings,
-  Sliders,
-  BarChart3,
-  LogOut,
-  ChevronsUpDown,
-  Bell,
-  KeyRound,
-  Activity,
-  Ticket,
-  FolderOpen,
-  FileText,
-  UsersRound,
-  Layers,
-} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const mainNavItems = [
+const adminNavItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
   { title: 'Partners', url: '/admin/partners', icon: Users },
-  { title: 'Customers', url: '/admin/customers', icon: UserCheck },
+  { title: 'Storefronts', url: '/admin/storefronts', icon: Store },
+  { title: 'Conversions', url: '/admin/conversions', icon: ArrowLeftRight },
+  { title: 'Commissions', url: '/admin/commissions', icon: Percent },
   { title: 'Payouts', url: '/admin/payouts', icon: Wallet },
-  { title: 'Invoices', url: '/admin/invoices', icon: FileText },
+  { title: 'Networks', url: '/admin/networks', icon: Network },
+  { title: 'Products', url: '/admin/products', icon: Package },
+  { title: 'Messages', url: '/admin/messages', icon: MessageSquare },
   { title: 'Emails', url: '/admin/emails', icon: Mail },
-];
-
-const marketingNavItems = [
-  { title: 'Coupons', url: '/admin/coupons', icon: Ticket },
-  { title: 'Resources', url: '/admin/resources', icon: FolderOpen },
-  { title: 'Programs', url: '/admin/programs', icon: Layers, badge: 'NEW' },
-];
-
-const configNavItems = [
-  { title: 'Program Settings', url: '/admin/program-settings', icon: Sliders },
-  { title: 'Team Members', url: '/admin/team', icon: UsersRound },
-  { title: 'Settings', url: '/admin/settings', icon: Settings },
   { title: 'Reports', url: '/admin/reports', icon: BarChart3 },
-  { title: 'API Keys', url: '/admin/api-keys', icon: KeyRound },
-  { title: 'API Analytics', url: '/admin/api-analytics', icon: Activity },
+  { title: 'Settings', url: '/admin/settings', icon: Settings },
 ];
 
 function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout } = useMockAuth();
 
   const isActive = (url: string) => {
-    if (url === '/admin') return pathname === '/admin';
+    if (url === '/admin') return pathname === '/admin' || pathname === '/admin/';
     return pathname.startsWith(url);
   };
 
   return (
-    <Sidebar variant="inset">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="flex items-center gap-3 px-2 py-1.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                <span className="text-lg">🎯</span>
+    <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-cv-line h-screen sticky top-0">
+      {/* Logo */}
+      <div className="flex items-center gap-2.5 px-5 h-[72px] border-b border-cv-line">
+        <CareverseMark size={28} />
+        <div className="flex flex-col leading-tight">
+          <span className="text-sm font-extrabold text-cv-ink">Careverse</span>
+          <span className="text-[10px] font-bold text-cv-muted uppercase tracking-wider">Admin</span>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        {adminNavItems.map((item) => (
+          <button
+            key={item.title}
+            onClick={() => router.push(item.url)}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all',
+              isActive(item.url)
+                ? 'bg-cv-ink text-white'
+                : 'text-cv-body hover:bg-cv-soft hover:text-cv-ink'
+            )}
+          >
+            <item.icon className="h-4 w-4 shrink-0" />
+            {item.title}
+          </button>
+        ))}
+      </nav>
+
+      {/* User */}
+      <div className="border-t border-cv-line p-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-cv-soft transition-colors">
+              <Avatar name={user?.name || 'Admin'} color="#18191D" size={32} />
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-sm font-bold text-cv-ink truncate">{user?.name || 'Admin User'}</p>
+                <p className="text-xs text-cv-muted truncate">Administrator</p>
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-bold">Refferq</span>
-                <span className="text-xs text-muted-foreground">Admin Dashboard</span>
-              </div>
-            </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
+              <ChevronsUpDown className="h-4 w-4 text-cv-muted" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-52" align="end" sideOffset={8}>
+            <DropdownMenuItem onClick={() => router.push('/admin/settings')}>
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => { logout(); router.push('/admin/login'); }} className="text-cv-red">
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </aside>
+  );
+}
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    isActive={isActive(item.url)}
-                    onClick={() => router.push(item.url)}
-                    tooltip={item.title}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+function MobileAdminNav() {
+  const pathname = usePathname();
+  const router = useRouter();
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Marketing</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {marketingNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    isActive={isActive(item.url)}
-                    onClick={() => router.push(item.url)}
-                    tooltip={item.title}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                    {item.badge && (
-                      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {item.badge}
-                      </span>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+  const isActive = (url: string) => {
+    if (url === '/admin') return pathname === '/admin' || pathname === '/admin/';
+    return pathname.startsWith(url);
+  };
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Configure</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {configNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    isActive={isActive(item.url)}
-                    onClick={() => router.push(item.url)}
-                    tooltip={item.title}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent"
-                >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user?.profilePicture} alt={user?.name} />
-                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user?.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto h-4 w-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuItem onClick={() => router.push('/admin/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()} className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-
-      <SidebarRail />
-    </Sidebar>
+  return (
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-cv-line z-50">
+      <div className="flex overflow-x-auto px-2 py-2 gap-1 no-scrollbar">
+        {adminNavItems.map((item) => (
+          <button
+            key={item.title}
+            onClick={() => router.push(item.url)}
+            className={cn(
+              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-[10px] font-bold shrink-0 transition-colors',
+              isActive(item.url) ? 'text-cv-ink' : 'text-cv-muted'
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.title}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useMockAuth();
+  const router = useRouter();
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="cv-page flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="relative mx-auto h-12 w-12">
-            <div className="absolute inset-0 rounded-full border-4 border-muted" />
-            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-primary" />
+          <div className="relative mx-auto h-10 w-10">
+            <div className="absolute inset-0 rounded-full border-4 border-cv-line" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-cv-ink" />
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">Loading your dashboard...</p>
+          <p className="mt-4 text-sm text-cv-muted">Loading admin...</p>
         </div>
       </div>
     );
   }
 
+  // Redirect to admin login if not authenticated or not an admin
   if (!user || user.role !== 'ADMIN') {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
-            <span className="text-3xl">🔒</span>
-          </div>
-          <h1 className="text-xl font-bold">Access Denied</h1>
-          <p className="text-sm text-muted-foreground">You need admin privileges to access this page</p>
-          <Button asChild>
-            <a href="/login">Go to Login</a>
-          </Button>
-        </div>
-      </div>
-    );
+    router.push('/admin/login');
+    return null;
   }
 
   return (
-    <SidebarProvider>
+    <div className="flex cv-page">
       <AdminSidebar />
-      <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex flex-1 items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user.name?.split(' ')[0]}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-                  3
-                </span>
-              </Button>
-            </div>
+      <div className="flex-1 min-w-0">
+        <header className="sticky top-0 z-40 flex h-[72px] items-center justify-between px-5 lg:px-8 bg-cv-cream/88 backdrop-blur-md border-b border-cv-line">
+          <div className="lg:hidden flex items-center gap-2">
+            <CareverseMark size={24} />
+            <span className="text-sm font-extrabold text-cv-ink">Admin</span>
+          </div>
+          <div className="hidden lg:block">
+            <p className="text-sm text-cv-muted">
+              Careverse Admin Dashboard
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="relative rounded-full p-2 hover:bg-cv-soft transition-colors">
+              <Bell className="h-4 w-4 text-cv-body" />
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-cv-red text-[10px] text-white font-bold">
+                3
+              </span>
+            </button>
           </div>
         </header>
-        <main className="flex-1 overflow-auto p-6">
+
+        <main className="p-5 lg:p-8 pb-24 lg:pb-8">
           {children}
         </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+      <MobileAdminNav />
+    </div>
   );
 }

@@ -3,15 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CareverseLogo } from '@/components/shared/CareverseLogo';
-import { Button } from '@/components/ui/button';
+import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, Loader as Loader2, ArrowRight } from 'lucide-react';
 import { useMockAuth } from '@/hooks/useMockAuth';
 
-export default function PartnerLoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const { login } = useMockAuth();
   const [email, setEmail] = useState('');
@@ -24,10 +23,9 @@ export default function PartnerLoginPage() {
     setError('');
     setLoading(true);
 
-    // Mock auth — accept any credentials
-    const result = login(email, password, 'PARTNER');
+    const result = login(email, password, 'ADMIN');
     if (result.success) {
-      router.push('/partner');
+      router.push('/admin');
     } else {
       setError(result.error || 'Sign in failed');
     }
@@ -39,13 +37,15 @@ export default function PartnerLoginPage() {
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-8">
-          <CareverseLogo size={40} className="justify-center mb-4" />
+          <div className="flex justify-center mb-4">
+            <CareverseMark size={40} />
+          </div>
           <div className="flex items-center justify-center gap-2 mb-1">
             <div className="cv-red-rule" />
-            <span className="cv-eyebrow uppercase">Partner Portal</span>
+            <span className="cv-eyebrow uppercase">Admin Portal</span>
           </div>
-          <h1 className="text-3xl font-bold text-cv-ink tracking-tight">Careverse Partners</h1>
-          <p className="text-cv-muted text-sm mt-2">Sign in to your partner account</p>
+          <h1 className="text-3xl font-bold text-cv-ink tracking-tight">Careverse Admin</h1>
+          <p className="text-cv-muted text-sm mt-2">Sign in to the admin dashboard</p>
         </div>
 
         {/* Login Card */}
@@ -58,15 +58,15 @@ export default function PartnerLoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-bold text-cv-ink uppercase tracking-wider">
+              <Label htmlFor="admin-email" className="text-xs font-bold text-cv-ink uppercase tracking-wider">
                 Email
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
                 <Input
-                  id="email"
+                  id="admin-email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="admin@careverse.ai"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="cv-input pl-10"
@@ -77,13 +77,13 @@ export default function PartnerLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs font-bold text-cv-ink uppercase tracking-wider">
+              <Label htmlFor="admin-password" className="text-xs font-bold text-cv-ink uppercase tracking-wider">
                 Password
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
                 <Input
-                  id="password"
+                  id="admin-password"
                   type="password"
                   placeholder="Enter your password"
                   value={password}
@@ -118,15 +118,12 @@ export default function PartnerLoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 text-center space-y-2">
+        <div className="mt-6 text-center">
           <p className="text-sm text-cv-muted">
-            Admin user?{' '}
-            <Link href="/admin/login" className="font-bold text-cv-ink hover:underline">
-              Admin sign in
+            Partner user?{' '}
+            <Link href="/login" className="font-bold text-cv-ink hover:underline">
+              Partner sign in
             </Link>
-          </p>
-          <p className="text-xs text-cv-muted">
-            Lidia is free for everyone. Building the world&apos;s largest AI-powered care network.
           </p>
         </div>
       </div>

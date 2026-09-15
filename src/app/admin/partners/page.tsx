@@ -1,733 +1,420 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useMemo, useState } from 'react';
+import { PageHeader } from '@/components/shared/PageHeader';
+import { StatCard } from '@/components/shared/StatCard';
+import { StatusBadge, Avatar } from '@/components/shared/StatusBadge';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import {
-  Search,
-  Plus,
-  Mail,
-  MoreHorizontal,
-  ChevronUp,
-  ChevronDown,
-  Download,
-  Upload,
-  Users,
-  CheckCircle2,
-  XCircle,
-  Trash2,
-  UserPlus,
-  ArrowUpDown,
+  Users, Search, UserPlus, ArrowLeftRight, DollarSign, TrendingUp,
+  Store, MessageSquare, StickyNote, Settings, Activity as ActivityIcon,
 } from 'lucide-react';
+import {
+  mockPartners, mockConversions, mockCommissions, mockStorefronts,
+  adminDashboardStats,
+} from '@/data/mock';
+import type { MockPartner, PartnerType, PartnerStatus } from '@/data/mock/types';
 
-interface Partner {
-  id: string;
-  userId: string;
-  name: string;
-  email: string;
-  referralCode: string;
-  status: string;
-  createdAt: string;
-  clicks: number;
-  leads: number;
-  customers: number;
-  revenue: number;
-  earnings: number;
-  groupName?: string;
-}
+const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-export default function PartnersPage() {
-  const router = useRouter();
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [filteredPartners, setFilteredPartners] = useState<Partner[]>([]);
-  const [activeTab, setActiveTab] = useState('active');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currencySymbol, setCurrencySymbol] = useState('₹');
-  const [sortField, setSortField] = useState<keyof Partner>('createdAt');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+const partnerStatusMap: Record<PartnerStatus, 'active' | 'pending' | 'incomplete' | 'suspended'> = {
+  ACTIVE: 'active',
+  PENDING: 'pending',
+  INCOMPLETE: 'incomplete',
+  SUSPENDED: 'suspended',
+};
 
-  const [newPartner, setNewPartner] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    company: '',
-    partnerGroup: 'Default',
-    country: 'N/A',
-    payoutMethod: 'PayPal',
-    paypalEmail: '',
-    sendWelcomeEmail: true,
-    trackingParameter: 'ref',
-  });
+type TypeFilter = 'ALL' | PartnerType;
+const typeFilters: { value: TypeFilter; label: string }[] = [
+  { value: 'ALL', label: 'All' },
+  { value: 'CREATOR', label: 'Creator' },
+  { value: 'BUSINESS', label: 'Business' },
+  { value: 'NETWORK', label: 'Network' },
+];
 
-  const [invitePartner, setInvitePartner] = useState({
-    email: '',
-    partnerGroup: 'Default',
-    inviteType: 'single',
-  });
+export default function AdminPartnersPage() {
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPartners();
-  }, []);
-
-  useEffect(() => {
-    filterPartners();
-  }, [partners, activeTab, searchQuery, sortField, sortDirection]);
-
-  const fetchPartners = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/admin/affiliates');
-      const data = await response.json();
-
-      if (data.success) {
-        const formattedPartners = data.affiliates.map((aff: any) => ({
-          id: aff.id,
-          userId: aff.userId,
-          name: aff.user.name,
-          email: aff.user.email,
-          referralCode: aff.referralCode,
-          status: aff.user.status,
-          createdAt: aff.createdAt,
-          clicks: 0,
-          leads: aff._count?.referrals || 0,
-          customers: aff._count?.referrals || 0,
-          revenue: 0,
-          earnings: aff.balanceCents || 0,
-          groupName: '',
-        }));
-        setPartners(formattedPartners);
-        setCurrencySymbol(data.currencySymbol || '₹');
-      }
-    } catch (error) {
-      console.error('Failed to fetch partners:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterPartners = () => {
-    let filtered = partners;
-
-    if (activeTab === 'active') {
-      filtered = filtered.filter((p: Partner) => p.status === 'ACTIVE');
-    } else if (activeTab === 'pending') {
-      filtered = filtered.filter((p: Partner) => p.status === 'PENDING');
-    } else if (activeTab === 'invited') {
-      filtered = filtered.filter((p: Partner) => p.status === 'INVITED');
-    } else {
-      filtered = filtered.filter((p: Partner) => !['ACTIVE', 'PENDING', 'INVITED'].includes(p.status));
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (p: Partner) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.referralCode.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    filtered.sort((a: Partner, b: Partner) => {
-      const aValue = (a as any)[sortField];
-      const bValue = (b as any)[sortField];
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      }
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-      return 0;
+  const filtered = useMemo(() => {
+    return mockPartners.filter((p) => {
+      const matchesType = typeFilter === 'ALL' || p.type === typeFilter;
+      const q = search.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.email.toLowerCase().includes(q) ||
+        p.storefrontName.toLowerCase().includes(q);
+      return matchesType && matchesSearch;
     });
+  }, [search, typeFilter]);
 
-    setFilteredPartners(filtered);
-  };
+  const selectedPartner = mockPartners.find((p) => p.id === selectedId) || null;
 
-  const handleSort = (field: keyof Partner) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const handleCreatePartner = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('/api/admin/affiliates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: `${newPartner.firstName} ${newPartner.lastName}`.trim(),
-          email: newPartner.email,
-          company: newPartner.company,
-          payoutMethod: newPartner.payoutMethod,
-          paypalEmail: newPartner.paypalEmail || newPartner.email,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert(
-          `Partner created successfully!\n\nName: ${data.affiliate.name}\nEmail: ${data.affiliate.email}\nReferral Code: ${data.affiliate.referralCode}\nPassword: ${data.password}\n\nPlease save and share this with the partner.`
-        );
-        setShowCreateModal(false);
-        setNewPartner({
-          firstName: '', lastName: '', email: '', company: '',
-          partnerGroup: 'Default', country: 'N/A', payoutMethod: 'PayPal',
-          paypalEmail: '', sendWelcomeEmail: true, trackingParameter: 'ref',
-        });
-        fetchPartners();
-      } else {
-        alert(data.message || 'Failed to create partner');
-      }
-    } catch (error) {
-      console.error('Failed to create partner:', error);
-      alert('Failed to create partner');
-    }
-  };
-
-  const handleSelectPartner = (partnerId: string) => {
-    setSelectedPartners((prev: string[]) =>
-      prev.includes(partnerId) ? prev.filter((id: string) => id !== partnerId) : [...prev, partnerId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedPartners.length === filteredPartners.length) {
-      setSelectedPartners([]);
-    } else {
-      setSelectedPartners(filteredPartners.map((p: Partner) => p.id));
-    }
-  };
-
-  const handleExportPartners = (exportType: 'all' | 'selected' = 'all') => {
-    const partnersToExport =
-      exportType === 'all'
-        ? filteredPartners
-        : filteredPartners.filter((p: Partner) => selectedPartners.includes(p.id));
-
-    if (partnersToExport.length === 0) {
-      alert('No partners to export');
-      return;
-    }
-
-    const csv = [
-      ['Name', 'Email', 'Referral Code', 'Status', 'Signed Up', 'Clicks', 'Leads', 'Customers', 'Revenue', 'Earnings'].join(','),
-      ...partnersToExport.map((p: Partner) =>
-        [
-          `"${p.name}"`, p.email, p.referralCode, p.status,
-          new Date(p.createdAt).toLocaleDateString(), p.clicks, p.leads,
-          p.customers, (p.revenue / 100).toFixed(2), (p.earnings / 100).toFixed(2),
-        ].join(',')
-      ),
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `partners-${exportType}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
-
-  const handleBulkAction = async (action: string, status?: string) => {
-    if (selectedPartners.length === 0) {
-      alert(`Please select partners first`);
-      return;
-    }
-
-    if (action === 'delete') {
-      if (!confirm(`Delete ${selectedPartners.length} partner(s)? This cannot be undone.`)) return;
-    } else {
-      if (!confirm(`${action} ${selectedPartners.length} partner(s)?`)) return;
-    }
-
-    try {
-      const response = await fetch('/api/admin/affiliates/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          affiliateIds: selectedPartners,
-          action: action === 'delete' ? 'delete' : 'changeStatus',
-          status: status,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert(`Action completed successfully`);
-        setSelectedPartners([]);
-        fetchPartners();
-      } else {
-        alert(data.error || 'Action failed');
-      }
-    } catch (error) {
-      console.error('Bulk action failed:', error);
-      alert('Action failed');
-    }
-  };
-
-  const tabCounts = {
-    active: partners.filter((p: Partner) => p.status === 'ACTIVE').length,
-    pending: partners.filter((p: Partner) => p.status === 'PENDING').length,
-    invited: partners.filter((p: Partner) => p.status === 'INVITED').length,
-    other: partners.filter((p: Partner) => !['ACTIVE', 'PENDING', 'INVITED'].includes(p.status)).length,
-  };
-
-  const SortIcon = ({ field }: { field: keyof Partner }) => {
-    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />;
-    return sortDirection === 'asc' ? (
-      <ChevronUp className="ml-1 h-3 w-3" />
-    ) : (
-      <ChevronDown className="ml-1 h-3 w-3" />
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-32" />
-            <Skeleton className="h-9 w-32" />
-          </div>
-        </div>
-        <Skeleton className="h-10 w-full" />
-        <Card>
-          <CardContent className="pt-6">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 py-4">
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-9 w-9 rounded-full" />
-                <div className="flex-1">
-                  <Skeleton className="h-4 w-32 mb-1" />
-                  <Skeleton className="h-3 w-48" />
-                </div>
-                <Skeleton className="h-5 w-16" />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const stats = useMemo(() => {
+    const active = mockPartners.filter((p) => p.status === 'ACTIVE').length;
+    const pending = mockPartners.filter((p) => p.status === 'PENDING').length;
+    const revenue = mockPartners.reduce((s, p) => s + p.revenue, 0);
+    return { total: mockPartners.length, active, pending, revenue };
+  }, []);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Partners</h2>
-          <p className="text-muted-foreground">Manage your affiliate partners</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowInviteModal(true)}>
-            <Mail className="mr-2 h-4 w-4" />
-            Invite
+      <PageHeader
+        eyebrow="Partners"
+        title="Partner CRM"
+        description="Manage creators, businesses, and networks across the platform."
+        actions={
+          <Button className="bg-cv-ink text-white hover:bg-cv-ink/90" size="sm">
+            <UserPlus className="h-4 w-4" />
+            Add Partner
           </Button>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Partner
-          </Button>
-        </div>
+        }
+      />
+
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total Partners" value={stats.total} icon={Users} description={`${stats.active} active`} />
+        <StatCard label="Active" value={stats.active} icon={ArrowLeftRight} description="In good standing" />
+        <StatCard label="Pending" value={stats.pending} icon={TrendingUp} description="Awaiting review" />
+        <StatCard label="Partner Revenue" value={fmtMoney(stats.revenue)} icon={DollarSign} description="All time" />
       </div>
 
-      {/* Tabs + Search + Actions */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center justify-between gap-4">
-          <TabsList>
-            <TabsTrigger value="active">Active ({tabCounts.active})</TabsTrigger>
-            <TabsTrigger value="pending">Pending ({tabCounts.pending})</TabsTrigger>
-            <TabsTrigger value="invited">Invited ({tabCounts.invited})</TabsTrigger>
-            <TabsTrigger value="other">Other ({tabCounts.other})</TabsTrigger>
-          </TabsList>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      {/* Filters */}
+      <Card className="cv-card">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
               <Input
                 placeholder="Search partners..."
-                value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                className="pl-9 w-64"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="cv-input pl-9 h-11"
               />
             </div>
-            {selectedPartners.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Actions ({selectedPartners.length})
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleBulkAction('approve', 'ACTIVE')}>
-                    <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
-                    Approve Selected
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBulkAction('reject', 'INACTIVE')}>
-                    <XCircle className="mr-2 h-4 w-4 text-amber-600" />
-                    Reject Selected
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleBulkAction('delete')} className="text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Selected
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExportPartners('all')}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export All (CSV)
-                </DropdownMenuItem>
-                {selectedPartners.length > 0 && (
-                  <DropdownMenuItem onClick={() => handleExportPartners('selected')}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Selected (CSV)
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Import Partners (CSV)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-1 rounded-xl bg-cv-soft p-1">
+              {typeFilters.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setTypeFilter(t.value)}
+                  className={cn(
+                    'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
+                    typeFilter === t.value
+                      ? 'bg-white text-cv-ink shadow-sm'
+                      : 'text-cv-muted hover:text-cv-ink'
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Table Content (same for all tabs) */}
-        <Card className="mt-4">
-          <CardContent className="p-0">
+      {/* Table */}
+      <Card className="cv-card overflow-hidden">
+        <CardContent className="p-0">
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="No partners found"
+              description="Try a different search or filter to see partners."
+            />
+          ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedPartners.length === filteredPartners.length && filteredPartners.length > 0}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                    <div className="flex items-center">
-                      Partner <SortIcon field="name" />
-                    </div>
-                  </TableHead>
-                  <TableHead>Referral Code</TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('leads')}>
-                    <div className="flex items-center">
-                      Leads <SortIcon field="leads" />
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('customers')}>
-                    <div className="flex items-center">
-                      Customers <SortIcon field="customers" />
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer text-right" onClick={() => handleSort('revenue')}>
-                    <div className="flex items-center justify-end">
-                      Revenue <SortIcon field="revenue" />
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer text-right" onClick={() => handleSort('earnings')}>
-                    <div className="flex items-center justify-end">
-                      Earnings <SortIcon field="earnings" />
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('createdAt')}>
-                    <div className="flex items-center">
-                      Signed Up <SortIcon field="createdAt" />
-                    </div>
-                  </TableHead>
+                <TableRow className="border-cv-line hover:bg-transparent">
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Partner</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Type</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Storefront</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Conversions</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Revenue</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Joined</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPartners.length > 0 ? (
-                  filteredPartners.map((partner: Partner) => (
-                    <TableRow
-                      key={partner.id}
-                      className="cursor-pointer"
-                      onClick={() => router.push(`/admin/partners/${partner.id}`)}
-                    >
-                      <TableCell onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={selectedPartners.includes(partner.id)}
-                          onCheckedChange={() => handleSelectPartner(partner.id)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {partner.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">{partner.name}</p>
-                            <p className="text-xs text-muted-foreground">{partner.email}</p>
-                          </div>
+                {filtered.map((p) => (
+                  <TableRow
+                    key={p.id}
+                    className="border-cv-line cursor-pointer hover:bg-cv-soft/60 transition-colors"
+                    onClick={() => setSelectedId(p.id)}
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <Avatar name={p.name} color={p.avatarColor} size={32} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-cv-ink truncate">{p.name}</p>
+                          <p className="text-xs text-cv-muted truncate">{p.email}</p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{partner.referralCode}</code>
-                      </TableCell>
-                      <TableCell>{partner.leads}</TableCell>
-                      <TableCell>{partner.customers}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {currencySymbol}{(partner.revenue / 100).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {currencySymbol}{(partner.earnings / 100).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(partner.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8}>
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <Users className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                        <p className="text-sm font-medium text-muted-foreground">No partners found</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {searchQuery ? 'Try a different search term' : 'Create or invite partners to get started'}
-                        </p>
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <span className="text-xs font-bold text-cv-body">{p.type}</span>
+                    </TableCell>
+                    <TableCell><StatusBadge status={partnerStatusMap[p.status]} /></TableCell>
+                    <TableCell className="text-sm text-cv-body">{p.storefrontName}</TableCell>
+                    <TableCell className="text-right text-sm text-cv-body">{p.conversions}</TableCell>
+                    <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(p.revenue)}</TableCell>
+                    <TableCell className="text-right text-sm text-cv-body">{fmtMoney(p.commission)}</TableCell>
+                    <TableCell className="text-xs text-cv-muted">{fmtDate(p.joinedDate)}</TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      </Tabs>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Create Partner Dialog */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create Partner</DialogTitle>
-            <DialogDescription>Add a new affiliate partner manually</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreatePartner}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={newPartner.firstName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPartner({ ...newPartner, firstName: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    value={newPartner.lastName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPartner({ ...newPartner, lastName: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newPartner.email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPartner({ ...newPartner, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company">Company (Optional)</Label>
-                <Input
-                  id="company"
-                  value={newPartner.company}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPartner({ ...newPartner, company: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Partner Group</Label>
-                  <Select
-                    value={newPartner.partnerGroup}
-                    onValueChange={(value: string) => setNewPartner({ ...newPartner, partnerGroup: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Default">Default</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Payout Method</Label>
-                  <Select
-                    value={newPartner.payoutMethod}
-                    onValueChange={(value: string) => setNewPartner({ ...newPartner, payoutMethod: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PayPal">PayPal</SelectItem>
-                      <SelectItem value="Wise">Wise</SelectItem>
-                      <SelectItem value="Bank">Bank Transfer</SelectItem>
-                      <SelectItem value="Crypto">Crypto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="paypalEmail">PayPal Email (Optional)</Label>
-                <Input
-                  id="paypalEmail"
-                  type="email"
-                  value={newPartner.paypalEmail}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPartner({ ...newPartner, paypalEmail: e.target.value })}
-                  placeholder="defaults to partner email"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="sendWelcomeEmail"
-                  checked={newPartner.sendWelcomeEmail}
-                  onCheckedChange={(checked: boolean) => setNewPartner({ ...newPartner, sendWelcomeEmail: checked })}
-                />
-                <Label htmlFor="sendWelcomeEmail">Send welcome email</Label>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Create Partner
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Partner detail dialog */}
+      <PartnerDialog partner={selectedPartner} onClose={() => setSelectedId(null)} />
+    </div>
+  );
+}
 
-      {/* Invite Partner Dialog */}
-      <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Invite Partner</DialogTitle>
-            <DialogDescription>Send an email invitation to a new affiliate partner</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="inviteEmail">Email Address</Label>
-              <Input
-                id="inviteEmail"
-                type="email"
-                value={invitePartner.email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvitePartner({ ...invitePartner, email: e.target.value })}
-                placeholder="partner@example.com"
-                required
-              />
+function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onClose: () => void }) {
+  const open = !!partner;
+
+  const partnerConversions = useMemo(
+    () => (partner ? mockConversions.filter((c) => c.partnerId === partner.id) : []),
+    [partner]
+  );
+  const partnerCommissions = useMemo(
+    () => (partner ? mockCommissions.filter((c) => c.partnerId === partner.id) : []),
+    [partner]
+  );
+  const partnerStorefront = useMemo(
+    () => (partner ? mockStorefronts.find((s) => s.partnerId === partner.id) || null : null),
+    [partner]
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto cv-card border-cv-line rounded-2xl bg-white p-0">
+        {partner && (
+          <>
+            <DialogHeader className="p-6 pb-4 border-b border-cv-line">
+              <div className="flex items-center gap-3">
+                <Avatar name={partner.name} color={partner.avatarColor} size={44} />
+                <div>
+                  <DialogTitle className="text-lg font-bold text-cv-ink">{partner.name}</DialogTitle>
+                  <DialogDescription className="text-sm text-cv-muted">{partner.email}</DialogDescription>
+                </div>
+                <div className="ml-auto">
+                  <StatusBadge status={partnerStatusMap[partner.status]} />
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="px-6 pb-6">
+              <Tabs defaultValue="overview">
+                <TabsList className="bg-cv-soft h-auto p-1 flex flex-wrap gap-1">
+                  <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+                  <TabsTrigger value="activity" className="text-xs">Activity</TabsTrigger>
+                  <TabsTrigger value="conversions" className="text-xs">Conversions</TabsTrigger>
+                  <TabsTrigger value="commissions" className="text-xs">Commissions</TabsTrigger>
+                  <TabsTrigger value="storefront" className="text-xs">Storefront</TabsTrigger>
+                  <TabsTrigger value="messages" className="text-xs">Messages</TabsTrigger>
+                  <TabsTrigger value="notes" className="text-xs">Notes</TabsTrigger>
+                  <TabsTrigger value="settings" className="text-xs">Settings</TabsTrigger>
+                </TabsList>
+
+                {/* Overview */}
+                <TabsContent value="overview" className="mt-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <DetailField label="Name" value={partner.name} />
+                    <DetailField label="Email" value={partner.email} />
+                    <DetailField label="Type" value={partner.type} />
+                    <DetailField label="Status" value={<StatusBadge status={partnerStatusMap[partner.status]} />} />
+                    <DetailField label="Joined" value={fmtDate(partner.joinedDate)} />
+                    <DetailField label="Last Active" value={fmtDate(partner.lastActive)} />
+                    <DetailField label="Conversions" value={String(partner.conversions)} />
+                    <DetailField label="Revenue" value={fmtMoney(partner.revenue)} />
+                    <DetailField label="Commission" value={fmtMoney(partner.commission)} />
+                    <DetailField label="Storefront" value={partner.storefrontName} />
+                  </div>
+                </TabsContent>
+
+                {/* Activity */}
+                <TabsContent value="activity" className="mt-4">
+                  {partnerConversions.length === 0 ? (
+                    <EmptyState icon={ActivityIcon} title="No recent activity" description="Conversions will appear here." />
+                  ) : (
+                    <div className="space-y-2">
+                      {partnerConversions.slice(0, 6).map((c) => (
+                        <div key={c.id} className="flex items-center justify-between rounded-xl bg-cv-soft p-3">
+                          <div>
+                            <p className="text-sm font-bold text-cv-ink">{c.plan}</p>
+                            <p className="text-xs text-cv-muted">{fmtDate(c.date)} · {c.attributionSource}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-cv-ink">${c.saleAmount}</p>
+                            <p className="text-xs text-cv-muted">{fmtMoney(c.commission)} comm.</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Conversions */}
+                <TabsContent value="conversions" className="mt-4">
+                  {partnerConversions.length === 0 ? (
+                    <EmptyState icon={ArrowLeftRight} title="No conversions" description="This partner has no conversions yet." />
+                  ) : (
+                    <div className="rounded-xl border border-cv-line overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-cv-line hover:bg-transparent">
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Plan</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Sale</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Date</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {partnerConversions.map((c) => (
+                            <TableRow key={c.id} className="border-cv-line">
+                              <TableCell className="text-sm font-bold text-cv-ink">{c.plan}</TableCell>
+                              <TableCell className="text-right text-sm text-cv-body">${c.saleAmount}</TableCell>
+                              <TableCell className="text-right text-sm text-cv-body">{fmtMoney(c.commission)}</TableCell>
+                              <TableCell><StatusBadge status={c.status.toLowerCase() as any} /></TableCell>
+                              <TableCell className="text-xs text-cv-muted">{fmtDate(c.date)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Commissions */}
+                <TabsContent value="commissions" className="mt-4">
+                  {partnerCommissions.length === 0 ? (
+                    <EmptyState icon={DollarSign} title="No commissions" description="This partner has no commissions yet." />
+                  ) : (
+                    <div className="rounded-xl border border-cv-line overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-cv-line hover:bg-transparent">
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Plan</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Sale</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Rule</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {partnerCommissions.map((c) => (
+                            <TableRow key={c.id} className="border-cv-line">
+                              <TableCell className="text-sm font-bold text-cv-ink">{c.plan}</TableCell>
+                              <TableCell className="text-right text-sm text-cv-body">${c.saleAmount}</TableCell>
+                              <TableCell className="text-xs text-cv-muted">{c.commissionRule}</TableCell>
+                              <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(c.commission)}</TableCell>
+                              <TableCell><StatusBadge status={c.status.toLowerCase() as any} /></TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Storefront */}
+                <TabsContent value="storefront" className="mt-4">
+                  {partnerStorefront ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <DetailField label="Name" value={partnerStorefront.name} />
+                        <DetailField label="URL" value={partnerStorefront.url} />
+                        <DetailField label="Status" value={<StatusBadge status={partnerStorefront.status.toLowerCase() as any} />} />
+                        <DetailField label="Domain" value={
+                          partnerStorefront.customDomain
+                            ? <span className="flex items-center gap-2"><span>{partnerStorefront.customDomain}</span><StatusBadge status={partnerStorefront.domainStatus.toLowerCase() as any} /></span>
+                            : <StatusBadge status="none" />
+                        } />
+                        <DetailField label="Visitors" value={String(partnerStorefront.visitors)} />
+                        <DetailField label="Conversions" value={String(partnerStorefront.conversions)} />
+                        <DetailField label="Revenue" value={fmtMoney(partnerStorefront.revenue)} />
+                        <DetailField label="Commission" value={fmtMoney(partnerStorefront.commission)} />
+                      </div>
+                      {partnerStorefront.introCopy && (
+                        <div className="rounded-xl bg-cv-soft p-3">
+                          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Intro Copy</p>
+                          <p className="text-sm text-cv-body">{partnerStorefront.introCopy}</p>
+                        </div>
+                      )}
+                      <div className="rounded-xl bg-cv-soft p-3">
+                        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Packages</p>
+                        <div className="flex flex-wrap gap-2">
+                          {partnerStorefront.packages.length === 0 ? (
+                            <span className="text-sm text-cv-muted">No packages</span>
+                          ) : (
+                            partnerStorefront.packages.map((pkg) => (
+                              <span key={pkg} className="rounded-lg border border-cv-line bg-white px-2.5 py-1 text-xs font-bold text-cv-ink">{pkg}</span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <EmptyState icon={Store} title="No storefront" description="This partner has not set up a storefront." />
+                  )}
+                </TabsContent>
+
+                {/* Messages */}
+                <TabsContent value="messages" className="mt-4">
+                  <EmptyState
+                    icon={MessageSquare}
+                    title="Messages"
+                    description="Direct messages with this partner will appear here."
+                  />
+                </TabsContent>
+
+                {/* Notes */}
+                <TabsContent value="notes" className="mt-4">
+                  <EmptyState
+                    icon={StickyNote}
+                    title="Notes"
+                    description="Internal notes about this partner will appear here."
+                  />
+                </TabsContent>
+
+                {/* Settings */}
+                <TabsContent value="settings" className="mt-4">
+                  <EmptyState
+                    icon={Settings}
+                    title="Settings"
+                    description="Partner account settings and permissions will appear here."
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
-            <div className="space-y-2">
-              <Label>Partner Group</Label>
-              <Select
-                value={invitePartner.partnerGroup}
-                onValueChange={(value: string) => setInvitePartner({ ...invitePartner, partnerGroup: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Default">Default</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setShowInviteModal(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                alert('Invite feature will send an email invitation to the partner.');
-                setShowInviteModal(false);
-              }}
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              Send Invite
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-xl bg-cv-soft p-3">
+      <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">{label}</p>
+      <div className="text-sm font-bold text-cv-ink">{value}</div>
     </div>
   );
 }
