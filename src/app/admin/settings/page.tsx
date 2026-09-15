@@ -1,210 +1,449 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import React, { useState } from 'react';
+import { PageHeader } from '@/components/shared/PageHeader';
+import { StatusBadge, Avatar } from '@/components/shared/StatusBadge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import {
-  User,
-  Save,
-  CheckCircle2,
-  Shield,
-  Key,
-} from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Settings as SettingsIcon, FileSliders as Sliders, Crosshair, Mail, Plug, Users, Shield, Save, Plus, Trash2, Check, Clock, Lock, Globe, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface AdminProfile {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  createdAt: string;
+// ── Local mock data for settings ──────────────────────────────────
+interface CommissionRule {
+  id: string; name: string; rate: number; scope: string; status: 'ACTIVE' | 'PAUSED';
 }
+const initialRules: CommissionRule[] = [
+  { id: 'r-1', name: 'Standard', rate: 20, scope: 'All products', status: 'ACTIVE' },
+  { id: 'r-2', name: 'Network Bonus', rate: 25, scope: 'Network partners', status: 'ACTIVE' },
+  { id: 'r-3', name: 'Creator Boost', rate: 22, scope: 'Creator partners', status: 'ACTIVE' },
+  { id: 'r-4', name: 'Care Circle Premium', rate: 18, scope: 'Care Circle plan', status: 'PAUSED' },
+];
 
-export default function SettingsPage() {
-  const [profile, setProfile] = useState<AdminProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+interface Integration {
+  id: string; name: string; description: string; category: string; connected: boolean;
+}
+const integrations: Integration[] = [
+  { id: 'int-1', name: 'Stripe', description: 'Process partner payouts and track payment activity.', category: 'Payments', connected: true },
+  { id: 'int-2', name: 'Mailgun', description: 'Transactional email delivery for automations.', category: 'Email', connected: true },
+  { id: 'int-3', name: 'Slack', description: 'Get alerts for new partner signups and conversions.', category: 'Notifications', connected: false },
+  { id: 'int-4', name: 'Zapier', description: 'Connect Careverse to 5,000+ apps and automate workflows.', category: 'Automation', connected: false },
+  { id: 'int-5', name: 'Google Analytics', description: 'Track storefront traffic and conversion attribution.', category: 'Analytics', connected: true },
+  { id: 'int-6', name: 'Twilio', description: 'SMS notifications for partners and verification.', category: 'Notifications', connected: false },
+];
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+interface TeamMember {
+  id: string; name: string; email: string; role: 'Owner' | 'Admin' | 'Editor' | 'Viewer'; lastActive: string;
+}
+const team: TeamMember[] = [
+  { id: 'tm-1', name: 'Sarah Chen', email: 'admin@careverse.ai', role: 'Owner', lastActive: '2026-09-15' },
+  { id: 'tm-2', name: 'Marcus Johnson', email: 'marcus@careverse.ai', role: 'Admin', lastActive: '2026-09-14' },
+  { id: 'tm-3', name: 'Emily Rodriguez', email: 'emily@careverse.ai', role: 'Editor', lastActive: '2026-09-13' },
+  { id: 'tm-4', name: 'David Kim', email: 'david@careverse.ai', role: 'Viewer', lastActive: '2026-09-12' },
+];
 
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch('/api/admin/profile');
-      const data = await res.json();
-      if (data.success) {
-        setProfile(data.user);
-        setName(data.user.name);
-        setEmail(data.user.email);
-      }
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-    } finally {
-      setLoading(false);
-    }
+const tabConfig = [
+  { value: 'program', label: 'Program', icon: SettingsIcon },
+  { value: 'commission', label: 'Commission Rules', icon: Sliders },
+  { value: 'tracking', label: 'Tracking', icon: Crosshair },
+  { value: 'email', label: 'Email', icon: Mail },
+  { value: 'integrations', label: 'Integrations', icon: Plug },
+  { value: 'team', label: 'Team', icon: Users },
+  { value: 'security', label: 'Security', icon: Shield },
+] as const;
+
+export default function AdminSettingsPage() {
+  const [program, setProgram] = useState({ name: 'Careverse Partner Program', description: 'The Careverse Partner Program helps creators, businesses, and networks earn commission by referring families to Careverse membership plans.', defaultRate: '20' });
+  const [rules, setRules] = useState<CommissionRule[]>(initialRules);
+  const [tracking, setTracking] = useState({ attributionWindow: '30', cookieDuration: '60', firstClick: true, crossDomain: false });
+  const [emailCfg, setEmailCfg] = useState({ fromEmail: 'team@careverse.ai', replyTo: 'support@careverse.ai', testEmail: '' });
+  const [security, setSecurity] = useState({ twoFactor: true, sessionTimeout: '60', ipAllowlist: '' });
+  const [savedTab, setSavedTab] = useState<string | null>(null);
+
+  const handleSave = (tab: string) => {
+    setSavedTab(tab);
+    setTimeout(() => setSavedTab(null), 2500);
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    setSaved(false);
-    try {
-      const res = await fetch('/api/admin/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email }),
-      });
-      if (res.ok) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-        await fetchProfile();
-      }
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-    } finally {
-      setSaving(false);
-    }
+  const toggleRuleStatus = (id: string) => {
+    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, status: r.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE' } : r)));
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-[300px]" />
-        <Skeleton className="h-[200px]" />
-      </div>
-    );
-  }
+  const deleteRule = (id: string) => setRules((prev) => prev.filter((r) => r.id !== id));
+
+  const toggleIntegration = (id: string) => {
+    // mock — no state mutation needed for demo, button shows feedback
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and preferences</p>
-      </div>
+      <PageHeader
+        eyebrow="Settings"
+        title="Program Settings"
+        description="Configure your partner program, commissions, tracking, integrations, and security."
+      />
 
-      {/* Profile Settings */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Profile
-              </CardTitle>
-              <CardDescription>Your personal account information</CardDescription>
-            </div>
-            <Button onClick={handleSave} disabled={saving}>
-              {saved ? (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-                  Saved
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  {saving ? 'Saving...' : 'Save'}
-                </>
-              )}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Tabs defaultValue="program" className="space-y-6">
+        {/* Tab list */}
+        <TabsList className="bg-cv-soft rounded-2xl p-1.5 h-auto flex flex-wrap gap-1">
+          {tabConfig.map((t) => (
+            <TabsTrigger
+              key={t.value}
+              value={t.value}
+              className="rounded-xl px-3.5 py-2 data-[state=active]:bg-white data-[state=active]:text-cv-ink data-[state=active]:shadow-sm text-cv-muted font-bold text-sm"
+            >
+              <t.icon className="h-4 w-4 mr-1.5" /> {t.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {/* ── Program ── */}
+        <TabsContent value="program" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Program Details</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Core information about your partner program</p>
+              </div>
+              <SaveButton onClick={() => handleSave('program')} saved={savedTab === 'program'} />
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <div className="grid gap-2">
+                <Label htmlFor="prog-name" className="text-sm font-bold text-cv-ink">Program Name</Label>
+                <Input id="prog-name" value={program.name} onChange={(e) => setProgram({ ...program, name: e.target.value })} className="cv-input" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="prog-desc" className="text-sm font-bold text-cv-ink">Description</Label>
+                <Textarea id="prog-desc" value={program.description} onChange={(e) => setProgram({ ...program, description: e.target.value })} className="cv-input min-h-[100px] rounded-2xl" />
+              </div>
+              <div className="grid gap-2 max-w-xs">
+                <Label htmlFor="prog-rate" className="text-sm font-bold text-cv-ink">Default Commission Rate (%)</Label>
+                <div className="relative">
+                  <Input id="prog-rate" type="number" value={program.defaultRate} onChange={(e) => setProgram({ ...program, defaultRate: e.target.value })} className="cv-input pr-8" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-cv-muted">%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Commission Rules ── */}
+        <TabsContent value="commission" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Commission Rules</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Rules that determine how partners earn commission</p>
+              </div>
+              <Button className="cv-btn-primary cv-btn-sm rounded-full"><Plus className="h-4 w-4" /> Add Rule</Button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-cv-line">
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Rule Name</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Rate</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Scope</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted text-right w-24" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rules.map((r) => (
+                    <TableRow key={r.id} className="border-cv-line">
+                      <TableCell className="font-bold text-cv-ink text-sm">{r.name}</TableCell>
+                      <TableCell className="text-right text-sm font-bold text-cv-ink">{r.rate}%</TableCell>
+                      <TableCell className="text-sm text-cv-body">{r.scope}</TableCell>
+                      <TableCell>
+                        <button onClick={() => toggleRuleStatus(r.id)}>
+                          <StatusBadge status={r.status === 'ACTIVE' ? 'active' : 'suspended'} label={r.status === 'ACTIVE' ? 'Active' : 'Paused'} />
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <button onClick={() => deleteRule(r.id)} className="rounded-lg p-1.5 hover:bg-red-50 transition-colors">
+                          <Trash2 className="h-3.5 w-3.5 text-cv-red" />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Tracking ── */}
+        <TabsContent value="tracking" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Tracking Settings</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">How referrals are attributed and tracked</p>
+              </div>
+              <SaveButton onClick={() => handleSave('tracking')} saved={savedTab === 'tracking'} />
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Attribution Window (days)</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                    <Input type="number" value={tracking.attributionWindow} onChange={(e) => setTracking({ ...tracking, attributionWindow: e.target.value })} className="cv-input pl-9" />
+                  </div>
+                  <p className="text-xs text-cv-muted">How long after a click a conversion can be attributed.</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Cookie Duration (days)</Label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                    <Input type="number" value={tracking.cookieDuration} onChange={(e) => setTracking({ ...tracking, cookieDuration: e.target.value })} className="cv-input pl-9" />
+                  </div>
+                  <p className="text-xs text-cv-muted">How long the referral cookie stays active.</p>
+                </div>
+              </div>
+              <div className="space-y-4 pt-2 border-t border-cv-line">
+                <ToggleRow
+                  icon={Crosshair}
+                  title="First-click attribution"
+                  description="Credit the first partner whose link was clicked, not the last."
+                  checked={tracking.firstClick}
+                  onCheckedChange={(v) => setTracking({ ...tracking, firstClick: v })}
+                />
+                <ToggleRow
+                  icon={Globe}
+                  title="Cross-domain tracking"
+                  description="Track referrals across partner custom domains."
+                  checked={tracking.crossDomain}
+                  onCheckedChange={(v) => setTracking({ ...tracking, crossDomain: v })}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Email ── */}
+        <TabsContent value="email" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Email Configuration</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Sender settings and test email delivery</p>
+              </div>
+              <SaveButton onClick={() => handleSave('email')} saved={savedTab === 'email'} />
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">From Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                    <Input value={emailCfg.fromEmail} onChange={(e) => setEmailCfg({ ...emailCfg, fromEmail: e.target.value })} className="cv-input pl-9" />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Reply-To Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                    <Input value={emailCfg.replyTo} onChange={(e) => setEmailCfg({ ...emailCfg, replyTo: e.target.value })} className="cv-input pl-9" />
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-2 max-w-md pt-4 border-t border-cv-line">
+                <Label className="text-sm font-bold text-cv-ink">Send Test Email</Label>
+                <div className="flex items-center gap-2">
+                  <Input value={emailCfg.testEmail} onChange={(e) => setEmailCfg({ ...emailCfg, testEmail: e.target.value })} placeholder="recipient@example.com" className="cv-input" />
+                  <Button
+                    onClick={() => { setSavedTab('test'); setTimeout(() => setSavedTab(null), 2500); }}
+                    className="cv-btn-secondary cv-btn-sm rounded-full shrink-0"
+                    disabled={!emailCfg.testEmail}
+                  >
+                    <Mail className="h-4 w-4" /> {savedTab === 'test' ? 'Sent!' : 'Send'}
+                  </Button>
+                </div>
+                <p className="text-xs text-cv-muted">Sends a test email to verify your configuration.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Integrations ── */}
+        <TabsContent value="integrations" className="mt-0">
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+            {integrations.map((int) => (
+              <Card key={int.id} className="cv-card">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className={cn('flex h-11 w-11 items-center justify-center rounded-2xl shrink-0', int.connected ? 'bg-emerald-50' : 'bg-cv-soft')}>
+                        <Plug className={cn('h-5 w-5', int.connected ? 'text-cv-good' : 'text-cv-ink')} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-cv-ink">{int.name}</p>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-cv-muted rounded bg-cv-soft px-1.5 py-0.5">{int.category}</span>
+                        </div>
+                        <p className="text-xs text-cv-body mt-1 leading-relaxed">{int.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-cv-line">
+                    {int.connected ? (
+                      <StatusBadge status="connected" label="Connected" />
+                    ) : (
+                      <span className="text-xs text-cv-muted font-bold">Not connected</span>
+                    )}
+                    <Button
+                      variant={int.connected ? 'outline' : 'default'}
+                      className={cn('rounded-full text-xs font-bold h-9', int.connected ? 'border-cv-line text-cv-body hover:bg-cv-soft' : 'cv-btn-primary cv-btn-sm')}
+                      onClick={() => toggleIntegration(int.id)}
+                    >
+                      {int.connected ? 'Disconnect' : 'Connect'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Account Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Account Details
-          </CardTitle>
-          <CardDescription>Read-only account information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {profile && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-md border p-3">
-                <div>
-                  <p className="text-sm font-medium">Role</p>
-                  <p className="text-sm text-muted-foreground">{profile.role}</p>
-                </div>
-                <Shield className="h-4 w-4 text-muted-foreground" />
+        {/* ── Team ── */}
+        <TabsContent value="team" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Team Members</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">People with access to the Careverse admin</p>
               </div>
-              <div className="flex items-center justify-between rounded-md border p-3">
-                <div>
-                  <p className="text-sm font-medium">Status</p>
-                  <p className="text-sm text-muted-foreground">{profile.status}</p>
-                </div>
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              </div>
-              <div className="flex items-center justify-between rounded-md border p-3">
-                <div>
-                  <p className="text-sm font-medium">Account Created</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(profile.createdAt).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </p>
-                </div>
-                <Key className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              <Button className="cv-btn-primary cv-btn-sm rounded-full"><Plus className="h-4 w-4" /> Invite Member</Button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-cv-line">
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Member</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Role</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Last Active</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted text-right w-16" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {team.map((m) => (
+                    <TableRow key={m.id} className="border-cv-line">
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          <Avatar name={m.name} color="#18191D" size={32} />
+                          <div>
+                            <p className="text-sm font-bold text-cv-ink">{m.name}</p>
+                            <p className="text-xs text-cv-muted">{m.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Select defaultValue={m.role}>
+                          <SelectTrigger className="cv-input h-9 w-[120px] text-sm font-bold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            <SelectItem value="Owner">Owner</SelectItem>
+                            <SelectItem value="Admin">Admin</SelectItem>
+                            <SelectItem value="Editor">Editor</SelectItem>
+                            <SelectItem value="Viewer">Viewer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-xs text-cv-muted">{new Date(m.lastActive).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</TableCell>
+                      <TableCell className="text-right">
+                        {m.role !== 'Owner' && (
+                          <button className="rounded-lg p-1.5 hover:bg-red-50 transition-colors">
+                            <Trash2 className="h-3.5 w-3.5 text-cv-red" />
+                          </button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Security Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Security
-          </CardTitle>
-          <CardDescription>Authentication is managed via OTP</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            This platform uses passwordless OTP-based authentication. A one-time code is sent to your
-            email each time you log in. No password management is required.
-          </p>
-        </CardContent>
-      </Card>
+        {/* ── Security ── */}
+        <TabsContent value="security" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Security</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Protect your admin account and platform</p>
+              </div>
+              <SaveButton onClick={() => handleSave('security')} saved={savedTab === 'security'} />
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <ToggleRow
+                icon={Lock}
+                title="Two-Factor Authentication"
+                description="Require a verification code in addition to your password."
+                checked={security.twoFactor}
+                onCheckedChange={(v) => setSecurity({ ...security, twoFactor: v })}
+              />
+              <div className="grid gap-2 max-w-xs pt-4 border-t border-cv-line">
+                <Label className="text-sm font-bold text-cv-ink">Session Timeout (minutes)</Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                  <Input type="number" value={security.sessionTimeout} onChange={(e) => setSecurity({ ...security, sessionTimeout: e.target.value })} className="cv-input pl-9" />
+                </div>
+                <p className="text-xs text-cv-muted">Automatically log out inactive admins after this period.</p>
+              </div>
+              <div className="grid gap-2 max-w-md pt-4 border-t border-cv-line">
+                <Label className="text-sm font-bold text-cv-ink">IP Allowlist</Label>
+                <Textarea
+                  value={security.ipAllowlist}
+                  onChange={(e) => setSecurity({ ...security, ipAllowlist: e.target.value })}
+                  placeholder="203.0.113.0/24&#10;198.51.100.10"
+                  className="cv-input min-h-[80px] rounded-2xl font-mono text-sm"
+                />
+                <p className="text-xs text-cv-muted">One IP or CIDR per line. Leave empty to allow all IPs.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// ── Helper components ─────────────────────────────────────────────
+
+function SaveButton({ onClick, saved }: { onClick: () => void; saved: boolean }) {
+  return (
+    <Button onClick={onClick} className={cn('cv-btn-sm rounded-full', saved ? 'bg-cv-good text-white' : 'cv-btn-primary')}>
+      {saved ? <><Check className="h-4 w-4" /> Saved</> : <><Save className="h-4 w-4" /> Save</>}
+    </Button>
+  );
+}
+
+function ToggleRow({
+  icon: Icon, title, description, checked, onCheckedChange,
+}: {
+  icon: React.ElementType; title: string; description: string; checked: boolean; onCheckedChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cv-soft shrink-0">
+          <Icon className="h-4 w-4 text-cv-ink" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-cv-ink">{title}</p>
+          <p className="text-xs text-cv-muted mt-0.5">{description}</p>
+        </div>
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
 }
