@@ -61,6 +61,7 @@ export interface MockStorefront {
 }
 
 export type ConversionStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'REVERSED';
+export type AttributionState = 'ATTRIBUTED' | 'PENDING' | 'UNATTRIBUTED' | 'REVERSED';
 
 export interface MockConversion {
   id: string;
@@ -74,6 +75,9 @@ export interface MockConversion {
   storefrontId: string;
   storefrontName: string;
   attributionSource: string;
+  attributionState: AttributionState;
+  clickId: string;
+  customerName: string;
   customerEmail: string;
 }
 

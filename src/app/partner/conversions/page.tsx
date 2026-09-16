@@ -14,12 +14,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { ArrowLeftRight, Search, Eye } from 'lucide-react';
-import { mockConversions } from '@/data/mock';
-import type { MockConversion, ConversionStatus } from '@/data/mock/types';
+import { ArrowLeftRight, Search, Eye, Calendar, Store, ChevronDown } from 'lucide-react';
+import { mockConversions, mockStorefronts } from '@/data/mock';
+import type { MockConversion, ConversionStatus, AttributionState } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
 
-type FilterTab = 'ALL' | 'PENDING' | 'APPROVED' | 'PAID' | 'REVERSED';
+type FilterTab = 'ALL' | ConversionStatus;
+type DateFilter = 'ALL' | '7D' | '30D' | '90D';
+type StorefrontFilter = 'ALL' | string;
 
 const FILTER_TABS: { key: FilterTab; label: string }[] = [
   { key: 'ALL', label: 'All' },
@@ -29,8 +31,31 @@ const FILTER_TABS: { key: FilterTab; label: string }[] = [
   { key: 'REVERSED', label: 'Reversed' },
 ];
 
+const DATE_FILTERS: { key: DateFilter; label: string }[] = [
+  { key: 'ALL', label: 'All time' },
+  { key: '7D', label: '7 days' },
+  { key: '30D', label: '30 days' },
+  { key: '90D', label: '90 days' },
+];
+
+const ATTRIBUTION_LABELS: Record<AttributionState, string> = {
+  ATTRIBUTED: 'Attributed',
+  PENDING: 'Pending',
+  UNATTRIBUTED: 'Unattributed',
+  REVERSED: 'Reversed',
+};
+
+const ATTRIBUTION_COLORS: Record<AttributionState, string> = {
+  ATTRIBUTED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+  UNATTRIBUTED: 'bg-gray-100 text-gray-600 border-gray-200',
+  REVERSED: 'bg-red-50 text-red-700 border-red-200',
+};
+
 export default function PartnerConversionsPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('ALL');
+  const [storefrontFilter, setStorefrontFilter] = useState<StorefrontFilter>('ALL');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<MockConversion | null>(null);
 
@@ -39,22 +64,43 @@ export default function PartnerConversionsPage() {
   const fmtDate = (d: string) =>
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+  const partnerId = 'p-1';
+
   const partnerConversions = useMemo(
-    () => mockConversions.filter((c) => c.partnerId === 'p-1'),
+    () => mockConversions.filter((c) => c.partnerId === partnerId),
     [],
   );
 
+  const partnerStorefronts = useMemo(() => {
+    const ids = new Set(partnerConversions.map((c) => c.storefrontId));
+    return mockStorefronts.filter((s) => ids.has(s.id));
+  }, [partnerConversions]);
+
   const filtered = useMemo(() => {
+    const now = new Date('2026-09-16');
     return partnerConversions.filter((c) => {
       const matchesStatus = activeTab === 'ALL' || c.status === activeTab;
+      const matchesStorefront = storefrontFilter === 'ALL' || c.storefrontId === storefrontFilter;
       const matchesQuery =
         !query ||
         c.plan.toLowerCase().includes(query.toLowerCase()) ||
         c.id.toLowerCase().includes(query.toLowerCase()) ||
-        c.storefrontName.toLowerCase().includes(query.toLowerCase());
-      return matchesStatus && matchesQuery;
+        c.storefrontName.toLowerCase().includes(query.toLowerCase()) ||
+        c.customerName.toLowerCase().includes(query.toLowerCase()) ||
+        c.customerEmail.toLowerCase().includes(query.toLowerCase());
+
+      let matchesDate = true;
+      if (dateFilter !== 'ALL') {
+        const convDate = new Date(c.date);
+        const daysDiff = Math.floor((now.getTime() - convDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (dateFilter === '7D') matchesDate = daysDiff <= 7;
+        else if (dateFilter === '30D') matchesDate = daysDiff <= 30;
+        else if (dateFilter === '90D') matchesDate = daysDiff <= 90;
+      }
+
+      return matchesStatus && matchesStorefront && matchesQuery && matchesDate;
     });
-  }, [partnerConversions, activeTab, query]);
+  }, [partnerConversions, activeTab, storefrontFilter, query, dateFilter]);
 
   const counts = useMemo(() => {
     const base: Record<FilterTab, number> = {
@@ -108,10 +154,39 @@ export default function PartnerConversionsPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search plan, ID, or storefront..."
+            placeholder="Search customer, plan, ID..."
             className="cv-input w-full pl-9 h-9 text-sm"
           />
         </div>
+      </div>
+
+      {/* Additional filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <FilterDropdown
+          icon={Calendar}
+          label="Date"
+          value={DATE_FILTERS.find((d) => d.key === dateFilter)?.label || 'All time'}
+          options={DATE_FILTERS.map((d) => ({ value: d.key, label: d.label }))}
+          onSelect={(v) => setDateFilter(v as DateFilter)}
+        />
+        <FilterDropdown
+          icon={Store}
+          label="Storefront"
+          value={storefrontFilter === 'ALL' ? 'All storefronts' : partnerStorefronts.find((s) => s.id === storefrontFilter)?.name || 'All storefronts'}
+          options={[
+            { value: 'ALL', label: 'All storefronts' },
+            ...partnerStorefronts.map((s) => ({ value: s.id, label: s.name })),
+          ]}
+          onSelect={(v) => setStorefrontFilter(v)}
+        />
+        {(dateFilter !== 'ALL' || storefrontFilter !== 'ALL' || activeTab !== 'ALL' || query) && (
+          <button
+            onClick={() => { setDateFilter('ALL'); setStorefrontFilter('ALL'); setActiveTab('ALL'); setQuery(''); }}
+            className="text-xs font-bold text-cv-muted hover:text-cv-ink transition-colors"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {/* Conversions table */}
@@ -121,21 +196,19 @@ export default function PartnerConversionsPage() {
             <EmptyState
               icon={ArrowLeftRight}
               title="No conversions found"
-              description="Try changing the filter or search. Conversions will appear here once customers purchase through your storefront."
+              description="Try changing the filters or search. Conversions will appear here once customers purchase through your storefront."
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow className="border-cv-line">
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Plan</TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">
-                    Sale Amount
-                  </TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">
-                    Commission
-                  </TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Customer</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Storefront</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Package</TableHead>
                   <TableHead className="text-xs font-bold uppercase text-cv-muted">Date</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Amount</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
+                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
                   <TableHead className="text-xs font-bold uppercase text-cv-muted text-right w-12">
                     <span className="sr-only">View</span>
                   </TableHead>
@@ -148,17 +221,18 @@ export default function PartnerConversionsPage() {
                     className="border-cv-line cursor-pointer hover:bg-cv-soft/60 transition-colors"
                     onClick={() => setSelected(c)}
                   >
-                    <TableCell className="font-bold text-cv-ink text-sm">{c.plan}</TableCell>
-                    <TableCell className="text-right text-sm text-cv-body">
-                      {fmtMoney(c.saleAmount)}
+                    <TableCell className="text-sm">
+                      <p className="font-bold text-cv-ink">{c.customerName}</p>
+                      <p className="text-xs text-cv-muted">{c.customerEmail}</p>
                     </TableCell>
-                    <TableCell className="text-right text-sm font-bold text-cv-ink">
-                      {fmtMoney(c.commission)}
-                    </TableCell>
+                    <TableCell className="text-sm text-cv-body">{c.storefrontName}</TableCell>
+                    <TableCell className="text-sm font-bold text-cv-ink">{c.plan}</TableCell>
+                    <TableCell className="text-xs text-cv-muted">{fmtDate(c.date)}</TableCell>
+                    <TableCell className="text-right text-sm text-cv-body">{fmtMoney(c.saleAmount)}</TableCell>
+                    <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(c.commission)}</TableCell>
                     <TableCell>
                       <StatusBadge status={statusToBadge(c.status)} />
                     </TableCell>
-                    <TableCell className="text-xs text-cv-muted">{fmtDate(c.date)}</TableCell>
                     <TableCell className="text-right">
                       <Eye className="h-4 w-4 text-cv-muted" />
                     </TableCell>
@@ -172,7 +246,7 @@ export default function PartnerConversionsPage() {
 
       {/* Conversion detail dialog */}
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-cv-ink">Conversion details</DialogTitle>
             <DialogDescription className="text-sm text-cv-muted">
@@ -182,26 +256,38 @@ export default function PartnerConversionsPage() {
 
           {selected && (
             <div className="space-y-3 pt-1">
-              <DetailRow label="Plan" value={selected.plan} />
-              <DetailRow
-                label="Sale Amount"
-                value={fmtMoney(selected.saleAmount)}
-                mono
-              />
-              <DetailRow label="Partner / Storefront" value={selected.storefrontName} />
-              <DetailRow label="Attribution Source" value={selected.attributionSource} />
-              <DetailRow
-                label="Commission"
-                value={fmtMoney(selected.commission)}
-                mono
-              />
-              <div className="flex items-center justify-between py-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-cv-muted">
-                  Status
-                </span>
+              <div className="rounded-xl bg-cv-soft p-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Customer</p>
+                <p className="text-sm font-bold text-cv-ink">{selected.customerName}</p>
+                <p className="text-xs text-cv-muted">{selected.customerEmail}</p>
+              </div>
+
+              <DetailRow label="Storefront" value={selected.storefrontName} />
+              <DetailRow label="Package" value={selected.plan} />
+              <DetailRow label="Conversion Date" value={fmtDate(selected.date)} />
+              <DetailRow label="Purchase Amount" value={fmtMoney(selected.saleAmount)} mono />
+              <DetailRow label="Commission" value={fmtMoney(selected.commission)} mono />
+
+              <div className="flex items-center justify-between py-1 border-b border-cv-line">
+                <span className="text-xs font-bold uppercase tracking-wider text-cv-muted">Status</span>
                 <StatusBadge status={statusToBadge(selected.status)} />
               </div>
-              <DetailRow label="Date" value={fmtDate(selected.date)} />
+
+              {/* Attribution section */}
+              <div className="rounded-xl border border-cv-line p-4 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Attribution / Tracking</p>
+                <DetailRow label="Tracking Source" value={selected.attributionSource} />
+                <DetailRow label="Click ID" value={selected.clickId} mono />
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-cv-muted">Attribution State</span>
+                  <span className={cn(
+                    'text-xs font-extrabold px-2.5 py-1 rounded-full border',
+                    ATTRIBUTION_COLORS[selected.attributionState]
+                  )}>
+                    {ATTRIBUTION_LABELS[selected.attributionState]}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -240,6 +326,52 @@ function DetailRow({
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+function FilterDropdown({
+  icon: Icon,
+  label,
+  value,
+  options,
+  onSelect,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onSelect: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-3 py-2 rounded-xl border border-cv-line bg-white text-sm font-bold text-cv-ink hover:bg-cv-soft transition-colors"
+      >
+        <Icon className="h-3.5 w-3.5 text-cv-muted" />
+        <span className="text-xs text-cv-muted uppercase tracking-wider">{label}:</span>
+        <span>{value}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-cv-muted" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 z-50 bg-white rounded-xl border border-cv-line shadow-lg py-1 min-w-[180px]">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { onSelect(opt.value); setOpen(false); }}
+                className="w-full text-left px-3 py-2 text-sm font-bold text-cv-body hover:bg-cv-soft hover:text-cv-ink transition-colors"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

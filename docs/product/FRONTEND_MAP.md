@@ -185,6 +185,33 @@ All mock data lives in `src/data/mock/`.
 - **Preview** — desktop/mobile preview that reflects builder changes (storefront name, intro copy, selected packages)
 - **Publish** — draft/published status toggle, storefront checklist, publish/unpublish controls
 
+### Partner Conversions
+- Conversion list with columns: Customer, Storefront, Package, Date, Amount, Commission, Status
+- Search by customer name, email, plan, ID, or storefront
+- Status filter tabs (All, Pending, Approved, Paid, Reversed)
+- Date filter (All time, 7 days, 30 days, 90 days)
+- Storefront filter (partner's storefronts only)
+- Clear filters button
+- Conversion detail dialog showing customer, storefront, package, date, purchase amount, commission, status, and attribution section (tracking source, click ID, attribution state)
+
+### Admin Conversions
+- Stats: total conversions, total revenue, total commission
+- Conversion list with columns: Customer, Partner, Storefront, Package, Amount, Commission, Attribution, Status, Date
+- Search by customer, partner, storefront, email, attribution source, or click ID
+- Status filter tabs (All, Pending, Approved, Paid, Reversed)
+- Date filter (All time, 7 days, 30 days, 90 days)
+- Partner filter (all partners)
+- Storefront filter (all storefronts)
+- Package filter (Family, Family Plus, Care Circle)
+- Clear filters button
+- Conversion detail dialog with full attribution info: partner, storefront, tracking source, click/attribution ID, customer, package, purchase amount, conversion date, status, attribution state
+
+### Attribution States
+- Attributed (green) — conversion successfully attributed to a partner's tracking link
+- Pending (amber) — attribution being verified
+- Unattributed (gray) — no clear attribution source identified
+- Reversed (red) — attribution reversed due to refund or fraud
+
 ### Admin Dashboard
 - Primary metrics: Revenue, Conversions, Commissions, Active Partners
 - Performance chart with 7D/30D/90D/All time toggle and Revenue/Conversions/Commission metric switch
