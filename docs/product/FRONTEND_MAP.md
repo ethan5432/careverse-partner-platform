@@ -168,18 +168,22 @@ All mock data lives in `src/data/mock/`.
 - Recent conversions table
 
 ### Customer Storefront
-- Browse Careverse packages (Family, Family Plus, Care Circle)
-- Mock purchase flow with confirmation dialog
+- Partner logo/profile image with verified badge, rating, and family count
+- Hero with partner intro copy and proof chips
+- Careverse membership packages (Family, Family Plus, Care Circle) with plan details toggle
+- Benefits overview grid (6 benefits)
 - Lidia AI section
-- Benefits grid
+- Footer with plan links, learn links, contact info, legal links (Terms, Privacy, Refund), and membership disclaimer
+- Mock purchase flow with confirmation dialog and purchased state
 
 ### Storefront Builder
 - Tab navigation: Overview, Packages, Branding, Domain, Preview, Publish
-- Toggle package selection
-- Edit storefront name, logo, intro copy
-- Configure custom domain
-- Desktop/mobile preview
-- Publish/unpublish toggle
+- **Overview** — stat cards (storefront status, URL, visitors, conversions, revenue, commission), quick action cards (packages, domain, preview), View Storefront button
+- **Packages** — toggle which Careverse packages appear on the storefront
+- **Branding** — storefront name, logo upload, partner photo upload, short intro copy with character counter
+- **Domain** — Careverse-hosted URL display, custom domain input with DNS configuration
+- **Preview** — desktop/mobile preview that reflects builder changes (storefront name, intro copy, selected packages)
+- **Publish** — draft/published status toggle, storefront checklist, publish/unpublish controls
 
 ### Admin Dashboard
 - Primary metrics: Revenue, Conversions, Commissions, Active Partners
