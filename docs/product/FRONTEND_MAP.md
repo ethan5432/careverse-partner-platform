@@ -620,7 +620,7 @@ Storefront page (display to customers)
   - Partner attribution (partner ID, storefront ID)
   - Order reference (order ID, reference number)
 - Membership stored in sessionStorage for confirmation page retrieval
-- `MockMembership` type includes: id, customerId, customerName, customerEmail, productId, productName, productPrice, status, startDate, partnerId, partnerName, storefrontId, storefrontName, orderId, orderReference, benefits
+- `MockMembership` type includes: id, customerId, customerName, customerEmail, productId, productName, productPrice, status, startDate, endDate, partnerId, partnerName, storefrontId, storefrontName, orderId, orderReference, benefits, benefitDetails, humanHelpEligible
 - Two mock memberships exist for the two mock orders
 - Structured so Lidia can use membership data in the next phase
 
@@ -641,6 +641,71 @@ Alternative paths:
 - New `MockMembership` type and `mockMemberships` array
 - `mockMemberships` export added to mock data index
 - Order and membership passed via sessionStorage between checkout and confirmation
+
+---
+
+## Phase 14 — Lidia + Membership Handoff
+
+### Lidia Member Experience (`/lidia`)
+- Post-purchase member experience where Lidia (AI care assistant) greets the customer by name
+- Reads membership from sessionStorage (fresh checkout) or `?membership=<id>` query param, falls back to first mock membership
+- If no membership found, shows a "free for everyone" fallback with link to browse plans
+- Lidia uses the customer's actual purchased package — not generic package information
+
+### Lidia Chat Interface
+- Welcome banner with customer's first name and purchased plan name
+- Conversational chat UI with:
+  - Lidia messages (left-aligned, dark avatar with heart icon)
+  - Member messages (right-aligned, ink background)
+  - Typing indicator with animated dots
+  - Quick-reply chips on Lidia messages (clickable suggestions)
+  - Text input with send button
+- Lidia responds to member questions about:
+  - What they purchased (plan, price, status, start date, referring partner)
+  - Benefit explanations (lists all benefit details with titles and descriptions)
+  - How to use benefits (step-by-step guide)
+  - Care allowance (how it works, monthly reset, eligible services)
+  - Included services (no additional cost, no waiting period)
+  - Finding care services (primary care, specialists, urgent care, wellness programs)
+  - Human help/advocate (eligibility, phone, email, hours)
+  - Cancellation/refund policy
+  - Specific service types (primary care, specialist, urgent care, wellness)
+  - Fallback response for unrecognized queries
+
+### Membership Context Sidebar
+- Membership card: ID, customer name, plan, price, start date, renewal date, ACTIVE status badge
+- Benefits card: expandable list of all benefit details (title + description), click to expand/collapse
+- Human help card (if eligible): dedicated health advocate, phone, email, hours
+- Referred by card: partner name and verification badge
+
+### Purchase → Membership Handoff
+- Checkout creates a `MockMembership` with:
+  - Customer name and email
+  - Purchased Careverse package (product ID, name, price)
+  - Active membership status
+  - Membership start date (today) and end date (1 year from today)
+  - Applicable package benefits (from centralized product `benefits` array)
+  - Benefit details (from centralized product `benefitDetails` array)
+  - Human help eligibility (true for all plans with health advocacy)
+  - Partner and storefront attribution
+- Membership stored in sessionStorage and passed via `?membership=<id>` query param
+- Confirmation page "Go to Lidia" CTA passes membership ID to `/lidia?membership=<id>`
+
+### Data Structure
+- Relationship: Customer → Membership → Careverse Package → Benefits
+- Uses centralized package data from Phase 11 (`mockProducts` with `benefits` array of `{ title, description }`)
+- `MockMembership` extended with: `endDate`, `benefitDetails` (array of `{ title, description }`), `humanHelpEligible` (boolean)
+- Mock memberships updated with end dates, benefit details, and human help eligibility
+- Checkout creates membership with `benefitDetails` from the centralized product's `benefits` array
+
+### Complete Flow
+```
+Storefront → Package CTA → Checkout → Purchase → Confirmation
+  → Go to Lidia (/lidia?membership=id)
+  → Lidia greets customer by name with their purchased plan
+  → Customer asks about benefits, care services, or human help
+  → Lidia responds with membership-specific information
+```
 
 ---
 
@@ -679,6 +744,7 @@ src/
     storefront-builder/ Storefront builder
     checkout/           Checkout flow (form → processing → success/failed)
       confirmation/     Purchase confirmation page
+    lidia/              Lidia AI care assistant (member experience)
   components/
     shared/             Shared Careverse components
     ui/                 shadcn/ui primitives

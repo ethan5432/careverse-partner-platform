@@ -378,6 +378,7 @@ export interface MockMembership {
   productPrice: number;
   status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
   startDate: string;
+  endDate: string;
   partnerId: string;
   partnerName: string;
   storefrontId: string;
@@ -385,4 +386,6 @@ export interface MockMembership {
   orderId: string;
   orderReference: string;
   benefits: string[];
+  benefitDetails: { title: string; description: string }[];
+  humanHelpEligible: boolean;
 }

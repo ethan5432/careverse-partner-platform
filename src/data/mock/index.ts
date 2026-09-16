@@ -522,6 +522,17 @@ export const mockOrders: MockOrder[] = [
 ];
 
 export const mockMemberships: MockMembership[] = [
-  { id: 'm-1', customerId: 'cust-1', customerName: 'Jennifer Smith', customerEmail: 'j.smith@email.com', productId: 'prod-family-plus', productName: 'Family Plus', productPrice: 89, status: 'ACTIVE', startDate: '2026-09-14', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', orderId: 'o-1', orderReference: 'CV-2026-0914-A1B2', benefits: ['Included services', 'Enhanced care allowance', 'Priority Health Advocacy', 'Expanded product specials', 'Exclusive free samples'] },
-  { id: 'm-2', customerId: 'cust-2', customerName: 'Michael Park', customerEmail: 'm.park@email.com', productId: 'prod-care-circle', productName: 'Care Circle', productPrice: 149, status: 'ACTIVE', startDate: '2026-09-13', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', orderId: 'o-2', orderReference: 'CV-2026-0913-C3D4', benefits: ['Everything in Family Plus', 'Full care circle coverage', 'Dedicated Health Advocate', 'Premium product specials', 'Concierge care coordination'] },
+  { id: 'm-1', customerId: 'cust-1', customerName: 'Jennifer Smith', customerEmail: 'j.smith@email.com', productId: 'prod-family-plus', productName: 'Family Plus', productPrice: 89, status: 'ACTIVE', startDate: '2026-09-14', endDate: '2027-09-14', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', orderId: 'o-1', orderReference: 'CV-2026-0914-A1B2', benefits: ['Included services', 'Enhanced care allowance', 'Priority Health Advocacy', 'Expanded product specials', 'Exclusive free samples'], benefitDetails: [
+    { title: 'Included Services', description: 'Access to essential care services at no additional cost.' },
+    { title: 'Enhanced Care Allowance', description: 'Doubled monthly allowance for comprehensive care needs.' },
+    { title: 'Priority Health Advocacy', description: 'Dedicated advocate with priority response times.' },
+    { title: 'Expanded Product Specials', description: 'Broader range of discounted products and services.' },
+    { title: 'Exclusive Free Samples', description: 'Curated samples of premium health products.' },
+  ], humanHelpEligible: true },
+  { id: 'm-2', customerId: 'cust-2', customerName: 'Michael Park', customerEmail: 'm.park@email.com', productId: 'prod-care-circle', productName: 'Care Circle', productPrice: 149, status: 'ACTIVE', startDate: '2026-09-13', endDate: '2027-09-13', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', orderId: 'o-2', orderReference: 'CV-2026-0913-C3D4', benefits: ['Everything in Family Plus', 'Full care circle coverage', 'Dedicated Health Advocate', 'Premium product specials', 'Concierge care coordination'], benefitDetails: [
+    { title: 'Full Care Circle Coverage', description: 'Covers extended family members and care circle participants.' },
+    { title: 'Dedicated Health Advocate', description: 'A personal advocate assigned to your care circle.' },
+    { title: 'Premium Product Specials', description: 'Top-tier discounts on premium health and wellness brands.' },
+    { title: 'Concierge Care Coordination', description: 'White-glove coordination for all care appointments and services.' },
+  ], humanHelpEligible: true },
 ];
