@@ -276,8 +276,41 @@ All mock data lives in `src/data/mock/`.
 - Click product card to open detail dialog with full product information
 
 ### Admin Emails
-- Campaigns tab with status indicators
-- Automations tab with active/paused toggle
+- Stats: campaigns count, emails sent, avg open rate, active automations
+- Four tabs: Campaigns, Scheduled, Automations, Templates
+- **Campaigns** — one-time broadcast list with name, audience, subject, schedule, status, sent count, open rate, and view/edit actions
+- **Scheduled** — upcoming campaign sends with date, recipients, and detail dialog showing campaign, audience, subject, scheduled date, recipient count, and status; cancel send option for scheduled emails
+- **Automations** — triggered email list with name, trigger, audience, template, delay, status; pause/resume toggle that updates state
+- **Templates** — 7 editable email templates (Partner Approved, Account Activated, First Conversion, Storefront Published, Commission Approved, Payout Sent, No Activity); each with enable/disable toggle, trigger description, subject line, last edited date, and edit dialog with subject line input, body textarea with merge variable hints, and save functionality
+
+### Email Templates
+- Partner Approved — sent when partner status changes to ACTIVE
+- Account Activated — sent when account is fully activated
+- First Conversion — sent when partner records their first sale
+- Storefront Published — sent when storefront goes live
+- Commission Approved — sent when commission status changes to APPROVED
+- Payout Sent — sent when payout status changes to PAID
+- No Activity — sent when no conversions in 14 days (disabled by default)
+- Merge variables: {{partner_name}}, {{commission_amount}}, {{package_name}}, {{customer_name}}, {{storefront_name}}, {{storefront_url}}, {{payout_amount}}, {{payout_method}}, {{payout_reference}}
+
+### Partner Messages
+- Conversation list showing Careverse Team threads with unread indicators
+- Search across messages and last message text
+- Conversation view with message bubbles (partner right, Careverse left)
+- Message composer with send button (Enter to send)
+- New message button creates a fresh conversation with Careverse
+- Empty state when no messages exist in a conversation
+- Mobile responsive: list and conversation toggle on small screens
+- Only shows the logged-in partner's conversations (filtered by partner ID)
+
+### Admin Messages
+- Three-column layout: conversation list | chat thread | partner details panel
+- Conversation list with search, unread indicators, and partner avatars
+- Chat thread with message bubbles, scroll-to-bottom on open, and reply composer
+- Partner details panel showing: avatar, name, email, status badge, partner type, joined date, last active, storefront name, storefront status, and performance stats (conversions, revenue, commission, visitors)
+- Unread count badge in header
+- Messages sent from partner portal appear in admin conversations (shared mock data)
+- Admin replies update the conversation in real-time (local state)
 
 ---
 

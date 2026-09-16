@@ -6,6 +6,7 @@ import type {
   MockPayoutSetup, MockAdminActivity, MockNeedsAttentionItem,
   MockPartnerNote, MockPartnerActivityItem, AdminTimeRange, AdminMetric,
   AdminPerformancePoint, CommissionStatus,
+  MockEmailTemplate, MockScheduledEmail,
 } from './types';
 
 export const mockUsers: MockUser[] = [
@@ -129,6 +130,85 @@ export const mockEmailAutomations: MockEmailAutomation[] = [
   { id: 'ea-5', name: 'Commission Approved', trigger: 'Commission → APPROVED', audience: 'Partners', template: 'Commission Update', delay: 'Immediate', status: 'ACTIVE' },
   { id: 'ea-6', name: 'Payout Sent', trigger: 'Payout → PAID', audience: 'Partners', template: 'Payout Notification', delay: 'Immediate', status: 'ACTIVE' },
   { id: 'ea-7', name: 'No Activity Reminder', trigger: 'No conversions in 14 days', audience: 'Active Partners', template: 'Re-engagement', delay: '14 days', status: 'PAUSED' },
+];
+
+export const mockEmailTemplates: MockEmailTemplate[] = [
+  { id: 'et-1', name: 'Partner Approved', trigger: 'Partner status → ACTIVE', subject: 'Your Careverse partner account is approved!', audience: 'Partners', enabled: true, lastEdited: '2026-08-15',
+    body: `Hi {{partner_name}},
+
+Great news — your Careverse partner application has been approved! You can now access your partner dashboard, set up your storefront, and start earning commissions.
+
+Next steps:
+1. Complete your storefront setup
+2. Choose which Careverse packages to feature
+3. Share your storefront link with your audience
+
+Welcome to the Careverse partner community!
+
+The Careverse Team` },
+  { id: 'et-2', name: 'Account Activated', trigger: 'Account activated', subject: 'Your Careverse account is now active', audience: 'Partners', enabled: true, lastEdited: '2026-08-15',
+    body: `Hi {{partner_name}},
+
+Your Careverse account is now fully activated. Your storefront is live and ready to accept customers.
+
+You can log in to your dashboard anytime at careverse.ai/partner to track conversions, view commissions, and manage your payout settings.
+
+The Careverse Team` },
+  { id: 'et-3', name: 'First Conversion', trigger: 'First conversion recorded', subject: 'You just made your first sale!', audience: 'Partners', enabled: true, lastEdited: '2026-09-01',
+    body: `Hi {{partner_name}},
+
+Congratulations on your first conversion! {{customer_name}} just purchased {{package_name}} through your storefront.
+
+Commission earned: {{commission_amount}}
+
+This is just the beginning. Keep promoting your storefront to earn more.
+
+The Careverse Team` },
+  { id: 'et-4', name: 'Storefront Published', trigger: 'Storefront → LIVE', subject: 'Your storefront is now live!', audience: 'Partners', enabled: true, lastEdited: '2026-08-20',
+    body: `Hi {{partner_name}},
+
+Your storefront "{{storefront_name}}" is now live and visible to customers at {{storefront_url}}.
+
+Share your link on social media, in emails, or anywhere your audience is. Every purchase through your link earns you a commission.
+
+The Careverse Team` },
+  { id: 'et-5', name: 'Commission Approved', trigger: 'Commission → APPROVED', subject: 'Your commission has been approved', audience: 'Partners', enabled: true, lastEdited: '2026-09-05',
+    body: `Hi {{partner_name}},
+
+A commission of {{commission_amount}} from your {{package_name}} conversion has been approved and is now available for payout.
+
+View your commission details in your partner dashboard.
+
+The Careverse Team` },
+  { id: 'et-6', name: 'Payout Sent', trigger: 'Payout → PAID', subject: 'Your payout has been sent', audience: 'Partners', enabled: true, lastEdited: '2026-09-10',
+    body: `Hi {{partner_name}},
+
+A payout of {{payout_amount}} has been sent to your account via {{payout_method}}.
+
+Reference: {{payout_reference}}
+Expected arrival: 1-3 business days
+
+Thank you for being a valued Careverse partner.
+
+The Careverse Team` },
+  { id: 'et-7', name: 'No Activity Reminder', trigger: 'No conversions in 14 days', subject: 'Tips to boost your Careverse conversions', audience: 'Active Partners', enabled: false, lastEdited: '2026-08-25',
+    body: `Hi {{partner_name}},
+
+We noticed you haven't had a conversion in the last 14 days. Here are some tips to get back on track:
+
+1. Refresh your storefront intro copy
+2. Share your link on a new platform
+3. Try one of our pre-written social media posts in the Resource Library
+4. Feature the popular Family Plus plan
+
+We're here to help you succeed!
+
+The Careverse Team` },
+];
+
+export const mockScheduledEmails: MockScheduledEmail[] = [
+  { id: 'se-1', campaignId: 'ec-2', campaignName: 'September Newsletter', audience: 'All Partners', subject: "What's new at Careverse this September", scheduledDate: '2026-09-20', status: 'SCHEDULED', recipientCount: 42 },
+  { id: 'se-2', campaignId: 'ec-3', campaignName: 'Care Circle Launch', audience: 'Active Partners', subject: 'Introducing Care Circle — our most comprehensive plan', scheduledDate: '2026-09-25', status: 'SCHEDULED', recipientCount: 8 },
 ];
 
 export const mockNetworks: MockNetwork[] = [

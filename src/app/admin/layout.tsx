@@ -130,8 +130,10 @@ function MobileAdminNav() {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useMockAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  const shouldRedirect = !loading && (!user || user.role !== 'ADMIN');
+  const isLoginPage = pathname === '/admin/login';
+  const shouldRedirect = !isLoginPage && !loading && (!user || user.role !== 'ADMIN');
 
   useEffect(() => {
     if (shouldRedirect) {
@@ -139,7 +141,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [shouldRedirect, router]);
 
-  if (loading || shouldRedirect) {
+  if (!isLoginPage && (loading || shouldRedirect)) {
     return (
       <div className="cv-page flex h-screen items-center justify-center">
         <div className="text-center">

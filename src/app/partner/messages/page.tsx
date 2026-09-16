@@ -22,27 +22,35 @@ const fmtDate = (d: string) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-export default function MessagesPage() {
-  const conversations: MockConversation[] = mockConversations;
-  const [activeId, setActiveId] = useState<string | null>(conversations[0]?.id ?? null);
+const PARTNER_ID = 'p-1';
+
+export default function PartnerMessagesPage() {
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
-  // Local copy so replies are reflected in the UI.
-  const [localConvs, setLocalConvs] = useState<MockConversation[]>(conversations);
+  const [localConvs, setLocalConvs] = useState<MockConversation[]>(
+    mockConversations.filter((c) => c.partnerId === PARTNER_ID),
+  );
   const [showListOnMobile, setShowListOnMobile] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-select first conversation
+  useEffect(() => {
+    if (!activeId && localConvs.length > 0) {
+      setActiveId(localConvs[0].id);
+    }
+  }, [activeId, localConvs]);
 
   const active = localConvs.find((c) => c.id === activeId) ?? null;
 
   const filtered = localConvs.filter(
     (c) =>
-      c.partnerName.toLowerCase().includes(search.toLowerCase()) ||
-      c.lastMessage.toLowerCase().includes(search.toLowerCase())
+      c.lastMessage.toLowerCase().includes(search.toLowerCase()) ||
+      c.messages.some((m) => m.text.toLowerCase().includes(search.toLowerCase())),
   );
 
   const unreadTotal = localConvs.filter((c) => c.unread).length;
 
-  // Scroll the chat to the bottom whenever the active conversation changes.
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -52,9 +60,8 @@ export default function MessagesPage() {
   const openConversation = (id: string) => {
     setActiveId(id);
     setShowListOnMobile(false);
-    // Mark as read.
     setLocalConvs((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, unread: false } : c))
+      prev.map((c) => (c.id === id ? { ...c, unread: false } : c)),
     );
   };
 
@@ -63,12 +70,7 @@ export default function MessagesPage() {
     if (!draft.trim() || !active) return;
 
     const now = new Date();
-    const time = now.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+    const dateStr = now.toISOString().slice(0, 10);
 
     const newMessage: MockMessage = {
       id: `m-${Date.now()}`,
@@ -76,7 +78,7 @@ export default function MessagesPage() {
       sender: 'PARTNER',
       senderName: 'You',
       text: draft.trim(),
-      date: now.toISOString().slice(0, 10),
+      date: dateStr,
     };
 
     setLocalConvs((prev) =>
@@ -86,11 +88,29 @@ export default function MessagesPage() {
               ...c,
               messages: [...c.messages, newMessage],
               lastMessage: newMessage.text,
-              lastMessageDate: now.toISOString().slice(0, 10),
+              lastMessageDate: dateStr,
             }
           : c
       )
     );
+    setDraft('');
+  };
+
+  const startNewConversation = () => {
+    const newId = `conv-new-${Date.now()}`;
+    const newConv: MockConversation = {
+      id: newId,
+      partnerId: PARTNER_ID,
+      partnerName: 'Careverse Team',
+      partnerAvatarColor: '#18191D',
+      lastMessage: 'Start a new conversation with the Careverse team.',
+      lastMessageDate: new Date().toISOString().slice(0, 10),
+      unread: false,
+      messages: [],
+    };
+    setLocalConvs((prev) => [newConv, ...prev]);
+    setActiveId(newId);
+    setShowListOnMobile(false);
     setDraft('');
   };
 
@@ -103,12 +123,7 @@ export default function MessagesPage() {
         actions={
           <Button
             className="rounded-full bg-cv-ink text-white font-bold hover:opacity-90"
-            onClick={() => {
-              // Start a fresh conversation with the support team.
-              const support = localConvs.find((c) => c.id === 'conv-1');
-              if (support) openConversation(support.id);
-              setDraft('');
-            }}
+            onClick={startNewConversation}
           >
             <Plus className="h-4 w-4 mr-1.5" />
             New message to Careverse
@@ -152,10 +167,10 @@ export default function MessagesPage() {
                           isActive ? 'bg-cv-soft' : 'hover:bg-cv-soft/60'
                         )}
                       >
-                        <Avatar name={c.partnerName} color={c.partnerAvatarColor} size={40} />
+                        <Avatar name="CV" color="#18191D" size={40} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-bold text-cv-ink truncate">{c.partnerName}</p>
+                            <p className="text-sm font-bold text-cv-ink truncate">Careverse Team</p>
                             <span className="text-[10px] text-cv-muted shrink-0">{fmtDate(c.lastMessageDate)}</span>
                           </div>
                           <p className="text-xs text-cv-muted truncate mt-0.5">{c.lastMessage}</p>
@@ -195,38 +210,49 @@ export default function MessagesPage() {
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <Avatar name={active.partnerName} color={active.partnerAvatarColor} size={40} />
+                <Avatar name="CV" color="#18191D" size={40} />
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-cv-ink truncate">{active.partnerName}</p>
-                  <p className="text-xs text-cv-muted">Careverse Team</p>
+                  <p className="text-sm font-bold text-cv-ink truncate">Careverse Team</p>
+                  <p className="text-xs text-cv-muted">Support · Replies within 24 hours</p>
                 </div>
               </div>
 
               {/* Messages */}
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-5 space-y-4 bg-cv-cream/40">
-                {active.messages.map((m) => {
-                  const isPartner = m.sender === 'PARTNER';
-                  return (
-                    <div
-                      key={m.id}
-                      className={cn('flex', isPartner ? 'justify-end' : 'justify-start')}
-                    >
-                      <div className={cn('max-w-[78%] flex flex-col', isPartner ? 'items-end' : 'items-start')}>
-                        <div
-                          className={cn(
-                            'rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
-                            isPartner
-                              ? 'bg-cv-ink text-white rounded-br-md'
-                              : 'bg-white border border-cv-line text-cv-ink rounded-bl-md'
-                          )}
-                        >
-                          {m.text}
+                {active.messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <EmptyState
+                      icon={MessageSquare}
+                      title="No messages yet"
+                      description="Send a message below to start the conversation."
+                      className="py-12"
+                    />
+                  </div>
+                ) : (
+                  active.messages.map((m) => {
+                    const isPartner = m.sender === 'PARTNER';
+                    return (
+                      <div
+                        key={m.id}
+                        className={cn('flex', isPartner ? 'justify-end' : 'justify-start')}
+                      >
+                        <div className={cn('max-w-[78%] flex flex-col', isPartner ? 'items-end' : 'items-start')}>
+                          <div
+                            className={cn(
+                              'rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+                              isPartner
+                                ? 'bg-cv-ink text-white rounded-br-md'
+                                : 'bg-white border border-cv-line text-cv-ink rounded-bl-md'
+                            )}
+                          >
+                            {m.text}
+                          </div>
+                          <span className="text-[10px] text-cv-muted mt-1 px-1">{fmtDate(m.date)}</span>
                         </div>
-                        <span className="text-[10px] text-cv-muted mt-1 px-1">{fmtDate(m.date)}</span>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
 
               {/* Reply input */}
@@ -237,7 +263,7 @@ export default function MessagesPage() {
                 <Input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Write a reply..."
+                  placeholder="Write a message to Careverse..."
                   className="cv-input flex-1 h-11"
                 />
                 <Button
