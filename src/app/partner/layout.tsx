@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 
 const baseNavItems = [
   { title: 'Overview', url: '/partner', icon: LayoutDashboard },
-  { title: 'Storefront', url: '/partner/storefront', icon: Store },
+  { title: 'Storefront', url: '/storefront', icon: Store },
   { title: 'Conversions', url: '/partner/conversions', icon: ArrowLeftRight },
   { title: 'Commissions', url: '/partner/commissions', icon: Percent },
   { title: 'Payouts', url: '/partner/payouts', icon: Wallet },
