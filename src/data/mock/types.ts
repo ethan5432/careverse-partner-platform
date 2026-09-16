@@ -358,11 +358,31 @@ export interface MockOrder {
   billingState: string;
   billingZip: string;
   paymentMethod: 'CARD' | 'PAYPAL' | 'BANK_TRANSFER';
-  status: 'COMPLETED' | 'PROCESSING' | 'FAILED';
+  status: 'COMPLETED' | 'PROCESSING' | 'FAILED' | 'CANCELLED';
   date: string;
   partnerId: string;
   partnerName: string;
   storefrontId: string;
   storefrontName: string;
   amount: number;
+  membershipId?: string;
+}
+
+export interface MockMembership {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  productId: string;
+  productName: string;
+  productPrice: number;
+  status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+  startDate: string;
+  partnerId: string;
+  partnerName: string;
+  storefrontId: string;
+  storefrontName: string;
+  orderId: string;
+  orderReference: string;
+  benefits: string[];
 }

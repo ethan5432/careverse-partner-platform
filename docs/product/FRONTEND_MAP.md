@@ -580,6 +580,70 @@ Storefront page (display to customers)
 
 ---
 
+## Phase 13 — Checkout + Purchase Flow
+
+### Customer Checkout (`/checkout`)
+- Connects from partner storefront package CTAs via `?product=<id>` URL parameter
+- Shows selected package, price, customer name, email, billing address, payment method UI, and order summary
+- Payment methods: Credit/Debit Card, PayPal, Bank Transfer (each with relevant fields)
+- Order summary sidebar shows package, features, cost breakdown, and partner attribution
+- "Complete Purchase" button with validation (disabled until form is valid)
+- "Simulate Failed Payment" button to test failure state
+- "Cancel" button to test cancelled state
+
+### Checkout States
+- **Form**: Full checkout form with customer info, billing, and payment method
+- **Processing**: Spinner with "Processing Payment..." message
+- **Success**: Confirmation summary with reference, amount, email, and "View Confirmation" button
+- **Failed**: Error message with "Try Again" and "Back to Storefront" buttons
+- **Cancelled**: Cancelled message with "Back to Storefront" and "Restart Checkout" buttons
+
+### Partner Attribution
+- Partner and storefront context carried from storefront through checkout via shared mock data
+- Purchase is associated with: partner ID, partner name, storefront ID, storefront name
+- Attribution visible in order summary sidebar ("Referred by" section)
+
+### Purchase Confirmation (`/checkout/confirmation`)
+- Reads order from sessionStorage (fresh checkout) or falls back to mock data via reference param
+- Shows: package purchased, amount, confirmation/reference number, customer email, customer name, payment method, date
+- "What happens next" section with 4 steps (check email, meet Lidia, start benefits, manage membership)
+- **"Go to Lidia" CTA** — primary button that navigates to `/lidia`
+- Membership card showing membership ID, plan, start date, monthly price, and benefit chips with ACTIVE status badge
+- Referred by section with partner verification badge
+- Support contact card
+
+### Membership State
+- On successful mock purchase, a `MockMembership` is created linking:
+  - Customer (name, email, customer ID)
+  - Membership (ID, status ACTIVE, start date, benefits)
+  - Careverse Package (product ID, name, price, benefits from centralized catalog)
+  - Partner attribution (partner ID, storefront ID)
+  - Order reference (order ID, reference number)
+- Membership stored in sessionStorage for confirmation page retrieval
+- `MockMembership` type includes: id, customerId, customerName, customerEmail, productId, productName, productPrice, status, startDate, partnerId, partnerName, storefrontId, storefrontName, orderId, orderReference, benefits
+- Two mock memberships exist for the two mock orders
+- Structured so Lidia can use membership data in the next phase
+
+### Complete Flow
+```
+Partner storefront → Package CTA → Checkout (?product=id)
+  → Complete Purchase → Processing → Success
+  → View Confirmation → Go to Lidia (/lidia)
+
+Alternative paths:
+  → Simulate Failed Payment → Failed state → Try Again / Back to Storefront
+  → Cancel → Cancelled state → Back to Storefront / Restart Checkout
+```
+
+### Data Extensions
+- `MockOrder.status` now includes `CANCELLED`
+- `MockOrder` has optional `membershipId` field
+- New `MockMembership` type and `mockMemberships` array
+- `mockMemberships` export added to mock data index
+- Order and membership passed via sessionStorage between checkout and confirmation
+
+---
+
 ## File Structure
 
 ```

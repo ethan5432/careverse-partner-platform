@@ -8,11 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, ArrowLeft, CreditCard, Wallet, Building, Shield, Loader2, AlertCircle, Lock } from 'lucide-react';
-import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders } from '@/data/mock';
-import type { MockOrder } from '@/data/mock/types';
+import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders, mockMemberships } from '@/data/mock';
+import type { MockOrder, MockMembership } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
 
-type CheckoutState = 'form' | 'processing' | 'success' | 'failed';
+type CheckoutState = 'form' | 'processing' | 'success' | 'failed' | 'cancelled';
 type PaymentMethod = 'CARD' | 'PAYPAL' | 'BANK_TRANSFER';
 
 export default function CheckoutPage() {
@@ -34,6 +34,7 @@ function CheckoutContent() {
   const [state, setState] = useState<CheckoutState>('form');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CARD');
   const [completedOrder, setCompletedOrder] = useState<MockOrder | null>(null);
+  const [completedMembership, setCompletedMembership] = useState<MockMembership | null>(null);
   const [form, setForm] = useState({
     customerName: '',
     customerEmail: '',
@@ -65,6 +66,7 @@ function CheckoutContent() {
     setState('processing');
     setTimeout(() => {
       const reference = `CV-2026-0916-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const membershipId = `m-${Date.now()}`;
       const order: MockOrder = {
         id: `o-${Date.now()}`,
         reference,
@@ -85,8 +87,32 @@ function CheckoutContent() {
         storefrontId: storefront.id,
         storefrontName: storefront.name,
         amount: product.price,
+        membershipId,
+      };
+      const membership: MockMembership = {
+        id: membershipId,
+        customerId: `cust-${Date.now()}`,
+        customerName: form.customerName,
+        customerEmail: form.customerEmail,
+        productId: product.id,
+        productName: product.name,
+        productPrice: product.price,
+        status: 'ACTIVE',
+        startDate: new Date().toISOString().split('T')[0],
+        partnerId: partner.id,
+        partnerName: partner.name,
+        storefrontId: storefront.id,
+        storefrontName: storefront.name,
+        orderId: order.id,
+        orderReference: reference,
+        benefits: product.features,
       };
       setCompletedOrder(order);
+      setCompletedMembership(membership);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('careverse_last_order', JSON.stringify(order));
+        sessionStorage.setItem('careverse_last_membership', JSON.stringify(membership));
+      }
       setState('success');
     }, 2500);
   };
@@ -94,6 +120,10 @@ function CheckoutContent() {
   const handleSimulateFailure = () => {
     setState('processing');
     setTimeout(() => setState('failed'), 2000);
+  };
+
+  const handleCancel = () => {
+    setState('cancelled');
   };
 
   // ─── Success state ───
@@ -112,11 +142,34 @@ function CheckoutContent() {
               <div className="flex justify-between"><span className="text-xs text-cv-muted">Amount</span><span className="text-sm font-bold text-cv-ink">{fmtMoney(completedOrder.amount)}/mo</span></div>
               <div className="flex justify-between"><span className="text-xs text-cv-muted">Email</span><span className="text-sm font-bold text-cv-ink truncate ml-2">{completedOrder.customerEmail}</span></div>
             </div>
-            <Button className="cv-btn-primary w-full rounded-full mb-2" onClick={() => router.push(`/checkout/confirmation?order=${completedOrder.id}&ref=${completedOrder.reference}`)}>
+            <Button className="cv-btn-primary w-full rounded-full mb-2" onClick={() => router.push(`/checkout/confirmation?order=${completedOrder.id}&ref=${completedOrder.reference}&membership=${completedMembership?.id || ''}`)}>
               View Confirmation
             </Button>
             <Button variant="outline" className="w-full rounded-full border-cv-line font-bold" onClick={() => router.push('/storefront')}>
               Back to Storefront
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Cancelled state ───
+  if (state === 'cancelled') {
+    return (
+      <div className="cv-page min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="cv-card p-8 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cv-soft mx-auto mb-5">
+              <ArrowLeft className="h-8 w-8 text-cv-muted" />
+            </div>
+            <h1 className="text-2xl font-bold text-cv-ink mb-2">Checkout Cancelled</h1>
+            <p className="text-sm text-cv-muted mb-6">Your purchase was cancelled and no payment was processed. You can return to the storefront anytime.</p>
+            <Button className="cv-btn-primary w-full rounded-full mb-2" onClick={() => router.push('/storefront')}>
+              Back to Storefront
+            </Button>
+            <Button variant="outline" className="w-full rounded-full border-cv-line font-bold" onClick={() => setState('form')}>
+              Restart Checkout
             </Button>
           </div>
         </div>
@@ -330,6 +383,9 @@ function CheckoutContent() {
               </Button>
               <Button type="button" variant="outline" className="rounded-full border-cv-line font-bold" onClick={handleSimulateFailure}>
                 Simulate Failed Payment
+              </Button>
+              <Button type="button" variant="outline" className="rounded-full border-cv-line font-bold" onClick={handleCancel}>
+                Cancel
               </Button>
             </div>
           </form>

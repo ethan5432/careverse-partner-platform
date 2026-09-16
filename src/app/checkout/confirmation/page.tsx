@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, ArrowLeft, Shield, Mail, Calendar, Package, User, CreditCard, Sparkles, Heart, Phone } from 'lucide-react';
-import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders } from '@/data/mock';
-import type { MockOrder } from '@/data/mock/types';
+import { Check, ArrowLeft, Shield, Mail, Calendar, Package, User, CreditCard, Sparkles, Heart, Phone, MessageCircle } from 'lucide-react';
+import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders, mockMemberships } from '@/data/mock';
+import type { MockOrder, MockMembership } from '@/data/mock/types';
 
 export default function ConfirmationPage() {
   return (
@@ -23,8 +23,19 @@ function ConfirmationContent() {
   const ref = searchParams.get('ref') || '';
   const orderId = searchParams.get('order') || '';
 
-  // Try to find the order in mock data, or construct from query params
-  const mockOrder = mockOrders.find((o) => o.reference === ref);
+  // Try sessionStorage first (from a fresh checkout), then mock data
+  let sessionOrder: MockOrder | null = null;
+  let sessionMembership: MockMembership | null = null;
+  if (typeof window !== 'undefined') {
+    const stored = sessionStorage.getItem('careverse_last_order');
+    const storedMem = sessionStorage.getItem('careverse_last_membership');
+    if (stored) { try { sessionOrder = JSON.parse(stored) as MockOrder; } catch { sessionOrder = null; } }
+    if (storedMem) { try { sessionMembership = JSON.parse(storedMem) as MockMembership; } catch { sessionMembership = null; } }
+  }
+
+  const mockOrder = sessionOrder || mockOrders.find((o) => o.reference === ref);
+  const membershipIdParam = searchParams.get('membership') || '';
+  const mockMembership = sessionMembership || mockMemberships.find((m) => m.id === membershipIdParam) || mockMemberships.find((m) => m.orderReference === ref);
   const product = mockProducts.find((p) => p.id === mockOrder?.productId) || mockProducts[1];
   const storefront = currentPartnerStorefront;
   const partner = currentPartner;
@@ -178,9 +189,9 @@ function ConfirmationContent() {
             </Card>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button className="cv-btn-primary flex-1 rounded-full" onClick={() => router.push('/storefront')}>
-                <Sparkles className="h-4 w-4 mr-1.5" />
-                Start Using Benefits
+              <Button className="cv-btn-primary flex-1 rounded-full" onClick={() => router.push('/lidia')}>
+                <MessageCircle className="h-4 w-4 mr-1.5" />
+                Go to Lidia
               </Button>
               <Button variant="outline" className="flex-1 rounded-full border-cv-line font-bold" onClick={() => router.push('/storefront')}>
                 Back to Storefront
@@ -197,6 +208,34 @@ function ConfirmationContent() {
                 <p className="text-xs text-cv-muted mt-3">Save this number for your records. You can use it to reference this purchase in support conversations.</p>
               </CardContent>
             </Card>
+
+            {mockMembership && (
+              <Card className="cv-card border-cv-ink">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50"><Shield className="h-5 w-5 text-cv-good" /></div>
+                    <div>
+                      <p className="text-sm font-bold text-cv-ink">Membership Active</p>
+                      <p className="text-xs text-cv-muted">ID: {mockMembership.id}</p>
+                    </div>
+                    <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold text-cv-good"><Check className="h-2.5 w-2.5" /> ACTIVE</span>
+                  </div>
+                  <div className="space-y-2 pt-3 border-t border-cv-line">
+                    <div className="flex justify-between text-xs"><span className="text-cv-muted">Plan</span><span className="font-bold text-cv-ink">{mockMembership.productName}</span></div>
+                    <div className="flex justify-between text-xs"><span className="text-cv-muted">Started</span><span className="font-bold text-cv-ink">{new Date(mockMembership.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>
+                    <div className="flex justify-between text-xs"><span className="text-cv-muted">Monthly price</span><span className="font-bold text-cv-ink">${mockMembership.productPrice}/mo</span></div>
+                  </div>
+                  <div className="pt-3 mt-3 border-t border-cv-line">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted mb-2">Your benefits</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {mockMembership.benefits.map((b, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 rounded-full bg-cv-soft px-2 py-0.5 text-[10px] font-bold text-cv-body"><Check className="h-2.5 w-2.5 text-cv-good" />{b}</span>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="cv-card">
               <CardContent className="p-6">

@@ -9,6 +9,7 @@ import type {
   MockEmailTemplate, MockScheduledEmail,
   NetworkStatus, MockNetworkActivity, MockOrder,
   MockCreatorContent, ContentSource, ContentPlacement, ContentLayout,
+  MockMembership,
 } from './types';
 
 export const mockUsers: MockUser[] = [
@@ -516,6 +517,11 @@ export const mockReportSummaries = {
 };
 
 export const mockOrders: MockOrder[] = [
-  { id: 'o-1', reference: 'CV-2026-0914-A1B2', productId: 'prod-family-plus', productName: 'Family Plus', productPrice: 89, customerName: 'Jennifer Smith', customerEmail: 'j.smith@email.com', billingAddress: '123 Oak St', billingCity: 'Springfield', billingState: 'IL', billingZip: '62701', paymentMethod: 'CARD', status: 'COMPLETED', date: '2026-09-14', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', amount: 89 },
-  { id: 'o-2', reference: 'CV-2026-0913-C3D4', productId: 'prod-care-circle', productName: 'Care Circle', productPrice: 149, customerName: 'Michael Park', customerEmail: 'm.park@email.com', billingAddress: '456 Pine Ave', billingCity: 'Portland', billingState: 'OR', billingZip: '97201', paymentMethod: 'PAYPAL', status: 'COMPLETED', date: '2026-09-13', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', amount: 149 },
+  { id: 'o-1', reference: 'CV-2026-0914-A1B2', productId: 'prod-family-plus', productName: 'Family Plus', productPrice: 89, customerName: 'Jennifer Smith', customerEmail: 'j.smith@email.com', billingAddress: '123 Oak St', billingCity: 'Springfield', billingState: 'IL', billingZip: '62701', paymentMethod: 'CARD', status: 'COMPLETED', date: '2026-09-14', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', amount: 89, membershipId: 'm-1' },
+  { id: 'o-2', reference: 'CV-2026-0913-C3D4', productId: 'prod-care-circle', productName: 'Care Circle', productPrice: 149, customerName: 'Michael Park', customerEmail: 'm.park@email.com', billingAddress: '456 Pine Ave', billingCity: 'Portland', billingState: 'OR', billingZip: '97201', paymentMethod: 'PAYPAL', status: 'COMPLETED', date: '2026-09-13', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', amount: 149, membershipId: 'm-2' },
+];
+
+export const mockMemberships: MockMembership[] = [
+  { id: 'm-1', customerId: 'cust-1', customerName: 'Jennifer Smith', customerEmail: 'j.smith@email.com', productId: 'prod-family-plus', productName: 'Family Plus', productPrice: 89, status: 'ACTIVE', startDate: '2026-09-14', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', orderId: 'o-1', orderReference: 'CV-2026-0914-A1B2', benefits: ['Included services', 'Enhanced care allowance', 'Priority Health Advocacy', 'Expanded product specials', 'Exclusive free samples'] },
+  { id: 'm-2', customerId: 'cust-2', customerName: 'Michael Park', customerEmail: 'm.park@email.com', productId: 'prod-care-circle', productName: 'Care Circle', productPrice: 149, status: 'ACTIVE', startDate: '2026-09-13', partnerId: 'p-1', partnerName: 'Marcus Johnson', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', orderId: 'o-2', orderReference: 'CV-2026-0913-C3D4', benefits: ['Everything in Family Plus', 'Full care circle coverage', 'Dedicated Health Advocate', 'Premium product specials', 'Concierge care coordination'] },
 ];
