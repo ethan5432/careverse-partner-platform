@@ -63,6 +63,27 @@ export interface MockStorefront {
   packages: string[];
   customDomain?: string;
   domainStatus: 'NONE' | 'PENDING' | 'CONNECTED';
+  heroHeadline?: string;
+  heroSupportingCopy?: string;
+  ctaText?: string;
+  aboutContent?: string;
+  brandPresentation?: string;
+  creatorContent?: MockCreatorContent[];
+}
+
+export type ContentSource = 'EMBED' | 'UPLOAD';
+export type ContentPlacement = 'TOP' | 'MIDDLE' | 'BOTTOM';
+export type ContentLayout = 'ONE_COLUMN' | 'TWO_COLUMN' | 'THREE_COLUMN';
+
+export interface MockCreatorContent {
+  id: string;
+  source: ContentSource;
+  url: string;
+  title?: string;
+  caption?: string;
+  placement: ContentPlacement;
+  layout: ContentLayout;
+  order: number;
 }
 
 export type ConversionStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'REVERSED';

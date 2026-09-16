@@ -8,6 +8,7 @@ import type {
   AdminPerformancePoint, CommissionStatus,
   MockEmailTemplate, MockScheduledEmail,
   NetworkStatus, MockNetworkActivity, MockOrder,
+  MockCreatorContent, ContentSource, ContentPlacement, ContentLayout,
 } from './types';
 
 export const mockUsers: MockUser[] = [
@@ -58,7 +59,10 @@ export const mockProducts: MockProduct[] = [
 ];
 
 export const mockStorefronts: MockStorefront[] = [
-  { id: 's-1', partnerId: 'p-1', name: 'Marcus Care Partners', url: 'careverse.ai/s/marcus', status: 'LIVE', visitors: 3240, conversions: 142, revenue: 28480, commission: 5696, introCopy: 'Helping families access better, more affordable care.', packages: ['Family', 'Family Plus', 'Care Circle'], domainStatus: 'CONNECTED', customDomain: 'marcus.carepartners.co' },
+  { id: 's-1', partnerId: 'p-1', name: 'Marcus Care Partners', url: 'careverse.ai/s/marcus', status: 'LIVE', visitors: 3240, conversions: 142, revenue: 28480, commission: 5696, introCopy: 'Helping families access better, more affordable care.', packages: ['Family', 'Family Plus', 'Care Circle'], domainStatus: 'CONNECTED', customDomain: 'marcus.carepartners.co', heroHeadline: 'Quality care for your family', heroSupportingCopy: 'I help families like yours discover affordable, comprehensive care benefits through Careverse.', ctaText: 'Request Care', aboutContent: 'As a dedicated care advocate, I connect families with the best Careverse membership plans. My goal is simple: make quality healthcare accessible and affordable for everyone.', brandPresentation: 'Trusted, family-focused care guidance', creatorContent: [
+    { id: 'cc-1', source: 'EMBED', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', title: 'Why I chose Careverse', caption: 'A quick story about how Careverse helped my family.', placement: 'TOP', layout: 'ONE_COLUMN', order: 0 },
+    { id: 'cc-2', source: 'EMBED', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', title: 'Family Plus walkthrough', caption: 'See what is included in the Family Plus plan.', placement: 'MIDDLE', layout: 'TWO_COLUMN', order: 1 },
+  ] },
   { id: 's-2', partnerId: 'p-2', name: 'Emily\'s Health Hub', url: 'careverse.ai/s/emily', status: 'LIVE', visitors: 1890, conversions: 87, revenue: 17400, commission: 3480, introCopy: 'Your trusted guide to family care benefits.', packages: ['Family', 'Family Plus'], domainStatus: 'NONE' },
   { id: 's-3', partnerId: 'p-3', name: 'Care Agency Direct', url: 'careverse.ai/s/david', status: 'LIVE', visitors: 1240, conversions: 64, revenue: 12800, commission: 2560, introCopy: 'Direct access to the care your family deserves.', packages: ['Family', 'Family Plus', 'Care Circle'], domainStatus: 'PENDING', customDomain: 'care.careagency.io' },
   { id: 's-4', partnerId: 'p-4', name: 'Wellness with Lisa', url: 'careverse.ai/s/lisa', status: 'DRAFT', visitors: 0, conversions: 0, revenue: 0, commission: 0, introCopy: '', packages: ['Family'], domainStatus: 'NONE' },

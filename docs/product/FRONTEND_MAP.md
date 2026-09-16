@@ -521,6 +521,65 @@ Storefront page (display to customers)
 
 ---
 
+## Phase 12 — White-Label Storefront Customization & Creator Content
+
+### Storefront Branding (expanded)
+- Storefront name (editable)
+- Logo/profile image (upload UI)
+- Partner photo (optional upload)
+- Brand presentation tagline (short text under storefront name)
+- Short intro copy (200-char textarea)
+
+### Storefront Positioning (new tab)
+- Hero headline (main headline visitors see first)
+- Hero supporting copy (160-char text below headline)
+- CTA button text (customizable call-to-action text)
+- About / positioning content (500-char textarea for about section)
+
+### Careverse Packages (unchanged from Phase 11)
+- Partners select from available centralized Careverse packages
+- Reorder selected packages with up/down arrows
+- Cannot create, edit, or modify package content
+
+### Creator Content (new tab)
+- Add video content blocks using either:
+  - Video embed URL (YouTube, Vimeo, etc.)
+  - Direct video upload (file picker UI)
+- Each content block supports:
+  - Video (embed URL or upload)
+  - Optional title (60 char max)
+  - Optional caption (120 char max)
+- Content placement options:
+  - Top (above hero)
+  - Middle (between hero and packages)
+  - Bottom (below about section)
+- Content layout options:
+  - 1 column
+  - 2 columns
+  - 3 columns
+- Reorder content blocks with up/down arrows
+- Remove content blocks with trash button
+- Empty state with "Add your first content block" CTA
+
+### Storefront Preview (updated)
+- Live preview reflects all branding, positioning, packages, and creator content changes
+- Desktop and mobile preview modes
+- Preview renders: header (logo + name + brand presentation), TOP content blocks, hero (headline + supporting copy + CTA button), MIDDLE content blocks, packages grid, about section, BOTTOM content blocks
+- Content blocks show video placeholder with play icon, title, caption, and selected layout
+- Packages show name, price, and CTA button text
+
+### Mock Data Extensions
+- `MockStorefront` extended with: `heroHeadline`, `heroSupportingCopy`, `ctaText`, `aboutContent`, `brandPresentation`, `creatorContent`
+- New types: `MockCreatorContent` (id, source, url, title, caption, placement, layout, order), `ContentSource` ('EMBED' | 'UPLOAD'), `ContentPlacement` ('TOP' | 'MIDDLE' | 'BOTTOM'), `ContentLayout` ('ONE_COLUMN' | 'TWO_COLUMN' | 'THREE_COLUMN')
+- First storefront (Marcus Care Partners) has default branding, positioning, and two mock content blocks
+- Package data remains connected to centralized `mockProducts` from Phase 11
+
+### Builder Tabs
+- Overview, Packages, Branding, Positioning, Creator Content, Domain, Preview, Publish
+- All tabs functional on desktop and mobile (horizontal scroll tab bar)
+
+---
+
 ## File Structure
 
 ```
