@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
@@ -145,10 +145,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Redirect to admin login if not authenticated or not an admin
-  if (!user || user.role !== 'ADMIN') {
-    router.push('/admin/login');
-    return null;
+  const shouldRedirect = !loading && (!user || user.role !== 'ADMIN');
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.push('/admin/login');
+    }
+  }, [shouldRedirect, router]);
+
+  if (loading || shouldRedirect) {
+    return (
+      <div className="cv-page flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="relative mx-auto h-10 w-10">
+            <div className="absolute inset-0 rounded-full border-4 border-cv-line" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-cv-ink" />
+          </div>
+          <p className="mt-4 text-sm text-cv-muted">Loading admin...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
