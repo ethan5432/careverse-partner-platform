@@ -381,6 +381,52 @@ All mock data lives in `src/data/mock/`.
 
 ---
 
+## Phase 9 — Platform Integration & Role Access
+
+### Role-Based Access
+- Four roles: Admin, Creator, Business / Agency, Network
+- Partner login page includes a role selector (Creator, Business / Agency, Network) with icons and descriptions
+- Selected role sets the partner type in the auth context, which controls:
+  - Sidebar navigation (Network tab only appears for Network partners)
+  - Network page access (non-network partners see an access-required empty state)
+  - Resources default tab (auto-selected based on partner type)
+- Admin login is separate from partner login at `/admin/login`
+- Role switcher available in partner sidebar dropdown (mock — for demo/testing)
+
+### Routing Audit
+- `/admin/login` — standalone login page, no admin shell, no auth guard
+- `/admin/*` (authenticated) — admin layout with sidebar, header, auth guard; redirects to `/admin/login` if not admin
+- `/login` — partner login with role selector; redirects to `/partner` on success
+- `/partner/*` — partner layout with sidebar, header, auth guard; redirects to `/login` if not partner
+- `/partner/network` — only visible to Network partners in nav; accessible by direct URL but shows access-required state for non-network partners
+- `/storefront` — public storefront page
+- `/storefront-builder` — storefront builder
+- All sidebar items link to correct pages with `router.push()`
+- Refreshing any authenticated route preserves auth state via localStorage
+- Logout from admin → `/admin/login`; logout from partner → `/login`
+
+### Shared Data Consistency
+- Partners reference storefronts via `storefrontId` / `partnerId`
+- Storefront data (visitors, conversions, revenue, commission) matches partner aggregate stats
+- Conversions reference both `partnerId` and `storefrontId`
+- Commissions are derived from conversions via `mockConversions.map()` — always in sync
+- Payouts reference `partnerId` and match partner commission totals
+- Networks reference `ownerId` (a partner ID) and contain sub-partners with their own storefront/conversion/revenue data
+- Network activity feed references partner names that exist in the network's partner list
+- Report summaries computed from the same shared mock data (mockReportSummaries)
+- Admin messages and partner messages share the same mock conversation data, filtered by partner ID
+
+### Empty / Loading / Error States
+- All admin table pages (partners, storefronts, conversions, commissions, payouts) have EmptyState for no search results
+- All partner table pages (conversions, commissions, payouts) have EmptyState for no search results
+- Admin networks and partner network pages have EmptyState for no results
+- Admin messages and partner messages have EmptyState for no conversations and no messages in a conversation
+- Admin emails has EmptyState for no campaigns, no scheduled emails, no automations, no templates
+- Auth guards show loading spinner during initial load and redirect
+- Status notices (pending, incomplete, suspended) shown in partner layout banner
+
+---
+
 ## File Structure
 
 ```
