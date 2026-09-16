@@ -212,6 +212,36 @@ All mock data lives in `src/data/mock/`.
 - Unattributed (gray) — no clear attribution source identified
 - Reversed (red) — attribution reversed due to refund or fraud
 
+### Partner Commissions
+- Stats: available balance, pending, total paid (computed from partner's commission data)
+- Status filter tabs (All, Pending, Approved, Paid, Reversed) with counts
+- Search by plan, conversion ID, or customer name
+- List columns: Conversion, Package, Purchase Amount, Commission, Status, Date
+- Commission detail dialog showing conversion reference, package, purchase amount, commission amount, commission rule + rate, status, relevant dates (created, approved, paid, reversed), and attribution reference (customer, storefront, tracking source, click ID)
+
+### Admin Commissions
+- Stats: total pending, approved, paid across all partners
+- Status filter tabs (All, Pending, Approved, Paid, Reversed)
+- Search by partner, plan, customer, or click ID
+- List columns: Partner (with avatar), Conversion, Package, Amount, Commission, Status, Date
+- Commission detail dialog showing partner, conversion, package, purchase amount, commission amount, commission rule + rate, status, all relevant dates, and attribution reference (customer, tracking source, click ID)
+
+### Partner Payouts
+- Stats: available balance, pending, total paid (computed from partner data)
+- Payout setup status card showing configured bank transfer method
+- Status filter tabs (All, Pending, Processing, Paid, Failed) with counts
+- Search by reference or method
+- List columns: Date, Amount, Method, Status, Reference
+- Payout detail dialog showing amount, method, date, reference, and status
+
+### Admin Payouts
+- Stats: total available, total pending, total paid across all partners
+- Status filter tabs (All, Pending, Processing, Paid, Failed)
+- Search by partner name
+- Per-partner summary table with columns: Partner, Available, Pending, Paid, Payout Status, Payout Date
+- Partner payout detail dialog showing available balance, pending, total paid, payout status, last payout date, and full payout history with click-through to individual payout details
+- Individual payout detail dialog showing partner, amount, method, date, reference, and status
+
 ### Admin Dashboard
 - Primary metrics: Revenue, Conversions, Commissions, Active Partners
 - Performance chart with 7D/30D/90D/All time toggle and Revenue/Conversions/Commission metric switch

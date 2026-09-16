@@ -5,7 +5,7 @@ import type {
   MockPartnerProfile, MockStorefrontSettings, MockNotificationSettings,
   MockPayoutSetup, MockAdminActivity, MockNeedsAttentionItem,
   MockPartnerNote, MockPartnerActivityItem, AdminTimeRange, AdminMetric,
-  AdminPerformancePoint,
+  AdminPerformancePoint, CommissionStatus,
 } from './types';
 
 export const mockUsers: MockUser[] = [
@@ -66,7 +66,15 @@ export const mockConversions: MockConversion[] = [
 ];
 
 export const mockCommissions: MockCommission[] = mockConversions.map(c => ({
-  id: `cm-${c.id}`, saleAmount: c.saleAmount, commissionRule: 'Standard 20%', rate: 0.20, commission: c.commission, status: c.status as any, date: c.date, conversionId: c.id, plan: c.plan, partnerId: c.partnerId,
+  id: `cm-${c.id}`, saleAmount: c.saleAmount, commissionRule: 'Standard 20%', rate: 0.20, commission: c.commission,
+  status: c.status as CommissionStatus,
+  date: c.date,
+  approvedDate: c.status === 'APPROVED' || c.status === 'PAID' ? c.date : undefined,
+  paidDate: c.status === 'PAID' ? c.date : undefined,
+  reversedDate: c.status === 'REVERSED' ? c.date : undefined,
+  conversionId: c.id, plan: c.plan, partnerId: c.partnerId,
+  partnerName: c.partnerName, storefrontName: c.storefrontName,
+  customerName: c.customerName, clickId: c.clickId, attributionSource: c.attributionSource,
 }));
 
 export const mockPayouts: MockPayout[] = [
