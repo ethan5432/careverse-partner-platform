@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { Check, Monitor, Smartphone, Eye, Save, Globe, Upload, Package } from 'lucide-react';
-import { mockProducts, currentPartnerStorefront } from '@/data/mock';
+import { Check, Monitor, Smartphone, Eye, Save, Globe, Upload, Package, ArrowLeftRight, DollarSign, Users, TrendingUp, ExternalLink } from 'lucide-react';
+import { mockProducts, currentPartnerStorefront, partnerDashboardStats } from '@/data/mock';
 import { cn } from '@/lib/utils';
 
 type BuilderTab = 'overview' | 'packages' | 'branding' | 'domain' | 'preview' | 'publish';
@@ -85,45 +85,119 @@ export default function StorefrontBuilderPage() {
 
       {/* Overview */}
       {activeTab === 'overview' && (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="cv-card">
-            <CardContent className="p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cv-soft mb-4">
-                <Package className="h-5 w-5 text-cv-ink" />
-              </div>
-              <h3 className="text-lg font-bold text-cv-ink mb-1">Packages</h3>
-              <p className="text-sm text-cv-muted mb-3">{selectedPackages.length} packages selected</p>
-              <Button variant="outline" className="rounded-full text-xs font-bold border-cv-line" onClick={() => setActiveTab('packages')}>
-                Manage packages
-              </Button>
-            </CardContent>
-          </Card>
-          <Card className="cv-card">
-            <CardContent className="p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cv-soft mb-4">
+        <div className="space-y-6">
+          {/* Stat cards */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="cv-card p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-soft">
                 <Globe className="h-5 w-5 text-cv-ink" />
               </div>
-              <h3 className="text-lg font-bold text-cv-ink mb-1">Domain</h3>
-              <p className="text-sm text-cv-muted mb-3">
-                {currentPartnerStorefront.domainStatus === 'CONNECTED' ? 'Custom domain connected' : currentPartnerStorefront.domainStatus === 'PENDING' ? 'Domain pending' : 'Using Careverse URL'}
-              </p>
-              <Button variant="outline" className="rounded-full text-xs font-bold border-cv-line" onClick={() => setActiveTab('domain')}>
-                Configure domain
-              </Button>
-            </CardContent>
-          </Card>
-          <Card className="cv-card">
-            <CardContent className="p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cv-soft mb-4">
-                <Eye className="h-5 w-5 text-cv-ink" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Storefront Status</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <StatusBadge status={publishStatus === 'LIVE' ? 'live' : 'draft'} />
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-cv-ink mb-1">Preview</h3>
-              <p className="text-sm text-cv-muted mb-3">See your storefront as customers see it</p>
-              <Button variant="outline" className="rounded-full text-xs font-bold border-cv-line" onClick={() => setActiveTab('preview')}>
-                Open preview
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="cv-card p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-soft">
+                <ExternalLink className="h-5 w-5 text-cv-ink" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Storefront URL</p>
+                <p className="text-sm font-bold text-cv-ink truncate mt-1">{currentPartnerStorefront.url}</p>
+              </div>
+            </div>
+            <div className="cv-card p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-soft">
+                <Users className="h-5 w-5 text-cv-ink" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Visitors</p>
+                <p className="text-sm font-bold text-cv-ink mt-1">{currentPartnerStorefront.visitors.toLocaleString()}</p>
+              </div>
+            </div>
+            <div className="cv-card p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-soft">
+                <ArrowLeftRight className="h-5 w-5 text-cv-ink" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Conversions</p>
+                <p className="text-sm font-bold text-cv-ink mt-1">{currentPartnerStorefront.conversions}</p>
+              </div>
+            </div>
+            <div className="cv-card p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-soft">
+                <DollarSign className="h-5 w-5 text-cv-ink" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Revenue</p>
+                <p className="text-sm font-bold text-cv-ink mt-1">${currentPartnerStorefront.revenue.toLocaleString()}</p>
+              </div>
+            </div>
+            <div className="cv-card p-5 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-soft">
+                <TrendingUp className="h-5 w-5 text-cv-ink" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Commission</p>
+                <p className="text-sm font-bold text-cv-ink mt-1">${currentPartnerStorefront.commission.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick action cards */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="cv-card">
+              <CardContent className="p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cv-soft mb-4">
+                  <Package className="h-5 w-5 text-cv-ink" />
+                </div>
+                <h3 className="text-lg font-bold text-cv-ink mb-1">Packages</h3>
+                <p className="text-sm text-cv-muted mb-3">{selectedPackages.length} packages selected</p>
+                <Button variant="outline" className="rounded-full text-xs font-bold border-cv-line" onClick={() => setActiveTab('packages')}>
+                  Manage packages
+                </Button>
+              </CardContent>
+            </Card>
+            <Card className="cv-card">
+              <CardContent className="p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cv-soft mb-4">
+                  <Globe className="h-5 w-5 text-cv-ink" />
+                </div>
+                <h3 className="text-lg font-bold text-cv-ink mb-1">Domain</h3>
+                <p className="text-sm text-cv-muted mb-3">
+                  {currentPartnerStorefront.domainStatus === 'CONNECTED' ? 'Custom domain connected' : currentPartnerStorefront.domainStatus === 'PENDING' ? 'Domain pending' : 'Using Careverse URL'}
+                </p>
+                <Button variant="outline" className="rounded-full text-xs font-bold border-cv-line" onClick={() => setActiveTab('domain')}>
+                  Configure domain
+                </Button>
+              </CardContent>
+            </Card>
+            <Card className="cv-card">
+              <CardContent className="p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cv-soft mb-4">
+                  <Eye className="h-5 w-5 text-cv-ink" />
+                </div>
+                <h3 className="text-lg font-bold text-cv-ink mb-1">Preview</h3>
+                <p className="text-sm text-cv-muted mb-3">See your storefront as customers see it</p>
+                <Button variant="outline" className="rounded-full text-xs font-bold border-cv-line" onClick={() => setActiveTab('preview')}>
+                  Open preview
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* View Storefront button */}
+          <div className="flex justify-center">
+            <Button
+              className="cv-btn-primary rounded-full"
+              onClick={() => router.push('/storefront')}
+            >
+              <ExternalLink className="h-4 w-4 mr-1.5" />
+              View Storefront
+            </Button>
+          </div>
         </div>
       )}
 
