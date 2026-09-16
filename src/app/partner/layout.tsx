@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
@@ -206,10 +206,29 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
     );
   }
 
-  if (!user || user.role !== 'PARTNER') {
-    router.push('/login');
-    return null;
+  const shouldRedirect = !loading && (!user || user.role !== 'PARTNER');
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.push('/login');
+    }
+  }, [shouldRedirect, router]);
+
+  if (loading || shouldRedirect) {
+    return (
+      <div className="cv-page flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="relative mx-auto h-10 w-10">
+            <div className="absolute inset-0 rounded-full border-4 border-cv-line" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-cv-ink" />
+          </div>
+          <p className="mt-4 text-sm text-cv-muted">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
   }
+
+  if (!user) return null;
 
   // Show status-based notices
   const showPendingNotice = user.status === 'PENDING';
