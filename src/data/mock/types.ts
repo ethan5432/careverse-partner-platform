@@ -40,6 +40,8 @@ export interface MockProduct {
   description: string;
   features: string[];
   popular?: boolean;
+  partnerAvailability: 'ALL' | 'CREATOR' | 'BUSINESS' | 'NETWORK';
+  benefits: { title: string; description: string }[];
 }
 
 export interface MockStorefront {

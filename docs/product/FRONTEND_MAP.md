@@ -273,7 +273,50 @@ All mock data lives in `src/data/mock/`.
 
 ### Admin Products
 - Three Careverse plans: Family, Family Plus, Care Circle
-- Click product card to open detail dialog with full product information
+- Summary bar: total products, available count, most popular
+- Product cards with name, price, billing type, description, status/availability badges, and features list
+- Click a product to open detail dialog with three tabs:
+  - **Details** — editable name, description, price, and billing type
+  - **Benefits** — editable benefit cards (title + description) with add/remove; package features list
+  - **Availability** — editable status, availability, partner availability (ALL/CREATOR/BUSINESS/NETWORK), and popular toggle
+- Edit mode toggles between view and edit with save confirmation state
+
+### Partner Resources
+- Three package tabs: Creator, Business / Agency, Network
+- Default tab auto-selected based on logged-in partner's type
+- Each package has curated resources: brand kits, guides, copy templates, product info, videos
+- Resource cards with icon, title, description, and download/view action button
+- Empty state when no resources available for a package
+
+### Admin Reports
+- Date-range filter: Last 7 days, 30 days, 90 days, All time
+- Export button with success confirmation
+- Global summary stats: revenue, conversions, commissions, partners, storefronts
+- Revenue over time bar chart with hover tooltips
+- Seven report tabs:
+  - **Partners** — total/active/pending/suspended counts, creator/business/network breakdown, top partners by revenue table
+  - **Storefronts** — total/live/draft/visitor counts, top storefronts by revenue with visitors and conversions
+  - **Conversions** — total/approved/pending/avg value, recent conversions table with date, partner, plan, status, amount
+  - **Revenue** — total/avg per storefront/top plan/monthly growth, revenue by storefront table
+  - **Commissions** — total/approved/pending/avg rate, commission history table
+  - **Payouts** — total/paid/pending/count, payout history table with method and status
+  - **Networks** — total networks/partners/revenue/earnings, network performance table
+- All report summaries computed from shared mock data (mockReportSummaries)
+
+### Admin Settings
+- Ten settings tabs:
+  - **Program** — editable program name, description, default commission rate
+  - **Commission** — commission rules table with add/delete, rate, scope, active/paused toggle
+  - **Partners** — auto-approve toggle, W-9 requirement, min payout amount, custom domains toggle, default storefront theme
+  - **Storefronts** — default intro copy, custom domains toggle, require approval toggle, max packages per storefront
+  - **Tracking** — attribution window, cookie duration, first-click toggle, cross-domain toggle
+  - **Email** — from email, reply-to email, test email send
+  - **Integrations** — Stripe, Mailgun, Slack, Zapier, Google Analytics, Twilio with connect/disconnect
+  - **Team** — team members table with role select and remove
+  - **Security** — 2FA toggle, session timeout, IP allowlist
+  - **General** — platform name, support email, timezone, date format, currency, maintenance mode
+- Each tab has save button with saved confirmation state
+- All settings use editable controls (inputs, selects, switches, textareas)
 
 ### Admin Networks
 - Stats: total networks, active partners, total revenue, network earnings

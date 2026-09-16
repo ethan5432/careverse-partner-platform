@@ -34,9 +34,27 @@ export const mockPartners: MockPartner[] = [
 ];
 
 export const mockProducts: MockProduct[] = [
-  { id: 'prod-family', name: 'Family', price: 49, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', description: 'Essential care benefits for the whole family — included services, lower prices on other care, product specials, and free samples.', features: ['Included services', 'Lower prices on other care', 'Product specials', 'Free samples & coupons', 'Care allowance', 'Health Advocacy where applicable'] },
-  { id: 'prod-family-plus', name: 'Family Plus', price: 89, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', description: 'Everything in Family, with enhanced benefits and expanded care allowance for families who need more coverage.', features: ['Everything in Family', 'Enhanced care allowance', 'Priority Health Advocacy', 'Expanded product specials', 'Exclusive free samples'], popular: true },
-  { id: 'prod-care-circle', name: 'Care Circle', price: 149, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', description: 'The most comprehensive Careverse plan — full benefits for extended families and care circles with the highest level of support.', features: ['Everything in Family Plus', 'Full care circle coverage', 'Dedicated Health Advocate', 'Premium product specials', 'Concierge care coordination'] },
+  { id: 'prod-family', name: 'Family', price: 49, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'Essential care benefits for the whole family — included services, lower prices on other care, product specials, and free samples.', features: ['Included services', 'Lower prices on other care', 'Product specials', 'Free samples & coupons', 'Care allowance', 'Health Advocacy where applicable'],
+    benefits: [
+      { title: 'Included Services', description: 'Access to essential care services at no additional cost.' },
+      { title: 'Care Allowance', description: 'Monthly allowance for out-of-pocket care expenses.' },
+      { title: 'Product Specials', description: 'Exclusive discounts on health and wellness products.' },
+      { title: 'Health Advocacy', description: 'Professional guidance for navigating care options.' },
+    ] },
+  { id: 'prod-family-plus', name: 'Family Plus', price: 89, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'Everything in Family, with enhanced benefits and expanded care allowance for families who need more coverage.', features: ['Everything in Family', 'Enhanced care allowance', 'Priority Health Advocacy', 'Expanded product specials', 'Exclusive free samples'], popular: true,
+    benefits: [
+      { title: 'Enhanced Care Allowance', description: 'Doubled monthly allowance for comprehensive care needs.' },
+      { title: 'Priority Health Advocacy', description: 'Dedicated advocate with priority response times.' },
+      { title: 'Expanded Product Specials', description: 'Broader range of discounted products and services.' },
+      { title: 'Exclusive Free Samples', description: 'Curated samples of premium health products.' },
+    ] },
+  { id: 'prod-care-circle', name: 'Care Circle', price: 149, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'The most comprehensive Careverse plan — full benefits for extended families and care circles with the highest level of support.', features: ['Everything in Family Plus', 'Full care circle coverage', 'Dedicated Health Advocate', 'Premium product specials', 'Concierge care coordination'],
+    benefits: [
+      { title: 'Full Care Circle Coverage', description: 'Covers extended family members and care circle participants.' },
+      { title: 'Dedicated Health Advocate', description: 'A personal advocate assigned to your care circle.' },
+      { title: 'Premium Product Specials', description: 'Top-tier discounts on premium health and wellness brands.' },
+      { title: 'Concierge Care Coordination', description: 'White-glove coordination for all care appointments and services.' },
+    ] },
 ];
 
 export const mockStorefronts: MockStorefront[] = [
@@ -442,3 +460,53 @@ export function getPartnerActivity(partnerId: string): MockPartnerActivityItem[]
   }
   return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
+
+export const mockReportSummaries = {
+  partners: {
+    total: mockPartners.length,
+    active: mockPartners.filter((p) => p.status === 'ACTIVE').length,
+    pending: mockPartners.filter((p) => p.status === 'PENDING').length,
+    suspended: mockPartners.filter((p) => p.status === 'SUSPENDED').length,
+    creators: mockPartners.filter((p) => p.type === 'CREATOR').length,
+    businesses: mockPartners.filter((p) => p.type === 'BUSINESS').length,
+    networks: mockPartners.filter((p) => p.type === 'NETWORK').length,
+  },
+  storefronts: {
+    total: mockStorefronts.length,
+    live: mockStorefronts.filter((s) => s.status === 'LIVE').length,
+    draft: mockStorefronts.filter((s) => s.status === 'DRAFT').length,
+    withCustomDomain: mockStorefronts.filter((s) => s.domainStatus === 'CONNECTED').length,
+    totalVisitors: mockStorefronts.reduce((s, st) => s + st.visitors, 0),
+  },
+  conversions: {
+    total: mockConversions.length,
+    approved: mockConversions.filter((c) => c.status === 'APPROVED').length,
+    pending: mockConversions.filter((c) => c.status === 'PENDING').length,
+    rejected: mockConversions.filter((c) => c.status === 'REVERSED').length,
+    avgValue: Math.round(mockConversions.reduce((s, c) => s + c.saleAmount, 0) / mockConversions.length),
+  },
+  revenue: {
+    total: mockStorefronts.reduce((s, st) => s + st.revenue, 0),
+    avgPerStorefront: Math.round(mockStorefronts.reduce((s, st) => s + st.revenue, 0) / mockStorefronts.filter((s) => s.status === 'LIVE').length),
+    topPlan: 'Family Plus',
+    monthlyGrowth: 18,
+  },
+  commissions: {
+    total: mockCommissions.reduce((s, c) => s + c.commission, 0),
+    approved: mockCommissions.filter((c) => c.status === 'APPROVED').reduce((s, c) => s + c.commission, 0),
+    pending: mockCommissions.filter((c) => c.status === 'PENDING').reduce((s, c) => s + c.commission, 0),
+    avgRate: 20,
+  },
+  payouts: {
+    total: mockPayouts.reduce((s, p) => s + p.amount, 0),
+    paid: mockPayouts.filter((p) => p.status === 'PAID').reduce((s, p) => s + p.amount, 0),
+    pending: mockPayouts.filter((p) => p.status === 'PENDING').reduce((s, p) => s + p.amount, 0),
+    count: mockPayouts.length,
+  },
+  networks: {
+    total: mockNetworks.length,
+    totalPartners: mockNetworks.reduce((s, n) => s + n.activePartnerCount, 0),
+    totalRevenue: mockNetworks.reduce((s, n) => s + n.revenue, 0),
+    totalEarnings: mockNetworks.reduce((s, n) => s + n.networkEarnings, 0),
+  },
+};
