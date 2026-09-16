@@ -5,22 +5,24 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
 import { StatusBadge, Avatar } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import {
-  Users, Search, UserPlus, ArrowLeftRight, DollarSign, TrendingUp,
-  Store, MessageSquare, StickyNote, Settings, Activity as ActivityIcon,
+  Users, Search, UserPlus, ArrowLeftRight, DollarSign,
+  Store, MessageSquare, StickyNote, Settings as SettingsIcon, Activity as ActivityIcon,
+  Send, ExternalLink, Pencil, Check,
 } from 'lucide-react';
 import {
   mockPartners, mockConversions, mockCommissions, mockStorefronts,
-  adminDashboardStats,
+  mockConversations, mockPartnerNotes, getPartnerActivity, adminDashboardStats,
 } from '@/data/mock';
-import type { MockPartner, PartnerType, PartnerStatus } from '@/data/mock/types';
+import type { MockPartner, PartnerType, PartnerStatus, MockPartnerNote, MockMessage } from '@/data/mock/types';
 
 const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -32,6 +34,13 @@ const partnerStatusMap: Record<PartnerStatus, 'active' | 'pending' | 'incomplete
   SUSPENDED: 'suspended',
 };
 
+const partnerStatusLabel: Record<PartnerStatus, string> = {
+  ACTIVE: 'Active',
+  PENDING: 'Pending',
+  INCOMPLETE: 'Incomplete',
+  SUSPENDED: 'Suspended',
+};
+
 type TypeFilter = 'ALL' | PartnerType;
 const typeFilters: { value: TypeFilter; label: string }[] = [
   { value: 'ALL', label: 'All' },
@@ -40,23 +49,45 @@ const typeFilters: { value: TypeFilter; label: string }[] = [
   { value: 'NETWORK', label: 'Network' },
 ];
 
+type StatusFilter = 'ALL' | PartnerStatus;
+const statusFilters: { value: StatusFilter; label: string }[] = [
+  { value: 'ALL', label: 'All' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'INCOMPLETE', label: 'Incomplete' },
+  { value: 'SUSPENDED', label: 'Suspended' },
+];
+
+const activityDotColor: Record<string, string> = {
+  APPLICATION: 'bg-cv-muted',
+  APPROVAL: 'bg-cv-good',
+  ACTIVATED: 'bg-cv-good',
+  STOREFRONT_CREATED: 'bg-blue-500',
+  STOREFRONT_PUBLISHED: 'bg-cv-good',
+  CONVERSION: 'bg-cv-ink',
+  COMMISSION: 'bg-cv-good',
+  MESSAGE: 'bg-cv-muted',
+};
+
 export default function AdminPartnersPage() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return mockPartners.filter((p) => {
       const matchesType = typeFilter === 'ALL' || p.type === typeFilter;
+      const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
       const q = search.trim().toLowerCase();
       const matchesSearch =
         !q ||
         p.name.toLowerCase().includes(q) ||
         p.email.toLowerCase().includes(q) ||
         p.storefrontName.toLowerCase().includes(q);
-      return matchesType && matchesSearch;
+      return matchesType && matchesStatus && matchesSearch;
     });
-  }, [search, typeFilter]);
+  }, [search, typeFilter, statusFilter]);
 
   const selectedPartner = mockPartners.find((p) => p.id === selectedId) || null;
 
@@ -71,7 +102,7 @@ export default function AdminPartnersPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Partners"
-        title="Partner CRM"
+        title="Partners"
         description="Manage creators, businesses, and networks across the platform."
         actions={
           <Button className="bg-cv-ink text-white hover:bg-cv-ink/90" size="sm">
@@ -85,7 +116,7 @@ export default function AdminPartnersPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Partners" value={stats.total} icon={Users} description={`${stats.active} active`} />
         <StatCard label="Active" value={stats.active} icon={ArrowLeftRight} description="In good standing" />
-        <StatCard label="Pending" value={stats.pending} icon={TrendingUp} description="Awaiting review" />
+        <StatCard label="Pending" value={stats.pending} icon={DollarSign} description="Awaiting review" />
         <StatCard label="Partner Revenue" value={fmtMoney(stats.revenue)} icon={DollarSign} description="All time" />
       </div>
 
@@ -102,21 +133,35 @@ export default function AdminPartnersPage() {
                 className="cv-input pl-9 h-11"
               />
             </div>
-            <div className="flex items-center gap-1 rounded-xl bg-cv-soft p-1">
-              {typeFilters.map((t) => (
-                <button
-                  key={t.value}
-                  onClick={() => setTypeFilter(t.value)}
-                  className={cn(
-                    'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
-                    typeFilter === t.value
-                      ? 'bg-white text-cv-ink shadow-sm'
-                      : 'text-cv-muted hover:text-cv-ink'
-                  )}
-                >
-                  {t.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 rounded-xl bg-cv-soft p-1">
+                {typeFilters.map((t) => (
+                  <button
+                    key={t.value}
+                    onClick={() => setTypeFilter(t.value)}
+                    className={cn(
+                      'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
+                      typeFilter === t.value ? 'bg-white text-cv-ink shadow-sm' : 'text-cv-muted hover:text-cv-ink'
+                    )}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1 rounded-xl bg-cv-soft p-1">
+                {statusFilters.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => setStatusFilter(s.value)}
+                    className={cn(
+                      'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
+                      statusFilter === s.value ? 'bg-white text-cv-ink shadow-sm' : 'text-cv-muted hover:text-cv-ink'
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -132,48 +177,50 @@ export default function AdminPartnersPage() {
               description="Try a different search or filter to see partners."
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-cv-line hover:bg-transparent">
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Partner</TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Type</TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Storefront</TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Conversions</TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Revenue</TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
-                  <TableHead className="text-xs font-bold uppercase text-cv-muted">Joined</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((p) => (
-                  <TableRow
-                    key={p.id}
-                    className="border-cv-line cursor-pointer hover:bg-cv-soft/60 transition-colors"
-                    onClick={() => setSelectedId(p.id)}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2.5">
-                        <Avatar name={p.name} color={p.avatarColor} size={32} />
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-cv-ink truncate">{p.name}</p>
-                          <p className="text-xs text-cv-muted truncate">{p.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs font-bold text-cv-body">{p.type}</span>
-                    </TableCell>
-                    <TableCell><StatusBadge status={partnerStatusMap[p.status]} /></TableCell>
-                    <TableCell className="text-sm text-cv-body">{p.storefrontName}</TableCell>
-                    <TableCell className="text-right text-sm text-cv-body">{p.conversions}</TableCell>
-                    <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(p.revenue)}</TableCell>
-                    <TableCell className="text-right text-sm text-cv-body">{fmtMoney(p.commission)}</TableCell>
-                    <TableCell className="text-xs text-cv-muted">{fmtDate(p.joinedDate)}</TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-cv-line hover:bg-transparent">
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Partner</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Type</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Storefront</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Conv.</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Revenue</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Joined</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((p) => (
+                    <TableRow
+                      key={p.id}
+                      className="border-cv-line cursor-pointer hover:bg-cv-soft/60 transition-colors"
+                      onClick={() => setSelectedId(p.id)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          <Avatar name={p.name} color={p.avatarColor} size={32} />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-cv-ink truncate">{p.name}</p>
+                            <p className="text-xs text-cv-muted truncate">{p.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs font-bold text-cv-body">{p.type}</span>
+                      </TableCell>
+                      <TableCell><StatusBadge status={partnerStatusMap[p.status]} /></TableCell>
+                      <TableCell className="text-sm text-cv-body">{p.storefrontName}</TableCell>
+                      <TableCell className="text-right text-sm text-cv-body">{p.conversions}</TableCell>
+                      <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(p.revenue)}</TableCell>
+                      <TableCell className="text-right text-sm text-cv-body">{fmtMoney(p.commission)}</TableCell>
+                      <TableCell className="text-xs text-cv-muted">{fmtDate(p.joinedDate)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -199,6 +246,66 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
     () => (partner ? mockStorefronts.find((s) => s.partnerId === partner.id) || null : null),
     [partner]
   );
+  const partnerConversation = useMemo(
+    () => (partner ? mockConversations.find((c) => c.partnerId === partner.id) || null : null),
+    [partner]
+  );
+  const partnerActivity = useMemo(
+    () => (partner ? getPartnerActivity(partner.id) : []),
+    [partner]
+  );
+
+  const [notes, setNotes] = useState<MockPartnerNote[]>([]);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [messages, setMessages] = useState<MockMessage[]>([]);
+  const [msgDraft, setMsgDraft] = useState('');
+  const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
+  const [partnerStatus, setPartnerStatus] = useState<PartnerStatus>('ACTIVE');
+
+  React.useEffect(() => {
+    if (partner) {
+      setNotes(mockPartnerNotes.filter((n) => n.partnerId === partner.id));
+      setMessages(partnerConversation?.messages || []);
+      setSelectedConvId(partnerConversation?.id || null);
+      setPartnerStatus(partner.status);
+      setNoteDraft('');
+      setMsgDraft('');
+    }
+  }, [partner, partnerConversation]);
+
+  const handleAddNote = () => {
+    if (!noteDraft.trim() || !partner) return;
+    const newNote: MockPartnerNote = {
+      id: `pn-${Date.now()}`,
+      partnerId: partner.id,
+      text: noteDraft.trim(),
+      author: 'Sarah Chen',
+      date: new Date().toISOString().slice(0, 10),
+    };
+    setNotes((prev) => [newNote, ...prev]);
+    setNoteDraft('');
+  };
+
+  const handleSendMessage = () => {
+    if (!msgDraft.trim() || !selectedConvId) return;
+    const newMsg: MockMessage = {
+      id: `m-${Date.now()}`,
+      conversationId: selectedConvId,
+      sender: 'ADMIN',
+      senderName: 'Careverse Team',
+      text: msgDraft.trim(),
+      date: new Date().toISOString().slice(0, 10),
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setMsgDraft('');
+  };
+
+  const statusOptions: { value: PartnerStatus; label: string; badge: 'active' | 'pending' | 'incomplete' | 'suspended' | 'paused' }[] = [
+    { value: 'ACTIVE', label: 'Active', badge: 'active' },
+    { value: 'PENDING', label: 'Pending', badge: 'pending' },
+    { value: 'INCOMPLETE', label: 'Incomplete', badge: 'incomplete' },
+    { value: 'SUSPENDED', label: 'Suspended', badge: 'suspended' },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -213,7 +320,7 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
                   <DialogDescription className="text-sm text-cv-muted">{partner.email}</DialogDescription>
                 </div>
                 <div className="ml-auto">
-                  <StatusBadge status={partnerStatusMap[partner.status]} />
+                  <StatusBadge status={partnerStatusMap[partnerStatus]} />
                 </div>
               </div>
             </DialogHeader>
@@ -245,26 +352,42 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
                     <DetailField label="Commission" value={fmtMoney(partner.commission)} />
                     <DetailField label="Storefront" value={partner.storefrontName} />
                   </div>
+
+                  <div className="mt-4 rounded-xl bg-cv-soft p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Commercial Summary</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <p className="text-xs text-cv-muted">Commission Rate</p>
+                        <p className="text-sm font-bold text-cv-ink">20%</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-cv-muted">Avg. Sale</p>
+                        <p className="text-sm font-bold text-cv-ink">{partner.conversions > 0 ? fmtMoney(partner.revenue / partner.conversions) : '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-cv-muted">Conversion Rate</p>
+                        <p className="text-sm font-bold text-cv-ink">{partnerStorefront ? `${(partnerStorefront.conversions / Math.max(partnerStorefront.visitors, 1) * 100).toFixed(1)}%` : '—'}</p>
+                      </div>
+                    </div>
+                  </div>
                 </TabsContent>
 
                 {/* Activity */}
                 <TabsContent value="activity" className="mt-4">
-                  {partnerConversions.length === 0 ? (
-                    <EmptyState icon={ActivityIcon} title="No recent activity" description="Conversions will appear here." />
+                  {partnerActivity.length === 0 ? (
+                    <EmptyState icon={ActivityIcon} title="No activity" description="Activity will appear here as the partner takes actions." />
                   ) : (
-                    <div className="space-y-2">
-                      {partnerConversions.slice(0, 6).map((c) => (
-                        <div key={c.id} className="flex items-center justify-between rounded-xl bg-cv-soft p-3">
-                          <div>
-                            <p className="text-sm font-bold text-cv-ink">{c.plan}</p>
-                            <p className="text-xs text-cv-muted">{fmtDate(c.date)} · {c.attributionSource}</p>
+                    <div className="relative pl-6">
+                      <div className="absolute left-2 top-1 bottom-1 w-px bg-cv-line" />
+                      <div className="space-y-4">
+                        {partnerActivity.map((item) => (
+                          <div key={item.id} className="relative">
+                            <div className={cn('absolute -left-[18px] top-1 h-3 w-3 rounded-full border-2 border-white', activityDotColor[item.type] || 'bg-cv-muted')} />
+                            <p className="text-sm font-bold text-cv-ink">{item.description}</p>
+                            <p className="text-xs text-cv-muted mt-0.5">{fmtDate(item.date)}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-bold text-cv-ink">${c.saleAmount}</p>
-                            <p className="text-xs text-cv-muted">{fmtMoney(c.commission)} comm.</p>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </TabsContent>
@@ -274,30 +397,7 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
                   {partnerConversions.length === 0 ? (
                     <EmptyState icon={ArrowLeftRight} title="No conversions" description="This partner has no conversions yet." />
                   ) : (
-                    <div className="rounded-xl border border-cv-line overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-cv-line hover:bg-transparent">
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Plan</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Sale</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Date</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {partnerConversions.map((c) => (
-                            <TableRow key={c.id} className="border-cv-line">
-                              <TableCell className="text-sm font-bold text-cv-ink">{c.plan}</TableCell>
-                              <TableCell className="text-right text-sm text-cv-body">${c.saleAmount}</TableCell>
-                              <TableCell className="text-right text-sm text-cv-body">{fmtMoney(c.commission)}</TableCell>
-                              <TableCell><StatusBadge status={c.status.toLowerCase() as any} /></TableCell>
-                              <TableCell className="text-xs text-cv-muted">{fmtDate(c.date)}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                    <ConversionTable conversions={partnerConversions} />
                   )}
                 </TabsContent>
 
@@ -306,30 +406,7 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
                   {partnerCommissions.length === 0 ? (
                     <EmptyState icon={DollarSign} title="No commissions" description="This partner has no commissions yet." />
                   ) : (
-                    <div className="rounded-xl border border-cv-line overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-cv-line hover:bg-transparent">
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Plan</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Sale</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Rule</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {partnerCommissions.map((c) => (
-                            <TableRow key={c.id} className="border-cv-line">
-                              <TableCell className="text-sm font-bold text-cv-ink">{c.plan}</TableCell>
-                              <TableCell className="text-right text-sm text-cv-body">${c.saleAmount}</TableCell>
-                              <TableCell className="text-xs text-cv-muted">{c.commissionRule}</TableCell>
-                              <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(c.commission)}</TableCell>
-                              <TableCell><StatusBadge status={c.status.toLowerCase() as any} /></TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                    <CommissionTable commissions={partnerCommissions} />
                   )}
                 </TabsContent>
 
@@ -369,6 +446,14 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
                           )}
                         </div>
                       </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs">
+                          <ExternalLink className="h-3.5 w-3.5" /> View storefront
+                        </Button>
+                        <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs">
+                          <Pencil className="h-3.5 w-3.5" /> Edit storefront
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <EmptyState icon={Store} title="No storefront" description="This partner has not set up a storefront." />
@@ -377,29 +462,120 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
 
                 {/* Messages */}
                 <TabsContent value="messages" className="mt-4">
-                  <EmptyState
-                    icon={MessageSquare}
-                    title="Messages"
-                    description="Direct messages with this partner will appear here."
-                  />
+                  {messages.length === 0 ? (
+                    <EmptyState
+                      icon={MessageSquare}
+                      title="No messages"
+                      description="Start a conversation with this partner."
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="max-h-64 overflow-y-auto space-y-3 rounded-xl bg-cv-soft/40 p-4">
+                        {messages.map((m) => {
+                          const isPartner = m.sender === 'PARTNER';
+                          return (
+                            <div key={m.id} className={cn('flex gap-2.5', isPartner ? 'justify-end' : 'justify-start')}>
+                              <div className={cn('max-w-[80%]', isPartner && 'flex flex-col items-end')}>
+                                <div
+                                  className={cn(
+                                    'rounded-2xl px-3.5 py-2 text-sm',
+                                    isPartner
+                                      ? 'bg-cv-ink text-white rounded-tr-sm'
+                                      : 'bg-white border border-cv-line text-cv-body rounded-tl-sm'
+                                  )}
+                                >
+                                  {m.text}
+                                </div>
+                                <span className="text-[10px] text-cv-muted mt-1 px-1">{m.senderName} · {fmtDate(m.date)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={msgDraft}
+                          onChange={(e) => setMsgDraft(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
+                          placeholder="Reply to partner..."
+                          className="cv-input h-10"
+                        />
+                        <Button
+                          onClick={handleSendMessage}
+                          disabled={!msgDraft.trim()}
+                          className="cv-btn-primary cv-btn-sm rounded-full h-10 w-10 p-0 shrink-0"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Notes */}
                 <TabsContent value="notes" className="mt-4">
-                  <EmptyState
-                    icon={StickyNote}
-                    title="Notes"
-                    description="Internal notes about this partner will appear here."
-                  />
+                  <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50/60 p-2.5">
+                    <p className="text-xs font-bold text-amber-700">Internal notes — not visible to the partner.</p>
+                  </div>
+                  <div className="flex gap-2 mb-4">
+                    <Textarea
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      placeholder="Add an internal note..."
+                      className="cv-input min-h-[60px] text-sm"
+                    />
+                    <Button
+                      onClick={handleAddNote}
+                      disabled={!noteDraft.trim()}
+                      className="cv-btn-primary cv-btn-sm rounded-full shrink-0 self-end h-10"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {notes.length === 0 ? (
+                    <EmptyState icon={StickyNote} title="No notes yet" description="Internal notes about this partner will appear here." />
+                  ) : (
+                    <div className="space-y-2.5">
+                      {notes.map((n) => (
+                        <div key={n.id} className="rounded-xl bg-cv-soft p-3">
+                          <p className="text-sm text-cv-body">{n.text}</p>
+                          <p className="text-xs text-cv-muted mt-2">{n.author} · {fmtDate(n.date)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Settings */}
                 <TabsContent value="settings" className="mt-4">
-                  <EmptyState
-                    icon={Settings}
-                    title="Settings"
-                    description="Partner account settings and permissions will appear here."
-                  />
+                  <div className="space-y-4">
+                    <DetailField label="Name" value={partner.name} />
+                    <DetailField label="Email" value={partner.email} />
+                    <DetailField label="Type" value={partner.type} />
+                    <DetailField label="Joined" value={fmtDate(partner.joinedDate)} />
+
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Account Status</p>
+                      <div className="flex flex-wrap gap-2">
+                        {statusOptions.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setPartnerStatus(opt.value)}
+                            className={cn(
+                              'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
+                              partnerStatus === opt.value
+                                ? 'border-cv-ink bg-cv-ink text-white'
+                                : 'border-cv-line bg-white text-cv-body hover:bg-cv-soft'
+                            )}
+                          >
+                            {partnerStatus === opt.value && <Check className="h-3 w-3" />}
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-cv-muted mt-2">Changes are mock only — no backend enforcement in this prototype.</p>
+                    </div>
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>
@@ -416,5 +592,119 @@ function DetailField({ label, value }: { label: string; value: React.ReactNode }
       <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">{label}</p>
       <div className="text-sm font-bold text-cv-ink">{value}</div>
     </div>
+  );
+}
+
+function ConversionTable({ conversions }: { conversions: typeof mockConversions }) {
+  const [selected, setSelected] = useState<typeof mockConversions[0] | null>(null);
+  return (
+    <>
+      <div className="rounded-xl border border-cv-line overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-cv-line hover:bg-transparent">
+              <TableHead className="text-xs font-bold uppercase text-cv-muted">Plan</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Sale</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted">Date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {conversions.map((c) => (
+              <TableRow
+                key={c.id}
+                className="border-cv-line cursor-pointer hover:bg-cv-soft/60 transition-colors"
+                onClick={() => setSelected(c)}
+              >
+                <TableCell className="text-sm font-bold text-cv-ink">{c.plan}</TableCell>
+                <TableCell className="text-right text-sm text-cv-body">${c.saleAmount}</TableCell>
+                <TableCell className="text-right text-sm text-cv-body">{fmtMoney(c.commission)}</TableCell>
+                <TableCell><StatusBadge status={c.status.toLowerCase() as any} /></TableCell>
+                <TableCell className="text-xs text-cv-muted">{fmtDate(c.date)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+        <DialogContent className="max-w-md cv-card border-cv-line rounded-2xl bg-white p-0">
+          {selected && (
+            <div className="p-6 space-y-3">
+              <DialogHeader>
+                <DialogTitle className="text-base font-bold text-cv-ink">Conversion Detail</DialogTitle>
+              </DialogHeader>
+              <DetailField label="Plan" value={selected.plan} />
+              <DetailField label="Sale Amount" value={`$${selected.saleAmount}`} />
+              <DetailField label="Commission" value={fmtMoney(selected.commission)} />
+              <DetailField label="Status" value={<StatusBadge status={selected.status.toLowerCase() as any} />} />
+              <DetailField label="Date" value={fmtDate(selected.date)} />
+              <DetailField label="Customer" value={selected.customerEmail} />
+              <DetailField label="Attribution" value={selected.attributionSource} />
+              <DetailField label="Storefront" value={selected.storefrontName} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function CommissionTable({ commissions }: { commissions: typeof mockCommissions }) {
+  const [selected, setSelected] = useState<typeof mockCommissions[0] | null>(null);
+  return (
+    <>
+      <div className="rounded-xl border border-cv-line overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-cv-line hover:bg-transparent">
+              <TableHead className="text-xs font-bold uppercase text-cv-muted">Plan</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Sale</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted">Rate</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+              <TableHead className="text-xs font-bold uppercase text-cv-muted">Date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {commissions.map((c) => (
+              <TableRow
+                key={c.id}
+                className="border-cv-line cursor-pointer hover:bg-cv-soft/60 transition-colors"
+                onClick={() => setSelected(c)}
+              >
+                <TableCell className="text-sm font-bold text-cv-ink">{c.plan}</TableCell>
+                <TableCell className="text-right text-sm text-cv-body">${c.saleAmount}</TableCell>
+                <TableCell className="text-xs text-cv-muted">{c.commissionRule}</TableCell>
+                <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(c.commission)}</TableCell>
+                <TableCell><StatusBadge status={c.status.toLowerCase() as any} /></TableCell>
+                <TableCell className="text-xs text-cv-muted">{fmtDate(c.date)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+        <DialogContent className="max-w-md cv-card border-cv-line rounded-2xl bg-white p-0">
+          {selected && (
+            <div className="p-6 space-y-3">
+              <DialogHeader>
+                <DialogTitle className="text-base font-bold text-cv-ink">Commission Calculation</DialogTitle>
+              </DialogHeader>
+              <DetailField label="Plan" value={selected.plan} />
+              <DetailField label="Sale Amount" value={`$${selected.saleAmount}`} />
+              <DetailField label="Commission Rule" value={selected.commissionRule} />
+              <DetailField label="Rate" value={`${(selected.rate * 100).toFixed(0)}%`} />
+              <div className="rounded-xl bg-cv-soft p-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Calculation</p>
+                <p className="text-sm font-bold text-cv-ink">${selected.saleAmount} x {(selected.rate * 100).toFixed(0)}% = {fmtMoney(selected.commission)}</p>
+              </div>
+              <DetailField label="Status" value={<StatusBadge status={selected.status.toLowerCase() as any} />} />
+              <DetailField label="Date" value={fmtDate(selected.date)} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

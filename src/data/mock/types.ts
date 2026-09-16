@@ -212,3 +212,51 @@ export interface MockPayoutSetup {
   routingNumber?: string;
   paypalEmail?: string;
 }
+
+export type AdminActivityType = 'APPLICATION' | 'APPROVAL' | 'STOREFRONT_PUBLISHED' | 'CONVERSION' | 'COMMISSION' | 'PAYOUT';
+
+export interface MockAdminActivity {
+  id: string;
+  type: AdminActivityType;
+  description: string;
+  partnerName: string;
+  amount?: number;
+  date: string;
+}
+
+export type PartnerActivityType = 'APPLICATION' | 'APPROVAL' | 'ACTIVATED' | 'STOREFRONT_CREATED' | 'STOREFRONT_PUBLISHED' | 'CONVERSION' | 'COMMISSION' | 'MESSAGE';
+
+export interface MockPartnerActivityItem {
+  id: string;
+  type: PartnerActivityType;
+  description: string;
+  date: string;
+}
+
+export interface MockNeedsAttentionItem {
+  id: string;
+  type: 'APPLICATION' | 'ONBOARDING' | 'PAYOUT' | 'STOREFRONT' | 'ACCOUNT';
+  title: string;
+  description: string;
+  partnerId: string;
+  partnerName: string;
+  severity: 'info' | 'warning' | 'error';
+}
+
+export interface MockPartnerNote {
+  id: string;
+  partnerId: string;
+  text: string;
+  author: string;
+  date: string;
+}
+
+export type AdminTimeRange = '7D' | '30D' | '90D' | 'ALL';
+export type AdminMetric = 'revenue' | 'conversions' | 'commission';
+
+export interface AdminPerformancePoint {
+  date: string;
+  revenue: number;
+  conversions: number;
+  commission: number;
+}

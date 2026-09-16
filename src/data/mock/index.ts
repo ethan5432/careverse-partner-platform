@@ -3,7 +3,9 @@ import type {
   MockConversion, MockCommission, MockPayout, MockConversation,
   MockEmailCampaign, MockEmailAutomation, MockNetwork, MockResource,
   MockPartnerProfile, MockStorefrontSettings, MockNotificationSettings,
-  MockPayoutSetup,
+  MockPayoutSetup, MockAdminActivity, MockNeedsAttentionItem,
+  MockPartnerNote, MockPartnerActivityItem, AdminTimeRange, AdminMetric,
+  AdminPerformancePoint,
 } from './types';
 
 export const mockUsers: MockUser[] = [
@@ -253,3 +255,88 @@ export const mockPayoutSetup: MockPayoutSetup = {
   accountLast4: '4821',
   routingNumber: '021000021',
 };
+
+export const adminPerformanceByRange: Record<AdminTimeRange, AdminPerformancePoint[]> = {
+  '7D': [
+    { date: 'Sep 10', revenue: 1240, conversions: 8, commission: 248 },
+    { date: 'Sep 11', revenue: 980, conversions: 6, commission: 196 },
+    { date: 'Sep 12', revenue: 1520, conversions: 10, commission: 304 },
+    { date: 'Sep 13', revenue: 1890, conversions: 13, commission: 378 },
+    { date: 'Sep 14', revenue: 1340, conversions: 9, commission: 268 },
+    { date: 'Sep 15', revenue: 1670, conversions: 11, commission: 334 },
+    { date: 'Sep 16', revenue: 1120, conversions: 7, commission: 224 },
+  ],
+  '30D': [
+    { date: 'Week 1', revenue: 8400, conversions: 56, commission: 1680 },
+    { date: 'Week 2', revenue: 10200, conversions: 68, commission: 2040 },
+    { date: 'Week 3', revenue: 7600, conversions: 50, commission: 1520 },
+    { date: 'Week 4', revenue: 9800, conversions: 65, commission: 1960 },
+  ],
+  '90D': [
+    { date: 'Jul', revenue: 24800, conversions: 164, commission: 4960 },
+    { date: 'Aug', revenue: 29600, conversions: 196, commission: 5920 },
+    { date: 'Sep', revenue: 18200, conversions: 121, commission: 3640 },
+  ],
+  'ALL': [
+    { date: 'Q1 2025', revenue: 16400, conversions: 108, commission: 3280 },
+    { date: 'Q2 2025', revenue: 31200, conversions: 208, commission: 6240 },
+    { date: 'Q3 2025', revenue: 37800, conversions: 252, commission: 7560 },
+    { date: 'Q4 2025', revenue: 28400, conversions: 190, commission: 5680 },
+    { date: 'Q1 2026', revenue: 33600, conversions: 224, commission: 6720 },
+    { date: 'Q2 2026', revenue: 38400, conversions: 256, commission: 7680 },
+    { date: 'Q3 2026', revenue: 24960, conversions: 166, commission: 4992 },
+  ],
+};
+
+export const mockAdminActivity: MockAdminActivity[] = [
+  { id: 'aa-1', type: 'APPLICATION', description: 'Partner application submitted', partnerName: 'Lisa Thompson', date: '2026-09-15' },
+  { id: 'aa-2', type: 'APPROVAL', description: 'Partner approved', partnerName: 'Emily Rodriguez', date: '2026-09-14' },
+  { id: 'aa-3', type: 'STOREFRONT_PUBLISHED', description: 'Storefront published', partnerName: 'Marcus Johnson', date: '2026-09-13' },
+  { id: 'aa-4', type: 'CONVERSION', description: 'New conversion recorded', partnerName: 'Tom Bradley', amount: 149, date: '2026-09-13' },
+  { id: 'aa-5', type: 'COMMISSION', description: 'Commission approved', partnerName: 'Emily Rodriguez', amount: 17.80, date: '2026-09-12' },
+  { id: 'aa-6', type: 'PAYOUT', description: 'Payout sent', partnerName: 'Marcus Johnson', amount: 1240, date: '2026-09-10' },
+  { id: 'aa-7', type: 'CONVERSION', description: 'New conversion recorded', partnerName: 'Nina Garcia', amount: 49, date: '2026-09-09' },
+  { id: 'aa-8', type: 'APPLICATION', description: 'Partner application submitted', partnerName: 'James Wilson', date: '2026-09-08' },
+];
+
+export const mockNeedsAttention: MockNeedsAttentionItem[] = [
+  { id: 'na-1', type: 'APPLICATION', title: 'New partner application', description: 'Lisa Thompson applied as Creator — awaiting review.', partnerId: 'p-4', partnerName: 'Lisa Thompson', severity: 'info' },
+  { id: 'na-2', type: 'ONBOARDING', title: 'Incomplete onboarding', description: 'James Wilson has not completed storefront setup.', partnerId: 'p-5', partnerName: 'James Wilson', severity: 'warning' },
+  { id: 'na-3', type: 'PAYOUT', title: 'Payout failed', description: 'Payout to Sophie Martin failed — bank account issue.', partnerId: 'p-10', partnerName: 'Sophie Martin', severity: 'error' },
+  { id: 'na-4', type: 'STOREFRONT', title: 'Storefront domain pending', description: "David Kim's custom domain DNS is not yet verified.", partnerId: 'p-3', partnerName: 'David Kim', severity: 'warning' },
+  { id: 'na-5', type: 'ACCOUNT', title: 'Account suspended', description: "Aisha Patel's account is suspended — review required.", partnerId: 'p-6', partnerName: 'Aisha Patel', severity: 'error' },
+];
+
+export const mockPartnerNotes: MockPartnerNote[] = [
+  { id: 'pn-1', partnerId: 'p-1', text: 'Top performer — consistently drives high-volume conversions. Consider featuring in partner spotlight.', author: 'Sarah Chen', date: '2026-09-10' },
+  { id: 'pn-2', partnerId: 'p-1', text: 'Requested higher commission tier for Q4. Escalating to leadership.', author: 'Sarah Chen', date: '2026-09-05' },
+  { id: 'pn-3', partnerId: 'p-2', text: 'Great content creator. Engagement on social posts is above average.', author: 'Sarah Chen', date: '2026-09-08' },
+  { id: 'pn-4', partnerId: 'p-6', text: 'Multiple chargebacks reported. Suspended pending fraud review.', author: 'Sarah Chen', date: '2026-07-30' },
+];
+
+export function getPartnerActivity(partnerId: string): MockPartnerActivityItem[] {
+  const partner = mockPartners.find((p) => p.id === partnerId);
+  if (!partner) return [];
+  const items: MockPartnerActivityItem[] = [
+    { id: `pa-${partnerId}-1`, type: 'APPLICATION', description: 'Partner application submitted', date: partner.joinedDate },
+    { id: `pa-${partnerId}-2`, type: 'APPROVAL', description: 'Application approved by admin', date: partner.joinedDate },
+  ];
+  if (partner.status === 'ACTIVE' || partner.status === 'SUSPENDED') {
+    items.push({ id: `pa-${partnerId}-3`, type: 'ACTIVATED', description: 'Account activated', date: partner.joinedDate });
+    items.push({ id: `pa-${partnerId}-4`, type: 'STOREFRONT_CREATED', description: `Storefront "${partner.storefrontName}" created`, date: partner.joinedDate });
+  }
+  const storefront = mockStorefronts.find((s) => s.id === partner.storefrontId);
+  if (storefront && storefront.status === 'LIVE') {
+    items.push({ id: `pa-${partnerId}-5`, type: 'STOREFRONT_PUBLISHED', description: 'Storefront published', date: partner.lastActive });
+  }
+  const convs = mockConversions.filter((c) => c.partnerId === partnerId);
+  convs.slice(0, 3).forEach((c, i) => {
+    items.push({ id: `pa-${partnerId}-conv-${i}`, type: 'CONVERSION', description: `${c.plan} conversion — ${c.saleAmount}`, date: c.date });
+    items.push({ id: `pa-${partnerId}-comm-${i}`, type: 'COMMISSION', description: `Commission ${c.status.toLowerCase()} — ${c.commission.toFixed(2)}`, date: c.date });
+  });
+  const conv = mockConversations.find((c) => c.partnerId === partnerId);
+  if (conv) {
+    items.push({ id: `pa-${partnerId}-msg`, type: 'MESSAGE', description: 'Message exchanged with partner', date: conv.lastMessageDate });
+  }
+  return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
