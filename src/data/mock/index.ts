@@ -7,6 +7,7 @@ import type {
   MockPartnerNote, MockPartnerActivityItem, AdminTimeRange, AdminMetric,
   AdminPerformancePoint, CommissionStatus,
   MockEmailTemplate, MockScheduledEmail,
+  NetworkStatus, MockNetworkActivity,
 } from './types';
 
 export const mockUsers: MockUser[] = [
@@ -212,20 +213,33 @@ export const mockScheduledEmails: MockScheduledEmail[] = [
 ];
 
 export const mockNetworks: MockNetwork[] = [
-  { id: 'net-1', name: 'Marcus Care Network', partnerCount: 12, conversions: 340, revenue: 68000, networkEarnings: 6800,
+  { id: 'net-1', name: 'Marcus Care Network', ownerId: 'p-1', ownerName: 'Marcus Johnson', status: 'ACTIVE', partnerCount: 5, activePartnerCount: 4, conversions: 269, revenue: 53800, networkEarnings: 5380, createdDate: '2025-04-01',
     partners: [
-      { id: 'np-1', name: 'Emily Rodriguez', type: 'CREATOR', conversions: 87, revenue: 17400, commission: 3480, joinedDate: '2025-05-10' },
-      { id: 'np-2', name: 'David Kim', type: 'BUSINESS', conversions: 64, revenue: 12800, commission: 2560, joinedDate: '2025-06-01' },
-      { id: 'np-3', name: 'Nina Garcia', type: 'CREATOR', conversions: 51, revenue: 10200, commission: 2040, joinedDate: '2025-07-08' },
-      { id: 'np-4', name: 'Robert Chang', type: 'BUSINESS', conversions: 38, revenue: 7600, commission: 1520, joinedDate: '2025-08-15' },
-      { id: 'np-5', name: 'Sophie Martin', type: 'CREATOR', conversions: 29, revenue: 5800, commission: 1160, joinedDate: '2025-09-20' },
+      { id: 'np-1', name: 'Emily Rodriguez', type: 'CREATOR', status: 'ACTIVE', storefrontName: 'Emily Care Tips', storefrontStatus: 'LIVE', conversions: 87, revenue: 17400, commission: 3480, networkEarnings: 870, joinedDate: '2025-05-10', lastActive: '2026-09-14', avatarColor: '#0B9B6B' },
+      { id: 'np-2', name: 'David Kim', type: 'BUSINESS', status: 'ACTIVE', storefrontName: 'Care Agency Pro', storefrontStatus: 'LIVE', conversions: 64, revenue: 12800, commission: 2560, networkEarnings: 640, joinedDate: '2025-06-01', lastActive: '2026-09-12', avatarColor: '#18191D' },
+      { id: 'np-3', name: 'Nina Garcia', type: 'CREATOR', status: 'ACTIVE', storefrontName: 'Nina Wellness Hub', storefrontStatus: 'LIVE', conversions: 51, revenue: 10200, commission: 2040, networkEarnings: 510, joinedDate: '2025-07-08', lastActive: '2026-09-13', avatarColor: '#E1062C' },
+      { id: 'np-4', name: 'Robert Chang', type: 'BUSINESS', status: 'ACTIVE', storefrontName: 'Chang Care Solutions', storefrontStatus: 'LIVE', conversions: 38, revenue: 7600, commission: 1520, networkEarnings: 380, joinedDate: '2025-08-15', lastActive: '2026-09-10', avatarColor: '#0B9B6B' },
+      { id: 'np-5', name: 'Sophie Martin', type: 'CREATOR', status: 'PENDING', storefrontName: 'Sophie Care Corner', storefrontStatus: 'DRAFT', conversions: 29, revenue: 5800, commission: 1160, networkEarnings: 290, joinedDate: '2025-09-20', lastActive: '2026-09-08', avatarColor: '#E1062C' },
+    ],
+    activity: [
+      { id: 'na-1-1', networkId: 'net-1', type: 'CONVERSION', description: 'Family Plus conversion', partnerName: 'Emily Rodriguez', amount: 199, date: '2026-09-14' },
+      { id: 'na-1-2', networkId: 'net-1', type: 'STOREFRONT_PUBLISHED', description: 'Storefront published', partnerName: 'Nina Garcia', date: '2026-09-13' },
+      { id: 'na-1-3', networkId: 'net-1', type: 'CONVERSION', description: 'Care Circle conversion', partnerName: 'David Kim', amount: 399, date: '2026-09-12' },
+      { id: 'na-1-4', networkId: 'net-1', type: 'PAYOUT', description: 'Commission payout sent', partnerName: 'Robert Chang', amount: 1520, date: '2026-09-10' },
+      { id: 'na-1-5', networkId: 'net-1', type: 'PARTNER_JOINED', description: 'New partner joined network', partnerName: 'Sophie Martin', date: '2025-09-20' },
     ],
   },
-  { id: 'net-2', name: 'Bradley Care Network', partnerCount: 8, conversions: 195, revenue: 39000, networkEarnings: 3900,
+  { id: 'net-2', name: 'Bradley Care Network', ownerId: 'p-7', ownerName: 'Tom Bradley', status: 'ACTIVE', partnerCount: 3, activePartnerCount: 2, conversions: 72, revenue: 14400, networkEarnings: 1440, createdDate: '2025-03-15',
     partners: [
-      { id: 'np-6', name: 'Aisha Patel', type: 'BUSINESS', conversions: 23, revenue: 4600, commission: 920, joinedDate: '2025-04-12' },
-      { id: 'np-7', name: 'Lisa Thompson', type: 'CREATOR', conversions: 31, revenue: 6200, commission: 1240, joinedDate: '2025-07-15' },
-      { id: 'np-8', name: 'James Wilson', type: 'BUSINESS', conversions: 18, revenue: 3600, commission: 720, joinedDate: '2025-08-20' },
+      { id: 'np-6', name: 'Aisha Patel', type: 'BUSINESS', status: 'SUSPENDED', storefrontName: 'Patel Care Group', storefrontStatus: 'DRAFT', conversions: 23, revenue: 4600, commission: 920, networkEarnings: 230, joinedDate: '2025-04-12', lastActive: '2026-07-30', avatarColor: '#18191D' },
+      { id: 'np-7', name: 'Lisa Thompson', type: 'CREATOR', status: 'ACTIVE', storefrontName: 'Lisa Care Stories', storefrontStatus: 'LIVE', conversions: 31, revenue: 6200, commission: 1240, networkEarnings: 310, joinedDate: '2025-07-15', lastActive: '2026-09-15', avatarColor: '#E1062C' },
+      { id: 'np-8', name: 'James Wilson', type: 'BUSINESS', status: 'ACTIVE', storefrontName: 'Wilson Care Partners', storefrontStatus: 'LIVE', conversions: 18, revenue: 3600, commission: 720, networkEarnings: 180, joinedDate: '2025-08-20', lastActive: '2026-09-11', avatarColor: '#0B9B6B' },
+    ],
+    activity: [
+      { id: 'na-2-1', networkId: 'net-2', type: 'PARTNER_JOINED', description: 'New partner joined network', partnerName: 'Lisa Thompson', date: '2025-07-15' },
+      { id: 'na-2-2', networkId: 'net-2', type: 'CONVERSION', description: 'Family conversion', partnerName: 'Lisa Thompson', amount: 99, date: '2026-09-15' },
+      { id: 'na-2-3', networkId: 'net-2', type: 'COMMISSION', description: 'Commission approved', partnerName: 'James Wilson', amount: 720, date: '2026-09-11' },
+      { id: 'na-2-4', networkId: 'net-2', type: 'STOREFRONT_PUBLISHED', description: 'Storefront published', partnerName: 'James Wilson', date: '2025-08-25' },
     ],
   },
 ];
