@@ -2,9 +2,7 @@
 const nextConfig = {
   // Output standalone build for Docker deployments
   output: 'standalone',
-  // Enable Turbopack (default in Next.js 16)
-  turbopack: {},
-  // Keep webpack config for fallback compatibility
+  // Keep webpack config — Turbopack is not supported on all platforms
   webpack: (config) => {
     config.module.rules.push({
       test: /\.svg$/,
