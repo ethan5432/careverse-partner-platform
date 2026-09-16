@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -9,19 +10,12 @@ import { mockProducts, currentPartnerStorefront } from '@/data/mock';
 import { cn } from '@/lib/utils';
 
 export default function StorefrontPage() {
+  const router = useRouter();
   const [purchasedPlan, setPurchasedPlan] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
 
-  const handlePurchase = (planName: string) => {
-    setSelectedPlan(planName);
-    setShowConfirm(true);
-  };
-
-  const confirmPurchase = () => {
-    setPurchasedPlan(selectedPlan);
-    setShowConfirm(false);
+  const handlePurchase = (product: typeof mockProducts[0]) => {
+    router.push(`/checkout?product=${product.id}`);
   };
 
   const fmtMoney = (n: number) => `$${n}/mo`;
@@ -199,7 +193,7 @@ export default function StorefrontPage() {
                 ) : (
                   <button
                     className={product.popular ? 'cv-btn-red w-full' : 'cv-btn-primary w-full'}
-                    onClick={() => handlePurchase(product.name)}
+                    onClick={() => handlePurchase(product)}
                   >
                     Request Care
                   </button>
@@ -315,30 +309,6 @@ export default function StorefrontPage() {
         </div>
       </footer>
 
-      {/* Purchase Confirmation Modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="cv-card p-8 max-w-md w-full animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-cv-ink">Confirm purchase</h3>
-              <button onClick={() => setShowConfirm(false)} className="text-cv-muted hover:text-cv-ink transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <p className="text-sm text-cv-body mb-6">
-              You&apos;re about to purchase the <span className="font-bold text-cv-ink">{selectedPlan}</span> plan. This is a mock purchase — no payment will be processed.
-            </p>
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 rounded-full border-cv-line font-bold" onClick={() => setShowConfirm(false)}>
-                Cancel
-              </Button>
-              <button className="cv-btn-primary flex-1" onClick={confirmPurchase}>
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

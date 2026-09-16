@@ -427,6 +427,46 @@ All mock data lives in `src/data/mock/`.
 
 ---
 
+## Phase 10 — Storefront Checkout & Purchase Flow
+
+### Customer Checkout (`/checkout`)
+- Dedicated checkout page reached from storefront package CTAs
+- URL carries product ID (`?product=prod-family-plus`) and reads partner/storefront from shared mock data
+- Form sections: Customer Information (name, email), Billing Address (street, city, state, ZIP), Payment Method
+- Payment method selector: Credit/Debit Card, PayPal, Bank Transfer — each shows relevant fields
+- Sticky order summary sidebar: selected package, price, included features, subtotal/setup/tax breakdown, total, and "Referred by" attribution showing the partner storefront
+- Complete Purchase button (disabled until form is valid) and Simulate Failed Payment button
+
+### Checkout States
+- **Checkout form** — full form with validation, payment method selection, order summary
+- **Processing** — spinner with "Securely processing your membership" message
+- **Success** — green check, reference number, amount, email, links to confirmation page and back to storefront
+- **Failed** — red alert, "Try Again" returns to form, "Back to Storefront" returns to storefront
+- **Cancelled/back** — "Back to Storefront" link in header returns to storefront at any time
+
+### Confirmation Page (`/checkout/confirmation`)
+- Dedicated confirmation page with order reference number prominently displayed
+- Order details: package name, amount, payment method, date, customer email, customer name
+- "What happens next" section: check email, meet Lidia AI assistant, start using benefits, manage membership
+- Referred-by sidebar showing the originating partner storefront with verification badge and join date
+- Support contact card (email + phone)
+- Buttons: "Start Using Benefits" and "Back to Storefront"
+
+### Partner Attribution
+- Storefront page passes product ID to checkout via URL query param
+- Checkout page reads partner and storefront from shared mock data (`currentPartner` / `currentPartnerStorefront`)
+- Order summary in checkout shows "Referred by" with partner name and storefront identity
+- Confirmation page shows originating partner storefront with verification badge
+- Mock orders include `partnerId`, `partnerName`, `storefrontId`, `storefrontName` fields for admin attribution
+- Completed mock orders connect to the existing conversion data structure
+
+### Mock Data
+- `MockOrder` type added with full order fields (reference, product, customer, billing, payment, attribution)
+- `mockOrders` array with two completed orders referencing existing partners/storefronts
+- Orders use the same product, partner, and storefront IDs as the rest of the mock data
+
+---
+
 ## File Structure
 
 ```
@@ -460,6 +500,8 @@ src/
       settings/         Partner settings
     storefront/         Customer storefront
     storefront-builder/ Storefront builder
+    checkout/           Checkout flow (form → processing → success/failed)
+      confirmation/     Purchase confirmation page
   components/
     shared/             Shared Careverse components
     ui/                 shadcn/ui primitives
