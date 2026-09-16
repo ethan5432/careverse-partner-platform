@@ -36,20 +36,21 @@ Phase 1 frontend prototype of the Careverse Partner Platform. All data is mocked
 
 ### Admin (`/admin/*`)
 
-| Route | Nav Label |
-|-------|-----------|
-| `/admin` | Dashboard |
-| `/admin/partners` | Partners (CRM) |
-| `/admin/storefronts` | Storefronts |
-| `/admin/conversions` | Conversions |
-| `/admin/commissions` | Commissions |
-| `/admin/payouts` | Payouts |
-| `/admin/networks` | Networks |
-| `/admin/products` | Products |
-| `/admin/messages` | Messages |
-| `/admin/emails` | Emails |
-| `/admin/reports` | Reports |
-| `/admin/settings` | Settings |
+| Route | Nav Label | Description |
+|-------|-----------|-------------|
+| `/admin/login` | — | Admin-only login (separate from partner login) |
+| `/admin` | Dashboard | Platform overview with metrics, performance chart, partner/storefront tables, needs attention, recent activity |
+| `/admin/partners` | Partners | Partner list with search, type + status filters, and partner detail dialog (8 tabs) |
+| `/admin/storefronts` | Storefronts | Storefront list with search + status filters, and storefront detail dialog (5 tabs) |
+| `/admin/conversions` | Conversions | All platform conversions |
+| `/admin/commissions` | Commissions | Commission ledger with status filters |
+| `/admin/payouts` | Payouts | All platform payouts |
+| `/admin/networks` | Networks | Network management |
+| `/admin/products` | Products | Product catalog (Family, Family Plus, Care Circle) with product detail dialog |
+| `/admin/messages` | Messages | Admin-to-partner messaging (two-column layout) |
+| `/admin/emails` | Emails | Email campaigns + automations |
+| `/admin/reports` | Reports | Platform reports |
+| `/admin/settings` | Settings | Admin settings |
 
 ---
 
@@ -118,6 +119,11 @@ All mock data lives in `src/data/mock/`.
 | mockStorefrontSettings | MockStorefrontSettings | Storefront settings |
 | mockNotificationSettings | MockNotificationSettings | Notification preferences |
 | mockPayoutSetup | MockPayoutSetup | Payout method details |
+| adminPerformanceByRange | Record<AdminTimeRange, AdminPerformancePoint[]> | Admin performance data by time range |
+| mockAdminActivity | MockAdminActivity[] | Platform-wide activity feed |
+| mockNeedsAttention | MockNeedsAttentionItem[] | Items requiring admin attention |
+| mockPartnerNotes | MockPartnerNote[] | Internal partner notes |
+| getPartnerActivity | (partnerId) => MockPartnerActivityItem[] | Partner activity timeline generator |
 
 ---
 
@@ -175,10 +181,38 @@ All mock data lives in `src/data/mock/`.
 - Desktop/mobile preview
 - Publish/unpublish toggle
 
+### Admin Dashboard
+- Primary metrics: Revenue, Conversions, Commissions, Active Partners
+- Performance chart with 7D/30D/90D/All time toggle and Revenue/Conversions/Commission metric switch
+- Partner performance table (top 5 by revenue)
+- Storefront performance table (top 5 by revenue)
+- Needs Attention section (applications, onboarding, payout issues, storefront issues, account issues)
+- Recent Activity feed (applications, approvals, storefronts published, conversions, commissions, payouts)
+
 ### Admin Partners CRM
-- Search and filter partners by type
-- Click partner to open detail dialog with 8 tabs
-- View partner conversions, commissions, storefront, messages, notes
+- Search and filter partners by type (All, Creator, Business, Network) and status (All, Active, Pending, Incomplete, Suspended)
+- Click partner to open detail dialog with 8 tabs:
+  - **Overview** — name, type, status, contact, joined, performance summary, commercial summary
+  - **Activity** — timeline (application, approval, activation, storefront created/published, conversions, commissions, messages)
+  - **Conversions** — partner's conversions with click-to-detail dialog
+  - **Commissions** — partner's commissions with click-to-detail calculation breakdown
+  - **Storefront** — storefront info with View/Edit actions
+  - **Messages** — conversation thread with reply and new message capability (mock state)
+  - **Notes** — internal-only notes with add capability (mock local state, not visible to partner)
+  - **Settings** — account info with status controls (Active, Pending, Incomplete, Suspended)
+
+### Admin Storefronts
+- Search and filter storefronts by status (All, Active, Draft)
+- Click storefront to open detail dialog with 5 tabs:
+  - **Overview** — name, URL, status, partner, visitors, conversions, revenue, commission, intro copy
+  - **Products** — assigned Careverse packages
+  - **Branding** — name, intro copy, brand colors
+  - **Domain** — default URL, custom domain, domain status
+  - **Analytics** — visitors, conversions, conversion rate, 4-week visitor chart
+
+### Admin Products
+- Three Careverse plans: Family, Family Plus, Care Circle
+- Click product card to open detail dialog with full product information
 
 ### Admin Emails
 - Campaigns tab with status indicators

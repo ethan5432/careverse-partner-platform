@@ -1,16 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Package, Check, Star, Plus, Pencil } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Package, Check, Star, Pencil } from 'lucide-react';
 import { mockProducts } from '@/data/mock';
+import type { MockProduct } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
 
 export default function AdminProductsPage() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedProduct = mockProducts.find((p) => p.id === selectedId) || null;
   const fmtPrice = (n: number) => `$${n}`;
 
   return (
@@ -19,7 +22,6 @@ export default function AdminProductsPage() {
         eyebrow="Products"
         title="Membership Catalog"
         description="The centralized Careverse membership plans available to every partner storefront."
-        actions={<Button className="cv-btn-primary cv-btn-sm rounded-full"><Plus className="h-4 w-4" /> Add Product</Button>}
       />
 
       {/* Summary bar */}
@@ -62,7 +64,11 @@ export default function AdminProductsPage() {
       {/* Product cards */}
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {mockProducts.map((p) => (
-          <Card key={p.id} className={cn('cv-card relative flex flex-col overflow-hidden', p.popular && 'ring-2 ring-cv-red ring-offset-2 ring-offset-cv-cream')}>
+          <Card
+            key={p.id}
+            className={cn('cv-card relative flex flex-col overflow-hidden cursor-pointer hover:shadow-md transition-shadow', p.popular && 'ring-2 ring-cv-red ring-offset-2 ring-offset-cv-cream')}
+            onClick={() => setSelectedId(p.id)}
+          >
             {p.popular && (
               <div className="absolute top-4 right-4">
                 <span className="inline-flex items-center gap-1 rounded-full bg-cv-red px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white">
@@ -83,22 +89,18 @@ export default function AdminProductsPage() {
             </CardHeader>
 
             <CardContent className="flex-1 flex flex-col gap-4">
-              {/* Price */}
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-cv-ink">{fmtPrice(p.price)}</span>
                 <span className="text-sm text-cv-muted">/mo</span>
               </div>
 
-              {/* Description */}
               <p className="text-sm text-cv-body leading-relaxed">{p.description}</p>
 
-              {/* Badges */}
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={p.status === 'ACTIVE' ? 'active' : 'draft'} />
                 <StatusBadge status={p.availability === 'AVAILABLE' ? 'available' : 'none'} label={p.availability === 'AVAILABLE' ? 'Available' : 'Coming Soon'} />
               </div>
 
-              {/* Features */}
               <div className="rounded-2xl border border-cv-line bg-cv-soft/40 p-4 flex-1">
                 <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-3">What's included</p>
                 <ul className="space-y-2.5">
@@ -113,7 +115,6 @@ export default function AdminProductsPage() {
                 </ul>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center gap-2 pt-1">
                 <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft">
                   <Pencil className="h-3.5 w-3.5" /> Edit
@@ -124,6 +125,84 @@ export default function AdminProductsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Product detail */}
+      <ProductDialog product={selectedProduct} onClose={() => setSelectedId(null)} />
     </div>
+  );
+}
+
+function ProductDialog({ product, onClose }: { product: MockProduct | null; onClose: () => void }) {
+  const open = !!product;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg cv-card border-cv-line rounded-2xl bg-white p-0">
+        {product && (
+          <div className="p-6 space-y-4">
+            <DialogHeader>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cv-soft">
+                  <Package className="h-6 w-6 text-cv-ink" />
+                </div>
+                <div>
+                  <DialogTitle className="text-lg font-bold text-cv-ink">{product.name}</DialogTitle>
+                  <DialogDescription className="text-sm text-cv-muted">{product.billingType.charAt(0) + product.billingType.slice(1).toLowerCase()} billing</DialogDescription>
+                </div>
+                {product.popular && (
+                  <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-cv-red px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white">
+                    <Star className="h-3 w-3" /> Popular
+                  </span>
+                )}
+              </div>
+            </DialogHeader>
+
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-cv-ink">${product.price}</span>
+              <span className="text-sm text-cv-muted">/mo</span>
+            </div>
+
+            <p className="text-sm text-cv-body leading-relaxed">{product.description}</p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge status={product.status === 'ACTIVE' ? 'active' : 'draft'} />
+              <StatusBadge status={product.availability === 'AVAILABLE' ? 'available' : 'none'} label={product.availability === 'AVAILABLE' ? 'Available' : 'Coming Soon'} />
+            </div>
+
+            <div className="rounded-2xl border border-cv-line bg-cv-soft/40 p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-3">What's included</p>
+              <ul className="space-y-2.5">
+                {product.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-cv-good">
+                      <Check className="h-2.5 w-2.5 text-white" />
+                    </span>
+                    <span className="text-sm text-cv-body">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-cv-soft p-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Price</p>
+                <p className="text-sm font-bold text-cv-ink">${product.price}/mo</p>
+              </div>
+              <div className="rounded-xl bg-cv-soft p-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Billing</p>
+                <p className="text-sm font-bold text-cv-ink">{product.billingType.charAt(0) + product.billingType.slice(1).toLowerCase()}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft">
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Button>
+              <Button className="cv-btn-primary cv-btn-sm rounded-full flex-1">Save Changes</Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

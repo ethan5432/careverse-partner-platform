@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-type StatusVariant = 'pending' | 'approved' | 'paid' | 'reversed' | 'active' | 'suspended' | 'incomplete' | 'live' | 'draft' | 'processing' | 'failed' | 'available' | 'connected' | 'none';
+type StatusVariant = 'pending' | 'approved' | 'paid' | 'reversed' | 'active' | 'suspended' | 'incomplete' | 'live' | 'draft' | 'processing' | 'failed' | 'available' | 'connected' | 'none' | 'paused';
 
 const statusConfig: Record<StatusVariant, { label: string; className: string; dot: string }> = {
   pending: { label: 'Pending', className: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
@@ -20,6 +20,7 @@ const statusConfig: Record<StatusVariant, { label: string; className: string; do
   available: { label: 'Available', className: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   connected: { label: 'Connected', className: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   none: { label: 'None', className: 'bg-gray-100 text-gray-600 border-gray-200', dot: 'bg-gray-400' },
+  paused: { label: 'Paused', className: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
 };
 
 export function StatusBadge({ status, label, className }: { status: StatusVariant; label?: string; className?: string }) {
