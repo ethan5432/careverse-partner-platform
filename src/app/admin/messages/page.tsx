@@ -1,27 +1,31 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { Avatar } from '@/components/shared/StatusBadge';
+import { Avatar, StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { MessageSquare, Send, Search, MessageCircle, Mail } from 'lucide-react';
-import { mockConversations } from '@/data/mock';
+import { MessageSquare, Send, Search, MessageCircle } from 'lucide-react';
+import { mockConversations, mockPartners, mockStorefronts } from '@/data/mock';
 import type { MockConversation, MockMessage } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
+
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const fmtDateLong = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 export default function AdminMessagesPage() {
   const [activeId, setActiveId] = useState<string>(mockConversations[0]?.id ?? '');
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
   const [threads, setThreads] = useState<MockConversation[]>(mockConversations);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const active = threads.find((t) => t.id === activeId) ?? null;
-
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const fmtDateLong = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const activePartner = active ? mockPartners.find((p) => p.id === active.partnerId) : null;
+  const activeStorefront = activePartner ? mockStorefronts.find((s) => s.id === activePartner.storefrontId) : null;
 
   const filtered = threads.filter((t) =>
     t.partnerName.toLowerCase().includes(query.toLowerCase()) ||
@@ -29,6 +33,12 @@ export default function AdminMessagesPage() {
   );
 
   const unreadCount = threads.filter((t) => t.unread).length;
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [activeId, active?.messages.length]);
 
   const handleSend = () => {
     if (!draft.trim() || !active) return;
@@ -69,15 +79,12 @@ export default function AdminMessagesPage() {
                 {unreadCount} unread
               </span>
             )}
-            <Button className="cv-btn-primary cv-btn-sm rounded-full">
-              <Mail className="h-4 w-4" /> Message Partner
-            </Button>
           </>
         }
       />
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 h-[calc(100vh-280px)] min-h-[520px]">
+      {/* Three-column layout: conversations | chat | partner details */}
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr_280px] gap-4 h-[calc(100vh-280px)] min-h-[520px]">
         {/* Conversation list */}
         <Card className="cv-card flex flex-col overflow-hidden">
           <div className="p-4 border-b border-cv-line">
@@ -136,7 +143,7 @@ export default function AdminMessagesPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-5 py-6 space-y-4 bg-cv-cream/40">
+              <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6 space-y-4 bg-cv-cream/40">
                 {active.messages.map((m) => {
                   const isPartner = m.sender === 'PARTNER';
                   return (
@@ -189,7 +196,68 @@ export default function AdminMessagesPage() {
             />
           )}
         </Card>
+
+        {/* Partner details panel */}
+        <Card className="cv-card flex flex-col overflow-hidden hidden lg:flex">
+          {activePartner ? (
+            <div className="flex flex-col h-full overflow-y-auto">
+              <div className="p-5 border-b border-cv-line">
+                <div className="flex items-center gap-3 mb-4">
+                  <Avatar name={activePartner.name} color={activePartner.avatarColor} size={48} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-cv-ink">{activePartner.name}</p>
+                    <p className="text-xs text-cv-muted">{activePartner.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={activePartner.status.toLowerCase() as 'active' | 'pending' | 'suspended'} label={activePartner.status.charAt(0) + activePartner.status.slice(1).toLowerCase()} />
+                  <span className="text-xs font-bold text-cv-muted">{activePartner.type}</span>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-3">
+                <DetailRow label="Partner Type" value={activePartner.type} />
+                <DetailRow label="Joined" value={fmtDateLong(activePartner.joinedDate)} />
+                <DetailRow label="Last Active" value={fmtDateLong(activePartner.lastActive)} />
+                <DetailRow label="Storefront" value={activePartner.storefrontName} />
+                {activeStorefront && (
+                  <DetailRow label="Storefront Status" value={activeStorefront.status} />
+                )}
+              </div>
+
+              <div className="p-5 border-t border-cv-line">
+                <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-3">Performance</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <MiniStat label="Conversions" value={activePartner.conversions} />
+                  <MiniStat label="Revenue" value={fmtMoney(activePartner.revenue)} />
+                  <MiniStat label="Commission" value={fmtMoney(activePartner.commission)} />
+                  <MiniStat label="Visitors" value={activeStorefront?.visitors ?? 0} />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <EmptyState icon={MessageCircle} title="No partner selected" description="Select a conversation to see partner details." />
+          )}
+        </Card>
       </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2 py-1 border-b border-cv-line last:border-0">
+      <span className="text-xs font-bold uppercase tracking-wider text-cv-muted shrink-0">{label}</span>
+      <span className="text-sm font-bold text-cv-ink text-right truncate">{value}</span>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-lg bg-cv-soft p-3">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted">{label}</p>
+      <p className="text-base font-bold text-cv-ink mt-0.5">{value}</p>
     </div>
   );
 }

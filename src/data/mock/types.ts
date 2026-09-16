@@ -159,6 +159,28 @@ export interface MockEmailAutomation {
   status: 'ACTIVE' | 'PAUSED' | 'DRAFT';
 }
 
+export interface MockEmailTemplate {
+  id: string;
+  name: string;
+  trigger: string;
+  subject: string;
+  body: string;
+  audience: string;
+  enabled: boolean;
+  lastEdited: string;
+}
+
+export interface MockScheduledEmail {
+  id: string;
+  campaignId: string;
+  campaignName: string;
+  audience: string;
+  subject: string;
+  scheduledDate: string;
+  status: 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED';
+  recipientCount: number;
+}
+
 export interface MockNetwork {
   id: string;
   name: string;
