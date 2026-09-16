@@ -131,20 +131,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading } = useMockAuth();
   const router = useRouter();
 
-  if (loading) {
-    return (
-      <div className="cv-page flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="relative mx-auto h-10 w-10">
-            <div className="absolute inset-0 rounded-full border-4 border-cv-line" />
-            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-cv-ink" />
-          </div>
-          <p className="mt-4 text-sm text-cv-muted">Loading admin...</p>
-        </div>
-      </div>
-    );
-  }
-
   const shouldRedirect = !loading && (!user || user.role !== 'ADMIN');
 
   useEffect(() => {

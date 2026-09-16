@@ -91,9 +91,17 @@ export interface MockCommission {
   commission: number;
   status: CommissionStatus;
   date: string;
+  approvedDate?: string;
+  paidDate?: string;
+  reversedDate?: string;
   conversionId: string;
   plan: string;
   partnerId: string;
+  partnerName: string;
+  storefrontName: string;
+  customerName: string;
+  clickId: string;
+  attributionSource: string;
 }
 
 export type PayoutStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED';
