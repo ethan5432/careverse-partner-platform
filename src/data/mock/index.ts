@@ -34,21 +34,21 @@ export const mockPartners: MockPartner[] = [
 ];
 
 export const mockProducts: MockProduct[] = [
-  { id: 'prod-family', name: 'Family', price: 49, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'Essential care benefits for the whole family — included services, lower prices on other care, product specials, and free samples.', features: ['Included services', 'Lower prices on other care', 'Product specials', 'Free samples & coupons', 'Care allowance', 'Health Advocacy where applicable'],
+  { id: 'prod-family', name: 'Family', price: 49, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'Essential care benefits for the whole family — included services, lower prices on other care, product specials, and free samples.', features: ['Included services', 'Lower prices on other care', 'Product specials', 'Free samples & coupons', 'Care allowance', 'Health Advocacy where applicable'], sourceId: 'cv-benefits-family-001', syncStatus: 'SYNCED', lastSyncedAt: '2026-09-15T10:00:00Z',
     benefits: [
       { title: 'Included Services', description: 'Access to essential care services at no additional cost.' },
       { title: 'Care Allowance', description: 'Monthly allowance for out-of-pocket care expenses.' },
       { title: 'Product Specials', description: 'Exclusive discounts on health and wellness products.' },
       { title: 'Health Advocacy', description: 'Professional guidance for navigating care options.' },
     ] },
-  { id: 'prod-family-plus', name: 'Family Plus', price: 89, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'Everything in Family, with enhanced benefits and expanded care allowance for families who need more coverage.', features: ['Everything in Family', 'Enhanced care allowance', 'Priority Health Advocacy', 'Expanded product specials', 'Exclusive free samples'], popular: true,
+  { id: 'prod-family-plus', name: 'Family Plus', price: 89, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'Everything in Family, with enhanced benefits and expanded care allowance for families who need more coverage.', features: ['Everything in Family', 'Enhanced care allowance', 'Priority Health Advocacy', 'Expanded product specials', 'Exclusive free samples'], popular: true, sourceId: 'cv-benefits-family-plus-001', syncStatus: 'SYNCED', lastSyncedAt: '2026-09-15T10:00:00Z',
     benefits: [
       { title: 'Enhanced Care Allowance', description: 'Doubled monthly allowance for comprehensive care needs.' },
       { title: 'Priority Health Advocacy', description: 'Dedicated advocate with priority response times.' },
       { title: 'Expanded Product Specials', description: 'Broader range of discounted products and services.' },
       { title: 'Exclusive Free Samples', description: 'Curated samples of premium health products.' },
     ] },
-  { id: 'prod-care-circle', name: 'Care Circle', price: 149, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'The most comprehensive Careverse plan — full benefits for extended families and care circles with the highest level of support.', features: ['Everything in Family Plus', 'Full care circle coverage', 'Dedicated Health Advocate', 'Premium product specials', 'Concierge care coordination'],
+  { id: 'prod-care-circle', name: 'Care Circle', price: 149, billingType: 'MONTHLY', status: 'ACTIVE', availability: 'AVAILABLE', partnerAvailability: 'ALL', description: 'The most comprehensive Careverse plan — full benefits for extended families and care circles with the highest level of support.', features: ['Everything in Family Plus', 'Full care circle coverage', 'Dedicated Health Advocate', 'Premium product specials', 'Concierge care coordination'], sourceId: 'cv-benefits-care-circle-001', syncStatus: 'SYNCED', lastSyncedAt: '2026-09-15T10:00:00Z',
     benefits: [
       { title: 'Full Care Circle Coverage', description: 'Covers extended family members and care circle participants.' },
       { title: 'Dedicated Health Advocate', description: 'A personal advocate assigned to your care circle.' },

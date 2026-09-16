@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { Check, Monitor, Smartphone, Eye, Save, Globe, Upload, Package, ArrowLeftRight, DollarSign, Users, TrendingUp, ExternalLink } from 'lucide-react';
+import { Check, Monitor, Smartphone, Eye, Save, Globe, Upload, Package, ArrowLeftRight, DollarSign, Users, TrendingUp, ExternalLink, ChevronUp, ChevronDown, Info, Lock } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront, partnerDashboardStats } from '@/data/mock';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +31,28 @@ export default function StorefrontBuilderPage() {
       prev.includes(pkg) ? prev.filter(p => p !== pkg) : [...prev, pkg]
     );
   };
+
+  const movePackageUp = (pkg: string) => {
+    setSelectedPackages(prev => {
+      const idx = prev.indexOf(pkg);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      return next;
+    });
+  };
+
+  const movePackageDown = (pkg: string) => {
+    setSelectedPackages(prev => {
+      const idx = prev.indexOf(pkg);
+      if (idx < 0 || idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      return next;
+    });
+  };
+
+  const availableProducts = mockProducts.filter((p) => p.availability === 'AVAILABLE');
 
   const handleSave = () => {
     setSaved(true);
@@ -203,43 +225,133 @@ export default function StorefrontBuilderPage() {
 
       {/* Packages */}
       {activeTab === 'packages' && (
-        <Card className="cv-card">
-          <CardHeader>
-            <CardTitle className="text-base font-bold text-cv-ink">Choose packages</CardTitle>
-            <p className="text-sm text-cv-muted">Select which Careverse plans appear on your storefront</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {mockProducts.map((product) => {
-              const isSelected = selectedPackages.includes(product.name);
-              return (
-                <div
-                  key={product.id}
-                  className={cn(
-                    'flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer',
-                    isSelected ? 'border-cv-ink bg-cv-soft' : 'border-cv-line bg-white hover:border-cv-muted'
-                  )}
-                  onClick={() => togglePackage(product.name)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      'flex h-6 w-6 items-center justify-center rounded-md border-2 transition-all',
-                      isSelected ? 'bg-cv-ink border-cv-ink' : 'border-cv-line'
-                    )}>
-                      {isSelected && <Check className="h-4 w-4 text-white" />}
+        <div className="space-y-6">
+          {/* Info banner */}
+          <div className="flex items-start gap-3 rounded-xl bg-cv-soft border border-cv-line p-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cv-ink shrink-0">
+              <Info className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-cv-ink">Careverse manages all package content</p>
+              <p className="text-xs text-cv-muted mt-0.5">You can select which packages to offer and reorder them. Package names, prices, and benefits are set by Careverse and cannot be edited.</p>
+            </div>
+          </div>
+
+          {/* Selected packages with reordering */}
+          {selectedPackages.length > 0 && (
+            <Card className="cv-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-bold text-cv-ink">Your storefront packages ({selectedPackages.length})</CardTitle>
+                <p className="text-sm text-cv-muted">Reorder how packages appear on your storefront</p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {selectedPackages.map((pkgName, idx) => {
+                  const product = mockProducts.find((p) => p.name === pkgName);
+                  if (!product) return null;
+                  return (
+                    <div key={pkgName} className="flex items-center gap-3 p-3 rounded-xl border border-cv-ink bg-cv-soft">
+                      <div className="flex flex-col gap-0.5">
+                        <button
+                          onClick={() => movePackageUp(pkgName)}
+                          disabled={idx === 0}
+                          className={cn('p-0.5 rounded transition-colors', idx === 0 ? 'text-cv-line cursor-not-allowed' : 'text-cv-ink hover:text-cv-red')}
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => movePackageDown(pkgName)}
+                          disabled={idx === selectedPackages.length - 1}
+                          className={cn('p-0.5 rounded transition-colors', idx === selectedPackages.length - 1 ? 'text-cv-line cursor-not-allowed' : 'text-cv-ink hover:text-cv-red')}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-xs font-bold shrink-0">{idx + 1}</span>
+                      <div className="flex-1">
+                        <p className="font-bold text-cv-ink">{product.name} <span className="text-cv-muted font-normal">— ${product.price}/mo</span></p>
+                        <p className="text-xs text-cv-muted">{product.features.length} benefits · {product.billingType.charAt(0) + product.billingType.slice(1).toLowerCase()} billing</p>
+                      </div>
+                      {product.popular && (
+                        <span className="text-xs font-extrabold text-cv-ink bg-white px-2 py-0.5 rounded-full border border-cv-line">POPULAR</span>
+                      )}
+                      <button
+                        onClick={() => togglePackage(pkgName)}
+                        className="text-xs font-bold text-cv-red hover:text-cv-ink transition-colors px-2"
+                      >
+                        Remove
+                      </button>
                     </div>
-                    <div>
-                      <p className="font-bold text-cv-ink">{product.name} <span className="text-cv-muted font-normal">— ${product.price}/mo</span></p>
-                      <p className="text-xs text-cv-muted">{product.features.length} benefits included</p>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Available packages to add */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Available Careverse packages</CardTitle>
+              <p className="text-sm text-cv-muted">Select which packages to offer on your storefront</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {availableProducts.map((product) => {
+                const isSelected = selectedPackages.includes(product.name);
+                return (
+                  <div key={product.id} className="space-y-0">
+                    <div
+                      className={cn(
+                        'flex items-center justify-between p-4 rounded-xl border-2 transition-all',
+                        isSelected ? 'border-cv-ink bg-cv-soft' : 'border-cv-line bg-white hover:border-cv-muted cursor-pointer'
+                      )}
+                      onClick={() => !isSelected && togglePackage(product.name)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={cn(
+                          'flex h-6 w-6 items-center justify-center rounded-md border-2 transition-all',
+                          isSelected ? 'bg-cv-ink border-cv-ink' : 'border-cv-line'
+                        )}>
+                          {isSelected && <Check className="h-4 w-4 text-white" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-cv-ink">{product.name} <span className="text-cv-muted font-normal">— ${product.price}/mo</span></p>
+                          <p className="text-xs text-cv-muted">{product.features.length} benefits included</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {product.popular && (
+                          <span className="text-xs font-extrabold text-cv-ink bg-cv-soft px-2 py-0.5 rounded-full">POPULAR</span>
+                        )}
+                        {isSelected ? (
+                          <span className="text-xs font-bold text-cv-good">Added</span>
+                        ) : (
+                          <span className="text-xs font-bold text-cv-ink">Click to add</span>
+                        )}
+                      </div>
                     </div>
+                    {/* Read-only package details */}
+                    {isSelected && (
+                      <div className="rounded-xl border border-cv-line border-t-0 bg-cv-soft/30 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Lock className="h-3.5 w-3.5 text-cv-muted" />
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted">Package content — managed by Careverse</p>
+                        </div>
+                        <p className="text-xs text-cv-body leading-relaxed">{product.description}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {product.features.map((f, i) => (
+                            <span key={i} className="inline-flex items-center gap-1 rounded-full bg-white border border-cv-line px-2 py-0.5 text-[10px] font-bold text-cv-body">
+                              <Check className="h-2.5 w-2.5 text-cv-good" />
+                              {f}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {product.popular && (
-                    <span className="text-xs font-extrabold text-cv-ink bg-cv-soft px-2 py-0.5 rounded-full">POPULAR</span>
-                  )}
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Branding */}
