@@ -320,3 +320,25 @@ export interface AdminPerformancePoint {
   conversions: number;
   commission: number;
 }
+
+export interface MockOrder {
+  id: string;
+  reference: string;
+  productId: string;
+  productName: string;
+  productPrice: number;
+  customerName: string;
+  customerEmail: string;
+  billingAddress: string;
+  billingCity: string;
+  billingState: string;
+  billingZip: string;
+  paymentMethod: 'CARD' | 'PAYPAL' | 'BANK_TRANSFER';
+  status: 'COMPLETED' | 'PROCESSING' | 'FAILED';
+  date: string;
+  partnerId: string;
+  partnerName: string;
+  storefrontId: string;
+  storefrontName: string;
+  amount: number;
+}
