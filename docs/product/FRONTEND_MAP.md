@@ -467,6 +467,60 @@ All mock data lives in `src/data/mock/`.
 
 ---
 
+## Phase 11 — Product Catalog & Package Management
+
+### Centralized Package Source
+- All package data comes from a single source (`mockProducts`) shared by Admin Products and Storefront Builder
+- `MockProduct` type includes `sourceId`, `syncStatus`, and `lastSyncedAt` fields for Careverse Benefits integration
+- No second package definition system — Admin Products and Storefront Builder reference the same data
+- Mock sync state: all packages are `SYNCED` with a `lastSyncedAt` timestamp
+
+### Admin Products (`/admin/products`)
+- Central Careverse package catalog showing all available packages
+- Stats: total packages, available count, most popular plan
+- Sync status banner showing Careverse Benefits source connection, last sync time, and sync count
+- "Sync from Careverse" button simulates pulling package data from the Benefits source (updates `lastSyncedAt` and `syncStatus`)
+- Package cards show name, price, billing type, status, availability, sync status, description, and feature list
+- Package detail dialog with three tabs:
+  - **Details**: read-only name, description, price, billing type (with note that content is managed by Careverse)
+  - **Benefits**: read-only benefit cards and feature list
+  - **Availability**: read-only status and partner availability, plus an availability toggle (the only admin control)
+- Admin can toggle whether a package is available for partner storefronts
+- Admin cannot create, edit, or delete packages — no "New Product" button, no edit mode
+- Package content (name, price, description, features, benefits) is read-only and comes from the Careverse Benefits source
+
+### Package Availability
+- Admin controls availability via a switch in the package detail dialog
+- When set to "Coming Soon", the package is hidden from partner storefront selection
+- Partners can only see and select packages with `availability === 'AVAILABLE'`
+- The Storefront Builder filters packages by availability before rendering the selection list
+
+### Partner Storefront Builder (`/storefront-builder` — Packages tab)
+- Info banner explaining Careverse manages all package content
+- Two sections: "Your storefront packages" (selected, with reordering) and "Available Careverse packages" (to add)
+- Selected packages section shows numbered ordering with up/down arrows to reorder
+- Each selected package shows position number, name, price, benefit count, and a "Remove" button
+- Available packages section shows only packages with `availability === 'AVAILABLE'`
+- Clicking an available package adds it to the selection
+- Selected packages expand to show read-only package details (description + feature chips) with a lock icon indicating content is managed by Careverse
+- Partners cannot create packages, change names, change prices, change descriptions, or edit benefits
+- The storefront page references the same centralized `mockProducts` data for package display
+
+### Shared Data Flow
+```
+Careverse Benefits Source (mock)
+  ↓ sync
+mockProducts (centralized)
+  ↓ read
+Admin Products (availability toggle only)
+  ↓ availability filter
+Storefront Builder (select + reorder only)
+  ↓ selected package names
+Storefront page (display to customers)
+```
+
+---
+
 ## File Structure
 
 ```

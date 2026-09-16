@@ -42,6 +42,9 @@ export interface MockProduct {
   popular?: boolean;
   partnerAvailability: 'ALL' | 'CREATOR' | 'BUSINESS' | 'NETWORK';
   benefits: { title: string; description: string }[];
+  sourceId?: string;
+  syncStatus: 'SYNCED' | 'PENDING_SYNC' | 'LOCAL_ONLY';
+  lastSyncedAt?: string;
 }
 
 export interface MockStorefront {
