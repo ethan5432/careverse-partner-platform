@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Settings as SettingsIcon, FileSliders as Sliders, Crosshair, Mail, Plug, Users, Shield, Save, Plus, Trash2, Check, Clock, Lock, Globe, Zap } from 'lucide-react';
+import { Settings as SettingsIcon, FileSliders as Sliders, Crosshair, Mail, Plug, Users, Shield, Save, Plus, Trash2, Check, Clock, Lock, Globe, Zap, Store, UserCheck, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Local mock data for settings ──────────────────────────────────
@@ -50,12 +50,15 @@ const team: TeamMember[] = [
 
 const tabConfig = [
   { value: 'program', label: 'Program', icon: SettingsIcon },
-  { value: 'commission', label: 'Commission Rules', icon: Sliders },
+  { value: 'commission', label: 'Commission', icon: Sliders },
+  { value: 'partner', label: 'Partners', icon: UserCheck },
+  { value: 'storefront', label: 'Storefronts', icon: Store },
   { value: 'tracking', label: 'Tracking', icon: Crosshair },
   { value: 'email', label: 'Email', icon: Mail },
   { value: 'integrations', label: 'Integrations', icon: Plug },
   { value: 'team', label: 'Team', icon: Users },
   { value: 'security', label: 'Security', icon: Shield },
+  { value: 'general', label: 'General', icon: Building },
 ] as const;
 
 export default function AdminSettingsPage() {
@@ -64,6 +67,19 @@ export default function AdminSettingsPage() {
   const [tracking, setTracking] = useState({ attributionWindow: '30', cookieDuration: '60', firstClick: true, crossDomain: false });
   const [emailCfg, setEmailCfg] = useState({ fromEmail: 'team@careverse.ai', replyTo: 'support@careverse.ai', testEmail: '' });
   const [security, setSecurity] = useState({ twoFactor: true, sessionTimeout: '60', ipAllowlist: '' });
+  const [partnerSettings, setPartnerSettings] = useState({
+    autoApprove: false, requireW9: true, minPayoutAmount: '50',
+    allowCustomDomains: true, defaultStorefrontTheme: 'Careverse Default',
+  });
+  const [storefrontSettings, setStorefrontSettings] = useState({
+    defaultIntroCopy: 'Helping families access better, more affordable care.',
+    allowCustomDomains: true, maxPackages: '5', requireApproval: true,
+  });
+  const [generalSettings, setGeneralSettings] = useState({
+    platformName: 'Careverse', supportEmail: 'support@careverse.ai',
+    timezone: 'America/New_York', dateFormat: 'MM/DD/YYYY',
+    currency: 'USD', maintenanceMode: false,
+  });
   const [savedTab, setSavedTab] = useState<string | null>(null);
 
   const handleSave = (tab: string) => {
@@ -174,6 +190,103 @@ export default function AdminSettingsPage() {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Partner Settings ── */}
+        <TabsContent value="partner" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Partner Settings</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Defaults and requirements for partner accounts</p>
+              </div>
+              <SaveButton onClick={() => handleSave('partner')} saved={savedTab === 'partner'} />
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <ToggleRow
+                icon={UserCheck}
+                title="Auto-approve new partners"
+                description="Automatically approve partner applications without manual review."
+                checked={partnerSettings.autoApprove}
+                onCheckedChange={(v) => setPartnerSettings({ ...partnerSettings, autoApprove: v })}
+              />
+              <ToggleRow
+                icon={Building}
+                title="Require W-9 before payout"
+                description="Partners must submit a W-9 form before their first payout."
+                checked={partnerSettings.requireW9}
+                onCheckedChange={(v) => setPartnerSettings({ ...partnerSettings, requireW9: v })}
+              />
+              <ToggleRow
+                icon={Globe}
+                title="Allow custom storefront domains"
+                description="Partners can connect their own domain to their storefront."
+                checked={partnerSettings.allowCustomDomains}
+                onCheckedChange={(v) => setPartnerSettings({ ...partnerSettings, allowCustomDomains: v })}
+              />
+              <div className="grid gap-4 sm:grid-cols-2 pt-4 border-t border-cv-line">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Minimum Payout Amount ($)</Label>
+                  <div className="relative">
+                    <Input type="number" value={partnerSettings.minPayoutAmount} onChange={(e) => setPartnerSettings({ ...partnerSettings, minPayoutAmount: e.target.value })} className="cv-input pl-9" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-cv-muted">$</span>
+                  </div>
+                  <p className="text-xs text-cv-muted">Minimum balance required before a payout is processed.</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Default Storefront Theme</Label>
+                  <Select value={partnerSettings.defaultStorefrontTheme} onValueChange={(v) => setPartnerSettings({ ...partnerSettings, defaultStorefrontTheme: v })}>
+                    <SelectTrigger className="cv-input"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Careverse Default">Careverse Default</SelectItem>
+                      <SelectItem value="Minimal">Minimal</SelectItem>
+                      <SelectItem value="Warm">Warm</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-cv-muted">Applied to new storefronts by default.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Storefront Settings ── */}
+        <TabsContent value="storefront" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Storefront Settings</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Defaults and policies for partner storefronts</p>
+              </div>
+              <SaveButton onClick={() => handleSave('storefront')} saved={savedTab === 'storefront'} />
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Default Intro Copy</Label>
+                <Textarea value={storefrontSettings.defaultIntroCopy} onChange={(e) => setStorefrontSettings({ ...storefrontSettings, defaultIntroCopy: e.target.value })} className="cv-input min-h-[80px] rounded-2xl" />
+                <p className="text-xs text-cv-muted">Pre-filled intro text for new storefronts.</p>
+              </div>
+              <ToggleRow
+                icon={Globe}
+                title="Allow custom domains"
+                description="Partners can connect a custom domain to their storefront."
+                checked={storefrontSettings.allowCustomDomains}
+                onCheckedChange={(v) => setStorefrontSettings({ ...storefrontSettings, allowCustomDomains: v })}
+              />
+              <ToggleRow
+                icon={Shield}
+                title="Require storefront approval"
+                description="Storefronts must be approved by an admin before going live."
+                checked={storefrontSettings.requireApproval}
+                onCheckedChange={(v) => setStorefrontSettings({ ...storefrontSettings, requireApproval: v })}
+              />
+              <div className="grid gap-2 max-w-xs pt-4 border-t border-cv-line">
+                <Label className="text-sm font-bold text-cv-ink">Max Packages per Storefront</Label>
+                <Input type="number" value={storefrontSettings.maxPackages} onChange={(e) => setStorefrontSettings({ ...storefrontSettings, maxPackages: e.target.value })} className="cv-input" />
+                <p className="text-xs text-cv-muted">Maximum number of Careverse plans a storefront can feature.</p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -408,6 +521,81 @@ export default function AdminSettingsPage() {
                   className="cv-input min-h-[80px] rounded-2xl font-mono text-sm"
                 />
                 <p className="text-xs text-cv-muted">One IP or CIDR per line. Leave empty to allow all IPs.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── General Settings ── */}
+        <TabsContent value="general" className="mt-0">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">General Settings</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Platform-wide configuration and branding</p>
+              </div>
+              <SaveButton onClick={() => handleSave('general')} saved={savedTab === 'general'} />
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Platform Name</Label>
+                  <Input value={generalSettings.platformName} onChange={(e) => setGeneralSettings({ ...generalSettings, platformName: e.target.value })} className="cv-input" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Support Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                    <Input value={generalSettings.supportEmail} onChange={(e) => setGeneralSettings({ ...generalSettings, supportEmail: e.target.value })} className="cv-input pl-9" />
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3 pt-4 border-t border-cv-line">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Timezone</Label>
+                  <Select value={generalSettings.timezone} onValueChange={(v) => setGeneralSettings({ ...generalSettings, timezone: v })}>
+                    <SelectTrigger className="cv-input"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="America/New_York">Eastern (ET)</SelectItem>
+                      <SelectItem value="America/Chicago">Central (CT)</SelectItem>
+                      <SelectItem value="America/Denver">Mountain (MT)</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Pacific (PT)</SelectItem>
+                      <SelectItem value="UTC">UTC</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Date Format</Label>
+                  <Select value={generalSettings.dateFormat} onValueChange={(v) => setGeneralSettings({ ...generalSettings, dateFormat: v })}>
+                    <SelectTrigger className="cv-input"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                      <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Currency</Label>
+                  <Select value={generalSettings.currency} onValueChange={(v) => setGeneralSettings({ ...generalSettings, currency: v })}>
+                    <SelectTrigger className="cv-input"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="EUR">EUR (€)</SelectItem>
+                      <SelectItem value="GBP">GBP (£)</SelectItem>
+                      <SelectItem value="CAD">CAD ($)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="pt-4 border-t border-cv-line">
+                <ToggleRow
+                  icon={Shield}
+                  title="Maintenance mode"
+                  description="Temporarily disable the partner portal for updates. Admin panel remains accessible."
+                  checked={generalSettings.maintenanceMode}
+                  onCheckedChange={(v) => setGeneralSettings({ ...generalSettings, maintenanceMode: v })}
+                />
               </div>
             </CardContent>
           </Card>
