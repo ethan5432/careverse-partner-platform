@@ -181,24 +181,48 @@ export interface MockScheduledEmail {
   recipientCount: number;
 }
 
-export interface MockNetwork {
-  id: string;
-  name: string;
-  partnerCount: number;
-  conversions: number;
-  revenue: number;
-  networkEarnings: number;
-  partners: MockNetworkPartner[];
-}
+export type NetworkStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED';
 
 export interface MockNetworkPartner {
   id: string;
   name: string;
   type: PartnerType;
+  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+  storefrontName: string;
+  storefrontStatus: 'LIVE' | 'DRAFT';
   conversions: number;
   revenue: number;
   commission: number;
+  networkEarnings: number;
   joinedDate: string;
+  lastActive: string;
+  avatarColor: string;
+}
+
+export interface MockNetworkActivity {
+  id: string;
+  networkId: string;
+  type: 'PARTNER_JOINED' | 'CONVERSION' | 'PAYOUT' | 'STOREFRONT_PUBLISHED' | 'COMMISSION';
+  description: string;
+  partnerName: string;
+  amount?: number;
+  date: string;
+}
+
+export interface MockNetwork {
+  id: string;
+  name: string;
+  ownerId: string;
+  ownerName: string;
+  status: NetworkStatus;
+  partnerCount: number;
+  activePartnerCount: number;
+  conversions: number;
+  revenue: number;
+  networkEarnings: number;
+  createdDate: string;
+  partners: MockNetworkPartner[];
+  activity: MockNetworkActivity[];
 }
 
 export type ResourceIconKey = 'palette' | 'file-text' | 'info' | 'book-open' | 'video' | 'image' | 'file' | 'layers' | 'megaphone' | 'gift' | 'presentation' | 'users';

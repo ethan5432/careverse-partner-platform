@@ -275,6 +275,30 @@ All mock data lives in `src/data/mock/`.
 - Three Careverse plans: Family, Family Plus, Care Circle
 - Click product card to open detail dialog with full product information
 
+### Admin Networks
+- Stats: total networks, active partners, total revenue, network earnings
+- Search by network name or owner name
+- Status filter tabs: All, Active, Pending, Suspended
+- Network list with columns: Network, Owner, Status, Active Partners, Conversions, Revenue, Earnings
+- Click a network to open detail dialog with three tabs:
+  - **Overview** — mini stats (partners, conversions, revenue, earnings) and detail rows (status, total/active partners, conversion rate, avg revenue per partner, created date)
+  - **Partners** — sub-partner table with name (avatar), status badge, storefront name + status, conversions, revenue, and network earnings
+  - **Activity** — chronological event feed with icons, descriptions, partner names, dates, and amounts
+
+### Partner Network
+- Only visible to partners with partner type = NETWORK (non-network partners see an access-required empty state)
+- Network overview stats: active partner count, conversions, revenue, network earnings
+- Partner list with search by partner name or storefront name
+- Table columns: Partner (with avatar), Status, Storefront (name + status), Conversions, Revenue, Earnings
+- Click a partner to open detail dialog showing: status badge, partner type, storefront name, storefront status, joined date, last active, and performance breakdown (conversions, revenue, commission, network earnings)
+- Recent network activity feed with event types (partner joined, conversion, payout, storefront published, commission), descriptions, partner names, dates, and amounts
+
+### Network Mock Data
+- Two networks: Marcus Care Network (5 partners, $53,800 revenue) and Bradley Care Network (3 partners, $14,400 revenue)
+- Each network partner has: name, type, status, storefront name + status, conversions, revenue, commission, network earnings, joined date, last active, avatar color
+- Each network has an activity feed with typed events
+- Shared mock data between admin and partner network views
+
 ### Admin Emails
 - Stats: campaigns count, emails sent, avg open rate, active automations
 - Four tabs: Campaigns, Scheduled, Automations, Templates
