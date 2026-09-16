@@ -189,7 +189,7 @@ function ConfirmationContent() {
             </Card>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button className="cv-btn-primary flex-1 rounded-full" onClick={() => router.push('/lidia')}>
+              <Button className="cv-btn-primary flex-1 rounded-full" onClick={() => router.push(`/lidia?membership=${mockMembership?.id || ''}`)}>
                 <MessageCircle className="h-4 w-4 mr-1.5" />
                 Go to Lidia
               </Button>
