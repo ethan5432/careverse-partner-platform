@@ -4,6 +4,16 @@ export type AccountState = 'ACTIVE' | 'PENDING' | 'INCOMPLETE' | 'SUSPENDED';
 
 export type ApplicationState = 'SUBMITTED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
 
+export type BusinessEntityType = 'LLC' | 'CORPORATION' | 'PARTNERSHIP' | 'SOLE_PROPRIETOR' | 'NONPROFIT' | 'OTHER';
+export type BusinessCategory = 'BENEFITS_HR' | 'FINANCIAL_SERVICES' | 'INSURANCE_BROKER' | 'CARE_HEALTHCARE_SERVICES' | 'WELLNESS' | 'PROFESSIONAL_SERVICES' | 'MARKETING_AGENCY' | 'COMMUNITY_MEMBERSHIP_ORGANIZATION' | 'OTHER';
+export type BusinessOperatingDuration = 'LESS_THAN_1_YEAR' | '1_TO_2_YEARS' | '3_TO_5_YEARS' | '6_TO_10_YEARS' | '10_PLUS_YEARS';
+
+export interface BusinessProfile {
+  id: string;
+  platform: string;
+  profileUrl: string;
+}
+
 export interface PartnerApplication {
   id: string;
   firstName: string;
@@ -21,11 +31,25 @@ export interface PartnerApplication {
   website?: string;
   socialPlatform?: string;
   socialHandle?: string;
+  creatorProfiles?: CreatorProfile[];
   // Business-specific
   legalBusinessName?: string;
   brandName?: string;
+  businessEntityType?: BusinessEntityType;
+  businessRegistrationNumber?: string;
+  registrationStateProvinceCountry?: string;
   businessWebsite?: string;
+  businessMailingAddress?: string;
   businessDescription?: string;
+  businessCategory?: BusinessCategory;
+  businessOperatingDuration?: BusinessOperatingDuration;
+  bookOfBusinessSize?: string;
+  estimatedMonthlyVolume?: string;
+  expectedPerformance?: string;
+  howCustomersReachCareverse?: string;
+  paidAdvertising?: string;
+  decisionMakingAuthority?: string;
+  businessProfiles?: BusinessProfile[];
   // State
   applicationState: ApplicationState;
   submittedAt: string;
