@@ -11,13 +11,14 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Wallet, TrendingUp, Users, MousePointerClick, ExternalLink, Pencil, Store,
-  Rocket, Sparkles,
+  Rocket, Sparkles, Share2,
 } from 'lucide-react';
 import {
   partnerDashboardStats, partnerPerformanceData,
   mockConversions, currentPartnerStorefront,
 } from '@/data/mock';
 import { useMockAuth } from '@/hooks/useMockAuth';
+import { ShareStoreDialog } from '@/components/shared/ShareStoreDialog';
 import { cn } from '@/lib/utils';
 
 type TimeRange = '7D' | '30D' | '90D' | 'ALL';
@@ -28,6 +29,7 @@ export default function PartnerDashboardPage() {
   const { user, onboarding, isOnboardingComplete } = useMockAuth();
   const [timeRange, setTimeRange] = useState<TimeRange>('30D');
   const [metric, setMetric] = useState<Metric>('revenue');
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const onboardingDone = isOnboardingComplete();
 
@@ -89,11 +91,12 @@ export default function PartnerDashboardPage() {
                   />
                 </div>
                 <Button
-                  onClick={() => router.push('/partner/store')}
-                  className="w-full rounded-full bg-cv-ink text-white font-bold hover:opacity-90"
+                  variant="outline"
+                  className="w-full rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft"
+                  onClick={() => setShareDialogOpen(true)}
                 >
-                  <Rocket className="h-4 w-4 mr-1.5" />
-                  Continue setup
+                  <Share2 className="h-4 w-4 mr-1.5" />
+                  Share your store
                 </Button>
               </CardContent>
             </Card>
@@ -112,18 +115,30 @@ export default function PartnerDashboardPage() {
                     <StatusBadge status={currentPartnerStorefront.status === 'LIVE' ? 'live' : 'draft'} />
                   </div>
                 </div>
+                {currentPartnerStorefront.status !== 'LIVE' && (
+                  <p className="text-xs text-cv-muted">Your store must be published before sharing.</p>
+                )}
                 <Button
                   variant="outline"
                   className="w-full rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft"
-                  onClick={() => router.push('/partner/store')}
+                  onClick={() => setShareDialogOpen(true)}
+                  disabled={currentPartnerStorefront.status !== 'LIVE'}
                 >
-                  <Pencil className="h-4 w-4 mr-1.5" />
-                  Edit store
+                  <Share2 className="h-4 w-4 mr-1.5" />
+                  {currentPartnerStorefront.status === 'LIVE' ? 'Share your store' : 'Store not published'}
                 </Button>
               </CardContent>
             </Card>
           </div>
         </div>
+
+        <ShareStoreDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          storeUrl={currentPartnerStorefront.url}
+          storeName={currentPartnerStorefront.name}
+          isPublished={currentPartnerStorefront.status === 'LIVE'}
+        />
       </div>
     );
   }
@@ -276,6 +291,14 @@ export default function PartnerDashboardPage() {
               <Button
                 variant="outline"
                 className="flex-1 rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft"
+                onClick={() => setShareDialogOpen(true)}
+              >
+                <Share2 className="h-4 w-4 mr-1.5" />
+                Share
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft"
                 onClick={() => router.push('/storefront')}
               >
                 <ExternalLink className="h-4 w-4 mr-1.5" />
@@ -287,7 +310,7 @@ export default function PartnerDashboardPage() {
                 onClick={() => router.push('/partner/store')}
               >
                 <Pencil className="h-4 w-4 mr-1.5" />
-                Edit storefront
+                Edit
               </Button>
             </div>
           </CardContent>
@@ -333,6 +356,14 @@ export default function PartnerDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ShareStoreDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        storeUrl={currentPartnerStorefront.url}
+        storeName={currentPartnerStorefront.name}
+        isPublished={currentPartnerStorefront.status === 'LIVE'}
+      />
     </div>
   );
 }

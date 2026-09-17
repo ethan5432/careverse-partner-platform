@@ -30,6 +30,14 @@ export interface StoreBranding {
   buttonWeight: string;
 }
 
+export interface SocialLink {
+  id: string;
+  platform: 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin' | 'x';
+  url: string;
+  visible: boolean;
+  order: number;
+}
+
 export interface StorefrontConfig {
   id: string;
   partnerId: string;
@@ -69,6 +77,7 @@ export interface StorefrontConfig {
   showPoweredByFooter: boolean;
   showCareverseInHeader: boolean;
   showCareverseInFooter: boolean;
+  socialLinks: SocialLink[];
   savedAt: string;
 }
 
@@ -156,6 +165,7 @@ function defaultConfig(): StorefrontConfig {
     showPoweredByFooter: true,
     showCareverseInHeader: true,
     showCareverseInFooter: true,
+    socialLinks: [],
     savedAt: new Date().toISOString(),
   };
 }
@@ -172,6 +182,7 @@ export function loadStorefrontConfig(): StorefrontConfig {
       ...parsed,
       branding: { ...defaults.branding, ...(parsed.branding || {}) },
       sectionImages: { ...(parsed.sectionImages || {}) },
+      socialLinks: parsed.socialLinks || [],
     };
   } catch {
     return defaultConfig();
