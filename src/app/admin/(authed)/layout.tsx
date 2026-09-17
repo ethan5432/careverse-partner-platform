@@ -168,12 +168,12 @@ export default function AuthedAdminLayout({ children }: { children: React.ReactN
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="relative rounded-full p-2 hover:bg-cv-soft transition-colors">
+            <a href="/admin/messages" className="relative rounded-full p-2 hover:bg-cv-soft transition-colors" title="Notifications">
               <Bell className="h-4 w-4 text-cv-body" />
               <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-cv-red text-[10px] text-white font-bold">
                 3
               </span>
-            </button>
+            </a>
           </div>
         </header>
 

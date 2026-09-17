@@ -860,3 +860,125 @@ Partner dashboard → Store (sidebar) → /partner/store (editor)
   → View Store → /storefront (reads from localStorage + IndexedDB)
   → Customer sees the exact configured storefront
 ```
+
+---
+
+## Phase 16 — Frontend Interaction Audit & Resource Asset System
+
+### Resource Persistence (localStorage + IndexedDB)
+- **`src/lib/resource-persistence.ts`** — reusable utility for resource catalog and asset files
+- **localStorage** stores the resource catalog (metadata: title, type, audience, description, URL, publish state, sort order, asset source info)
+- **IndexedDB** stores uploaded asset files (PDF, PNG/JPG/WEBP, MP4/MOV, DOC/DOCX, XLS/XLSX, PPT/PPTX, ZIP)
+- Resources survive refreshes and reopening the browser
+- Partner Resources reads the same persisted catalog as Admin Resources
+- Seeded resources start with empty URLs and no uploaded file — shown as "Asset not available yet" until an admin uploads an asset or sets a valid external URL
+
+### Admin Resources (`/admin/resources`)
+- Full CRUD: create, edit, delete/archive, publish/unpublish, reorder
+- Audience assignment: Creator, Business / Agency, All Partners
+- Resource types: Guide, Brand Asset, Copy/Template, Product Info, Video, Download, External Link
+- Asset source: Upload File or External URL (toggle)
+- Upload supports: PDF, PNG/JPG/WEBP/GIF, MP4/MOV/WEBM, DOC/DOCX, XLS/XLSX, PPT/PPTX, ZIP, TXT/CSV
+- Max file size: 100 MB
+- Shows filename, file size, file extension, and whether resource is an uploaded asset or external URL
+- Replace uploaded file, remove uploaded file
+- Preview opens in-browser for supported formats (images, video, PDF)
+- Download for all uploaded assets
+- External URL resources open the actual URL
+- Unsupported file types and oversize files show a clear error
+- Unavailable resources (no file, no URL) show "Asset not available yet" and buttons are disabled
+
+### Partner Resources (`/partner/resources`)
+- Three tabs: Creator, Business / Agency, All Partners (default auto-selected by partner type)
+- Only published resources matching the partner's audience (including "All Partners") are shown
+- Resource cards show icon, title, description, filename/size (if uploaded), and View/Download button
+- **View** opens an in-browser viewer for images, videos, and PDFs
+- **Download** downloads the actual uploaded file
+- **External URL** resources open the actual external link in a new tab
+- Resources without an asset show "Asset not available yet" with a disabled button
+- Empty state explains what will appear and offers a "Message Careverse" action
+
+### Frontend Button/Link Audit — All Fixed
+- All `<Button>` and `<button>` controls have meaningful handlers
+- No `href="#"` links remain — all point to real routes or external URLs
+- No `onClick={() => {}}` empty handlers remain
+- All navigation actions point to real current routes
+
+### Admin Email Center Fixes
+- **New Campaign** — opens a create dialog with name, audience, subject, and schedule fields; creates a draft campaign in state
+- **Campaign View** — opens a detail dialog showing all campaign fields with an Edit button for drafts
+- **Campaign Edit** — opens an edit dialog pre-filled with campaign data; saves changes to state
+- **New Automation** — opens a create dialog with name, trigger, audience, template, and delay fields; creates an active automation in state
+- **Cancel send** — cancels a scheduled email, updating its status to CANCELLED in state
+
+### Admin Partners Fixes
+- **Add Partner** — navigates to the signup page
+- **Approve** — updates the partner's status to ACTIVE in state, records the approval event in the activity timeline, checks the approval email automation configuration, and shows the correct email status (QUEUED if configured, NOT_CONFIGURED if not)
+- **View storefront** — navigates to `/storefront`
+- **Edit storefront** — navigates to `/partner/store`
+
+### Admin Storefronts Fixes
+- **New Storefront** — navigates to `/partner/store`
+- **View storefront** — navigates to `/storefront`
+- **Open builder** — navigates to `/partner/store`
+
+### Admin Products Fixes
+- **View source** — links to the actual Careverse website (external link, opens in new tab)
+
+### Admin Settings Fixes
+- **Add Rule** — opens a create dialog with name, rate, and scope fields; adds the rule to state
+- **Invite Member** — opens a create dialog with email and role fields; adds the member to state
+- **Remove team member** — removes the member from state (except Owner)
+- **Integration toggle** — actually toggles the connected state in state
+- **Admin bell icon** — links to `/admin/messages` instead of being a dead button
+
+### Partner Payouts Fixes
+- **Manage method / Add payout method** — navigates to `/partner/settings`
+- **Set up payouts** (empty state) — navigates to `/partner/settings`
+
+### Partner Commissions Fixes
+- **Share your store** (empty state) — navigates to `/partner` dashboard
+
+### Get Started Checklist Fixes
+- **Undo condition** — fixed: the Undo button now appears for all completed items (was using an incorrect `!onboarding[item.key] === false` condition that never evaluated to true)
+- **Nested button** — fixed: the outer element is now a `<div>` with role/onClick/onKeyDown for accessibility, and the Undo button is a proper separate `<button>` that stops propagation
+
+### Storefront Builder Redirect
+- `/storefront-builder` now redirects to `/partner/store` (the replacement route)
+- The old builder page with its fake save button is gone
+
+### Dead Link Fixes
+- Admin login "Forgot password?" — links to `/forgot-password`
+- Signup Terms of Service / Privacy Policy — link to external Careverse policy pages
+- Storefront footer Terms / Privacy / Refund Policy — link to external Careverse policy pages
+
+### Store Health Component
+- Shows "Ready" (green) when all onboarding steps are complete
+- Shows "Needs attention" (amber) with a list of specific incomplete items
+- Each incomplete item links directly to the page where it can be completed
+
+### Partner Notifications
+- Real notification dropdown in partner top bar (replaces hardcoded bell)
+- Notification types: application approved, account activated, storefront published, new conversion, commission approved, payout sent/failed, domain connected, upload failed
+- Unread count badge, mark as read, mark all as read
+- Clicking a notification deep-links to the relevant area
+
+### Publish Success Dialog
+- After publishing a store, shows "Your store is live!" with the store URL
+- Buttons: View Store, Copy Link, Share Store
+
+### Test Store Dialog
+- Walks the seller through the customer journey: store → package → checkout → confirmation
+- "Start test" navigates to the live storefront
+
+### Save States
+- Store editor shows unsaved changes / saving / saved / error states via a badge next to the save button
+- Save flow properly transitions through states with timeout
+
+### Profile / Store Separation
+- Settings page clearly labels Profile as "Your personal identity as a partner" and Storefront as "Your public store name that customers see"
+- Explicit notes that changing one will not change the other
+
+### Support Access
+- Reusable support card on store editor, conversions, commissions, payouts, and settings pages
+- Direct "Contact Careverse Support" action links to `/partner/messages`

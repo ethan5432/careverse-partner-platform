@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
 import { StatusBadge, Avatar } from '@/components/shared/StatusBadge';
@@ -26,6 +27,7 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function AdminStorefrontsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export default function AdminStorefrontsPage() {
         title="Storefronts"
         description="All partner storefronts across the platform, live and in draft."
         actions={
-          <Button className="bg-cv-ink text-white hover:bg-cv-ink/90" size="sm">
+          <Button className="bg-cv-ink text-white hover:bg-cv-ink/90" size="sm" onClick={() => router.push('/partner/store')}>
             <Store className="h-4 w-4" />
             New Storefront
           </Button>
@@ -189,6 +191,7 @@ export default function AdminStorefrontsPage() {
 }
 
 function StorefrontDialog({ storefront, onClose }: { storefront: MockStorefront | null; onClose: () => void }) {
+  const router = useRouter();
   const open = !!storefront;
 
   const partner = useMemo(
@@ -263,10 +266,10 @@ function StorefrontDialog({ storefront, onClose }: { storefront: MockStorefront 
                     </div>
                   )}
                   <div className="flex gap-2 mt-3">
-                    <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs">
+                    <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs" onClick={() => router.push('/storefront')}>
                       <ExternalLink className="h-3.5 w-3.5" /> View storefront
                     </Button>
-                    <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs">
+                    <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs" onClick={() => router.push('/partner/store')}>
                       <Pencil className="h-3.5 w-3.5" /> Open builder
                     </Button>
                   </div>

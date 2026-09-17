@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -28,6 +29,7 @@ const FILTER_TABS: { key: FilterTab; label: string }[] = [
 ];
 
 export default function PartnerCommissionsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<MockCommission | null>(null);
@@ -93,7 +95,7 @@ export default function PartnerCommissionsPage() {
       <Card className="cv-card">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
-            <EmptyState icon={Percent} title="No commissions yet" description={partnerCommissions.length === 0 ? "Commissions are earned when customers purchase through your storefront. Each approved conversion generates a commission entry here with your earnings breakdown." : "Try changing the filter or search above."} action={partnerCommissions.length === 0 ? <Button className="bg-cv-ink text-white hover:bg-cv-ink/90 rounded-full text-sm font-bold" onClick={() => {}}><Share2 className="h-4 w-4" /> Share your store</Button> : undefined} />
+            <EmptyState icon={Percent} title="No commissions yet" description={partnerCommissions.length === 0 ? "Commissions are earned when customers purchase through your storefront. Each approved conversion generates a commission entry here with your earnings breakdown." : "Try changing the filter or search above."} action={partnerCommissions.length === 0 ? <Button className="bg-cv-ink text-white hover:bg-cv-ink/90 rounded-full text-sm font-bold" onClick={() => router.push('/partner')}><Share2 className="h-4 w-4" /> Share your store</Button> : undefined} />
           ) : (
             <Table>
               <TableHeader>

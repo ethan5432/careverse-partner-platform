@@ -444,9 +444,9 @@ export default function StorefrontPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs" style={{ color: 'var(--night-text)' }}>© 2026 {sf.name}. All rights reserved.</p>
             <div className="flex items-center gap-4">
-              <a href="#" className="text-xs hover:text-white transition-colors" style={{ color: 'var(--night-text)' }}>Terms of Service</a>
-              <a href="#" className="text-xs hover:text-white transition-colors" style={{ color: 'var(--night-text)' }}>Privacy Policy</a>
-              <a href="#" className="text-xs hover:text-white transition-colors" style={{ color: 'var(--night-text)' }}>Refund Policy</a>
+              <a href="https://careverse.ai/terms" target="_blank" rel="noopener noreferrer" className="text-xs hover:text-white transition-colors" style={{ color: 'var(--night-text)' }}>Terms of Service</a>
+              <a href="https://careverse.ai/privacy" target="_blank" rel="noopener noreferrer" className="text-xs hover:text-white transition-colors" style={{ color: 'var(--night-text)' }}>Privacy Policy</a>
+              <a href="https://careverse.ai/refunds" target="_blank" rel="noopener noreferrer" className="text-xs hover:text-white transition-colors" style={{ color: 'var(--night-text)' }}>Refund Policy</a>
             </div>
           </div>
           <p className="text-xs mt-4 text-center sm:text-left" style={{ color: 'var(--night-text)' }}>
