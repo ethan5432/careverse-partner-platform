@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -14,9 +15,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { ArrowLeftRight, Search, Eye, Calendar, Store, ChevronDown } from 'lucide-react';
+import { ArrowLeftRight, Search, Eye, Calendar, Store, ChevronDown, Share2 } from 'lucide-react';
 import { mockConversions, mockStorefronts } from '@/data/mock';
 import type { MockConversion, ConversionStatus, AttributionState } from '@/data/mock/types';
+import { SupportLink } from '@/components/shared/SupportLink';
 import { cn } from '@/lib/utils';
 
 type FilterTab = 'ALL' | ConversionStatus;
@@ -53,6 +55,7 @@ const ATTRIBUTION_COLORS: Record<AttributionState, string> = {
 };
 
 export default function PartnerConversionsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [dateFilter, setDateFilter] = useState<DateFilter>('ALL');
   const [storefrontFilter, setStorefrontFilter] = useState<StorefrontFilter>('ALL');
@@ -195,8 +198,9 @@ export default function PartnerConversionsPage() {
           {filtered.length === 0 ? (
             <EmptyState
               icon={ArrowLeftRight}
-              title="No conversions found"
-              description="Try changing the filters or search. Conversions will appear here once customers purchase through your storefront."
+              title="No conversions yet"
+              description={partnerConversions.length === 0 ? "When customers purchase Careverse plans through your storefront, their conversions will appear here with full attribution details. Share your store link to start earning." : "Try changing the filters or search above."}
+              action={partnerConversions.length === 0 ? <Button className="bg-cv-ink text-white hover:bg-cv-ink/90 rounded-full text-sm font-bold" onClick={() => router.push('/partner')}><Share2 className="h-4 w-4" /> Share your store</Button> : undefined}
             />
           ) : (
             <Table>
@@ -243,6 +247,8 @@ export default function PartnerConversionsPage() {
           )}
         </CardContent>
       </Card>
+
+      <SupportLink variant="card" context="Questions about a conversion, attribution, or payout? Reach out and we'll help sort it out." />
 
       {/* Conversion detail dialog */}
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>

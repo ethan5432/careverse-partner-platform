@@ -16,7 +16,6 @@ import {
   Settings,
   LogOut,
   ChevronsUpDown,
-  Bell,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -26,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { PartnerNotifications } from '@/components/shared/PartnerNotifications';
 import { cn } from '@/lib/utils';
 
 const baseNavItems = [
@@ -227,12 +227,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative rounded-full">
-              <Bell className="h-4 w-4 text-cv-body" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-cv-red text-[10px] text-white font-bold">
-                2
-              </span>
-            </Button>
+            <PartnerNotifications />
           </div>
         </header>
 

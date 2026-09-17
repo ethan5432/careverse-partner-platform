@@ -39,6 +39,7 @@ import type {
   MockNotificationSettings,
 } from '@/data/mock/types';
 import { useMockAuth } from '@/hooks/useMockAuth';
+import { SupportLink } from '@/components/shared/SupportLink';
 import { cn } from '@/lib/utils';
 
 interface FieldProps {
@@ -247,7 +248,7 @@ export default function SettingsPage() {
             <SectionCard
               icon={User}
               title="Profile"
-              description="Update how your name and bio appear across Careverse."
+              description="Your personal identity as a partner. This is separate from your storefront name — changing your name here will not change your store name."
             >
               <div className="flex items-center gap-4">
                 <Avatar
@@ -339,7 +340,7 @@ export default function SettingsPage() {
             <SectionCard
               icon={Store}
               title="Storefront"
-              description="Manage your public storefront name, URL, and live status."
+              description="Your public store name that customers see. This is separate from your personal profile name."
             >
               <Field
                 id="storefront-name"
@@ -489,6 +490,8 @@ export default function SettingsPage() {
           </form>
         </TabsContent>
       </Tabs>
+
+      <SupportLink variant="card" context="Questions about your account, settings, or payouts? Message us anytime." />
     </div>
   );
 }
