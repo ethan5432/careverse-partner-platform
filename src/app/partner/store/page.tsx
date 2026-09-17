@@ -13,6 +13,7 @@ import {
   LayoutDashboard, Package, Palette, Target, Video, Globe, Eye, Rocket,
   Save, Check, ChevronUp, ChevronDown, Trash2, Plus, Upload, ExternalLink,
   ArrowUp, ArrowDown, X, Play, ImageIcon, Lock, Settings, Star,
+  Share2, Trash, Plus as PlusIcon,
 } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront, partnerDashboardStats } from '@/data/mock';
 import type { StoreSection, StoreSectionType } from '@/data/mock/types';
@@ -23,6 +24,17 @@ import {
 } from '@/lib/store-persistence';
 import { cn } from '@/lib/utils';
 import { useMockAuth } from '@/hooks/useMockAuth';
+import { ShareStoreDialog } from '@/components/shared/ShareStoreDialog';
+import type { SocialLink } from '@/lib/store-persistence';
+
+const socialPlatforms: { value: SocialLink['platform']; label: string }[] = [
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'x', label: 'X' },
+];
 
 type BuilderTab = 'overview' | 'packages' | 'branding' | 'positioning' | 'content' | 'sections' | 'domain' | 'preview' | 'publish';
 
@@ -139,6 +151,8 @@ export default function PartnerStorePage() {
   const [contentBlocks, setContentBlocks] = useState<CreatorBlock[]>([]);
   const [publishStatus, setPublishStatus] = useState<'LIVE' | 'DRAFT'>('DRAFT');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // Video preview URLs for uploaded videos
   const [videoPreviews, setVideoPreviews] = useState<Record<string, string>>({});
@@ -177,6 +191,7 @@ export default function PartnerStorePage() {
     setSections(config.sections);
     setContentBlocks(config.creatorContent);
     setPublishStatus(config.status);
+    setSocialLinks(config.socialLinks || []);
     setLoaded(true);
 
     // Load video previews for uploaded content
@@ -223,11 +238,13 @@ export default function PartnerStorePage() {
     showPoweredByFooter,
     showCareverseInHeader,
     showCareverseInFooter,
+    socialLinks,
     savedAt: new Date().toISOString(),
   }), [storefrontName, logo, favicon, partnerPhoto, heroImage, sectionImages, introCopy, brandPresentation, brandingMode, branding,
        heroHeadline, heroSupportingCopy, ctaText, aboutContent, customDomain,
        domainStatus, selectedPackages, sections, contentBlocks, publishStatus,
-       showProfile, showVerifiedBadge, showPoweredByFooter, showCareverseInHeader, showCareverseInFooter]);
+       showProfile, showVerifiedBadge, showPoweredByFooter, showCareverseInHeader, showCareverseInFooter,
+       socialLinks]);
 
   const handleSave = () => {
     saveStorefrontConfig(buildConfig());
@@ -416,6 +433,42 @@ export default function PartnerStorePage() {
     markDirty();
   };
 
+  // ─── Social link management ──────────────────────────────────────────────
+
+  const addSocialLink = () => {
+    const usedPlatforms = socialLinks.map(s => s.platform);
+    const available = socialPlatforms.find(p => !usedPlatforms.includes(p.value));
+    if (!available) return;
+    const newLink: SocialLink = {
+      id: `social-${Date.now()}`,
+      platform: available.value,
+      url: '',
+      visible: true,
+      order: socialLinks.length,
+    };
+    setSocialLinks([...socialLinks, newLink]);
+    markDirty();
+  };
+
+  const updateSocialLink = (id: string, partial: Partial<SocialLink>) => {
+    setSocialLinks(socialLinks.map(s => s.id === id ? { ...s, ...partial } : s));
+    markDirty();
+  };
+
+  const removeSocialLink = (id: string) => {
+    setSocialLinks(socialLinks.filter(s => s.id !== id).map((s, i) => ({ ...s, order: i })));
+    markDirty();
+  };
+
+  const moveSocialLink = (idx: number, dir: 'up' | 'down') => {
+    const target = dir === 'up' ? idx - 1 : idx + 1;
+    if (target < 0 || target >= socialLinks.length) return;
+    const newLinks = [...socialLinks];
+    [newLinks[idx], newLinks[target]] = [newLinks[target], newLinks[idx]];
+    setSocialLinks(newLinks.map((s, i) => ({ ...s, order: i })));
+    markDirty();
+  };
+
   const brandingCssVars: React.CSSProperties = {
     ['--ink' as string]: branding.primaryColor,
     ['--body' as string]: branding.mutedTextColor,
@@ -481,6 +534,14 @@ export default function PartnerStorePage() {
             >
               <ExternalLink className="h-4 w-4 mr-1.5" />
               View Store
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-full border-cv-line font-bold"
+              onClick={() => setShareDialogOpen(true)}
+            >
+              <Share2 className="h-4 w-4 mr-1.5" />
+              Share
             </Button>
             <Button
               className={cn('cv-btn-primary rounded-full', saved && 'bg-cv-good')}
@@ -949,6 +1010,60 @@ export default function PartnerStorePage() {
                   {FONT_WEIGHTS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
                 </select>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Social Links */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Social Links</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-cv-muted">Add your social media profiles. Only configured links will appear as icons in your storefront footer.</p>
+              {socialLinks.length === 0 && (
+                <div className="rounded-xl border border-dashed border-cv-line p-6 text-center">
+                  <p className="text-sm text-cv-muted mb-2">No social links added yet</p>
+                </div>
+              )}
+              {socialLinks.map((link, idx) => {
+                const platformLabel = socialPlatforms.find(p => p.value === link.platform)?.label || link.platform;
+                return (
+                  <div key={link.id} className="flex items-center gap-2 rounded-xl border border-cv-line p-3">
+                    <div className="flex flex-col">
+                      <button onClick={() => moveSocialLink(idx, 'up')} disabled={idx === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowUp className="h-3 w-3" /></button>
+                      <button onClick={() => moveSocialLink(idx, 'down')} disabled={idx === socialLinks.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowDown className="h-3 w-3" /></button>
+                    </div>
+                    <select
+                      value={link.platform}
+                      onChange={(e) => updateSocialLink(link.id, { platform: e.target.value as SocialLink['platform'] })}
+                      className="text-xs font-bold border border-cv-line rounded-md px-2 py-2 bg-white text-cv-ink shrink-0"
+                    >
+                      {socialPlatforms.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    </select>
+                    <Input
+                      value={link.url}
+                      onChange={(e) => updateSocialLink(link.id, { url: e.target.value })}
+                      className="cv-input text-xs flex-1"
+                      placeholder={`https://${platformLabel.toLowerCase()}.com/yourprofile`}
+                    />
+                    <button
+                      onClick={() => updateSocialLink(link.id, { visible: !link.visible })}
+                      className={cn('text-[10px] font-bold px-2 py-1 rounded-md transition-colors', link.visible ? 'text-cv-good bg-emerald-50' : 'text-cv-muted bg-cv-soft')}
+                    >
+                      {link.visible ? 'Show' : 'Hide'}
+                    </button>
+                    <button onClick={() => removeSocialLink(link.id)} className="text-cv-muted hover:text-cv-red transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+              {socialLinks.length < 6 && (
+                <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={addSocialLink}>
+                  <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
+                  Add social link
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -1431,6 +1546,16 @@ export default function PartnerStorePage() {
               >
                 {publishStatus === 'LIVE' ? 'Unpublish Store' : 'Publish Store'}
               </Button>
+              {publishStatus === 'LIVE' && (
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full border-cv-line font-bold mt-3"
+                  onClick={() => setShareDialogOpen(true)}
+                >
+                  <Share2 className="h-4 w-4 mr-1.5" />
+                  Share your store
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -1457,6 +1582,14 @@ export default function PartnerStorePage() {
           </Card>
         </div>
       )}
+
+      <ShareStoreDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        storeUrl={currentPartnerStorefront.url}
+        storeName={storefrontName || currentPartnerStorefront.name}
+        isPublished={publishStatus === 'LIVE'}
+      />
     </div>
   );
 }
