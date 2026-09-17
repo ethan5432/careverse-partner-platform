@@ -46,7 +46,6 @@ const typeFilters: { value: TypeFilter; label: string }[] = [
   { value: 'ALL', label: 'All' },
   { value: 'CREATOR', label: 'Creator' },
   { value: 'BUSINESS', label: 'Business' },
-  { value: 'NETWORK', label: 'Network' },
 ];
 
 type StatusFilter = 'ALL' | PartnerStatus;
@@ -103,7 +102,7 @@ export default function AdminPartnersPage() {
       <PageHeader
         eyebrow="Partners"
         title="Partners"
-        description="Manage creators, businesses, and networks across the platform."
+        description="Manage creators and businesses across the platform."
         actions={
           <Button className="bg-cv-ink text-white hover:bg-cv-ink/90" size="sm">
             <UserPlus className="h-4 w-4" />

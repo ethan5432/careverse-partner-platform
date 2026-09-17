@@ -42,7 +42,6 @@ const iconMap: Record<string, LucideIcon> = {
 const tabs: { value: ResourcePackage; label: string; description: string }[] = [
   { value: 'CREATOR', label: 'Creator', description: 'Brand kits, templates, and onboarding for creators.' },
   { value: 'BUSINESS', label: 'Business / Agency', description: 'Playbooks, email packs, and decks for business teams.' },
-  { value: 'NETWORK', label: 'Network', description: 'Recruitment and reporting tools for network partners.' },
 ];
 
 function ResourceCard({ resource }: { resource: MockResource }) {
@@ -86,11 +85,7 @@ export default function ResourcesPage() {
   const { user } = useMockAuth();
   // Default the active tab to the partner's own package when it maps cleanly.
   const defaultTab: ResourcePackage =
-    user?.partnerType === 'BUSINESS'
-      ? 'BUSINESS'
-      : user?.partnerType === 'NETWORK'
-        ? 'NETWORK'
-        : 'CREATOR';
+    user?.partnerType === 'BUSINESS' ? 'BUSINESS' : 'CREATOR';
 
   return (
     <div className="space-y-6">

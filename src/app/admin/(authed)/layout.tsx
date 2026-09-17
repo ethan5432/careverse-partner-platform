@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Avatar } from '@/components/shared/StatusBadge';
-import { LayoutDashboard, Users, Store, ArrowLeftRight, Percent, Wallet, Network, Package, MessageSquare, Mail, ChartBar as BarChart3, Settings, LogOut, ChevronsUpDown, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Store, ArrowLeftRight, Percent, Wallet, Package, MessageSquare, Mail, ChartBar as BarChart3, Settings, LogOut, ChevronsUpDown, Bell } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -19,7 +19,6 @@ const adminNavItems = [
   { title: 'Conversions', url: '/admin/conversions', icon: ArrowLeftRight },
   { title: 'Commissions', url: '/admin/commissions', icon: Percent },
   { title: 'Payouts', url: '/admin/payouts', icon: Wallet },
-  { title: 'Networks', url: '/admin/networks', icon: Network },
   { title: 'Products', url: '/admin/products', icon: Package },
   { title: 'Messages', url: '/admin/messages', icon: MessageSquare },
   { title: 'Emails', url: '/admin/emails', icon: Mail },

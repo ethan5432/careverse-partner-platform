@@ -250,7 +250,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-4">
                 <Avatar
                   name={profile.name}
-                  color={user?.partnerType === 'NETWORK' ? '#E1062C' : '#0B9B6B'}
+                  color={user?.partnerType === 'BUSINESS' ? '#18191D' : '#0B9B6B'}
                   size={56}
                 />
                 <div>
