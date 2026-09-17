@@ -147,7 +147,7 @@ export const mockEmailCampaigns: MockEmailCampaign[] = [
 ];
 
 export const mockEmailAutomations: MockEmailAutomation[] = [
-  { id: 'ea-1', name: 'Partner Approved', trigger: 'Partner status → ACTIVE', audience: 'Partners', template: 'Approval Email', delay: 'Immediate', status: 'ACTIVE' },
+  { id: 'ea-1', name: 'Partner Application Approved', trigger: 'Partner application → APPROVED', audience: 'Partners', template: 'Partner Approved', delay: 'Immediate', status: 'ACTIVE' },
   { id: 'ea-2', name: 'Account Activated', trigger: 'Account activated', audience: 'Partners', template: 'Activation Email', delay: 'Immediate', status: 'ACTIVE' },
   { id: 'ea-3', name: 'First Conversion', trigger: 'First conversion recorded', audience: 'Partners', template: 'First Conversion', delay: 'Immediate', status: 'ACTIVE' },
   { id: 'ea-4', name: 'Storefront Published', trigger: 'Storefront → LIVE', audience: 'Partners', template: 'Publish Confirmation', delay: 'Immediate', status: 'ACTIVE' },
@@ -157,15 +157,17 @@ export const mockEmailAutomations: MockEmailAutomation[] = [
 ];
 
 export const mockEmailTemplates: MockEmailTemplate[] = [
-  { id: 'et-1', name: 'Partner Approved', trigger: 'Partner status → ACTIVE', subject: 'Your Careverse partner account is approved!', audience: 'Partners', enabled: true, lastEdited: '2026-08-15',
+  { id: 'et-1', name: 'Partner Approved', trigger: 'Partner application approved', subject: 'Your Careverse partner application is approved!', audience: 'Partners', enabled: true, lastEdited: '2026-09-15',
     body: `Hi {{partner_name}},
 
-Great news — your Careverse partner application has been approved! You can now access your partner dashboard, set up your storefront, and start earning commissions.
+Great news — your Careverse partner application has been approved! You can now activate your account and start earning commissions.
 
-Next steps:
-1. Complete your storefront setup
-2. Choose which Careverse packages to feature
-3. Share your storefront link with your audience
+Here is what to do next:
+
+1. Activate your account: {{activation_link}}
+2. Log in to your partner portal: {{partner_portal_link}}
+3. Set up your storefront and choose which Careverse packages to feature
+{{#if storefront_link}}4. Visit your storefront: {{storefront_link}}{{/if}}
 
 Welcome to the Careverse partner community!
 
@@ -236,16 +238,18 @@ export const mockScheduledEmails: MockScheduledEmail[] = [
 ];
 
 export const mockResources: MockResource[] = [
-  { id: 'r-1', title: 'Careverse Brand Guidelines', type: 'BRAND_ASSET', category: 'CREATOR', description: 'Logos, colors, and typography for your storefront and promotions.', url: '#', icon: 'palette' },
-  { id: 'r-2', title: 'Approved Social Media Copy', type: 'COPY', category: 'CREATOR', description: 'Pre-written posts for Instagram, TikTok, and Facebook.', url: '#', icon: 'file-text' },
-  { id: 'r-3', title: 'Product Information Sheet', type: 'PRODUCT_INFO', category: 'CREATOR', description: 'Complete details on Family, Family Plus, and Care Circle plans.', url: '#', icon: 'info' },
-  { id: 'r-4', title: 'Getting Started Guide', type: 'GUIDE', category: 'CREATOR', description: 'Everything you need to launch your storefront and make your first sale.', url: '#', icon: 'book-open' },
-  { id: 'r-5', title: 'How to Promote Careverse', type: 'VIDEO', category: 'CREATOR', description: 'A 10-minute walkthrough of best practices for promoting your storefront.', url: '#', icon: 'video' },
-  { id: 'r-6', title: 'Agency Brand Kit', type: 'BRAND_ASSET', category: 'BUSINESS', description: 'Extended brand assets for agencies managing multiple storefronts.', url: '#', icon: 'palette' },
-  { id: 'r-7', title: 'Client Onboarding Templates', type: 'COPY', category: 'BUSINESS', description: 'Email and document templates for onboarding your clients to Careverse.', url: '#', icon: 'file-text' },
-  { id: 'r-8', title: 'Full Product Catalog', type: 'PRODUCT_INFO', category: 'BUSINESS', description: 'Detailed catalog with pricing, features, and comparison sheets for all plans.', url: '#', icon: 'info' },
-  { id: 'r-9', title: 'Agency Playbook', type: 'GUIDE', category: 'BUSINESS', description: 'How to build and manage a portfolio of Careverse storefronts for your clients.', url: '#', icon: 'book-open' },
-  { id: 'r-10', title: 'Client Management Best Practices', type: 'VIDEO', category: 'BUSINESS', description: 'Strategies for managing multiple partner accounts and reporting to clients.', url: '#', icon: 'video' },
+  { id: 'r-1', title: 'Careverse Brand Guidelines', type: 'BRAND_ASSET', category: 'CREATOR', description: 'Logos, colors, and typography for your storefront and promotions.', url: '#', icon: 'palette', published: true, order: 1, createdAt: '2026-08-01', updatedAt: '2026-08-15' },
+  { id: 'r-2', title: 'Approved Social Media Copy', type: 'COPY', category: 'CREATOR', description: 'Pre-written posts for Instagram, TikTok, and Facebook.', url: '#', icon: 'file-text', published: true, order: 2, createdAt: '2026-08-01', updatedAt: '2026-08-20' },
+  { id: 'r-3', title: 'Product Information Sheet', type: 'PRODUCT_INFO', category: 'CREATOR', description: 'Complete details on Family, Family Plus, and Care Circle plans.', url: '#', icon: 'info', published: true, order: 3, createdAt: '2026-08-01', updatedAt: '2026-09-01' },
+  { id: 'r-4', title: 'Getting Started Guide', type: 'GUIDE', category: 'ALL', description: 'Everything you need to launch your storefront and make your first sale.', url: '#', icon: 'book-open', published: true, order: 0, createdAt: '2026-07-15', updatedAt: '2026-09-10' },
+  { id: 'r-5', title: 'How to Promote Careverse', type: 'VIDEO', category: 'CREATOR', description: 'A 10-minute walkthrough of best practices for promoting your storefront.', url: '#', icon: 'video', published: true, order: 4, createdAt: '2026-08-05', updatedAt: '2026-08-05' },
+  { id: 'r-6', title: 'Agency Brand Kit', type: 'BRAND_ASSET', category: 'BUSINESS', description: 'Extended brand assets for agencies managing multiple storefronts.', url: '#', icon: 'palette', published: true, order: 1, createdAt: '2026-08-01', updatedAt: '2026-08-15' },
+  { id: 'r-7', title: 'Client Onboarding Templates', type: 'COPY', category: 'BUSINESS', description: 'Email and document templates for onboarding your clients to Careverse.', url: '#', icon: 'file-text', published: true, order: 2, createdAt: '2026-08-01', updatedAt: '2026-08-20' },
+  { id: 'r-8', title: 'Full Product Catalog', type: 'PRODUCT_INFO', category: 'BUSINESS', description: 'Detailed catalog with pricing, features, and comparison sheets for all plans.', url: '#', icon: 'info', published: true, order: 3, createdAt: '2026-08-01', updatedAt: '2026-09-01' },
+  { id: 'r-9', title: 'Agency Playbook', type: 'GUIDE', category: 'BUSINESS', description: 'How to build and manage a portfolio of Careverse storefronts for your clients.', url: '#', icon: 'book-open', published: true, order: 4, createdAt: '2026-08-05', updatedAt: '2026-08-05' },
+  { id: 'r-10', title: 'Client Management Best Practices', type: 'VIDEO', category: 'BUSINESS', description: 'Strategies for managing multiple partner accounts and reporting to clients.', url: '#', icon: 'video', published: true, order: 5, createdAt: '2026-08-05', updatedAt: '2026-08-05' },
+  { id: 'r-11', title: 'Content Angles & Post Ideas', type: 'COPY', category: 'CREATOR', description: 'Ready-to-use content angles, social post ideas, and video concepts for promoting Careverse.', url: '#', icon: 'megaphone', published: true, order: 5, createdAt: '2026-09-01', updatedAt: '2026-09-12' },
+  { id: 'r-12', title: 'Campaign Materials Pack', type: 'DOWNLOAD', category: 'ALL', description: 'Downloadable pack with campaign graphics, email banners, and promo copy for seasonal campaigns.', url: '#', icon: 'download', published: false, order: 6, createdAt: '2026-09-05', updatedAt: '2026-09-05' },
 ];
 
 export const currentPartner = mockPartners[0];

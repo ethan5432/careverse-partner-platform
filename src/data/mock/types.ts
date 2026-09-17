@@ -267,17 +267,23 @@ export interface MockScheduledEmail {
   recipientCount: number;
 }
 
-export type ResourceIconKey = 'palette' | 'file-text' | 'info' | 'book-open' | 'video' | 'image' | 'file' | 'layers' | 'megaphone' | 'gift' | 'presentation' | 'users';
-export type ResourcePackage = 'CREATOR' | 'BUSINESS';
+export type ResourceIconKey = 'palette' | 'file-text' | 'info' | 'book-open' | 'video' | 'image' | 'file' | 'layers' | 'megaphone' | 'gift' | 'presentation' | 'users' | 'link' | 'download';
+export type ResourcePackage = 'CREATOR' | 'BUSINESS' | 'ALL';
+export type ResourceType = 'GUIDE' | 'BRAND_ASSET' | 'COPY' | 'PRODUCT_INFO' | 'VIDEO' | 'DOWNLOAD' | 'LINK';
 
 export interface MockResource {
   id: string;
   title: string;
-  type: 'GUIDE' | 'BRAND_ASSET' | 'COPY' | 'PRODUCT_INFO' | 'VIDEO' | 'download' | 'link';
+  type: ResourceType;
   category: ResourcePackage;
   description: string;
   url: string;
   icon: ResourceIconKey;
+  thumbnail?: string;
+  published: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MockPartnerProfile {
@@ -313,7 +319,13 @@ export interface MockPayoutSetup {
   paypalEmail?: string;
 }
 
-export type AdminActivityType = 'APPLICATION' | 'APPROVAL' | 'STOREFRONT_PUBLISHED' | 'CONVERSION' | 'COMMISSION' | 'PAYOUT';
+export type AdminActivityType = 'APPLICATION' | 'APPROVAL' | 'STOREFRONT_PUBLISHED' | 'CONVERSION' | 'COMMISSION' | 'PAYOUT' | 'RESOURCE';
+export type ApprovalEmailStatus = 'NOT_CONFIGURED' | 'QUEUED' | 'SENT' | 'FAILED';
+export interface PartnerApprovalState {
+  applicationState: ApplicationState;
+  approvalEmailStatus: ApprovalEmailStatus;
+  approvedAt?: string;
+}
 
 export interface MockAdminActivity {
   id: string;

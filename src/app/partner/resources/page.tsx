@@ -42,11 +42,12 @@ const iconMap: Record<string, LucideIcon> = {
 const tabs: { value: ResourcePackage; label: string; description: string }[] = [
   { value: 'CREATOR', label: 'Creator', description: 'Brand kits, templates, and onboarding for creators.' },
   { value: 'BUSINESS', label: 'Business / Agency', description: 'Playbooks, email packs, and decks for business teams.' },
+  { value: 'ALL', label: 'All Partners', description: 'Shared resources available to every partner.' },
 ];
 
 function ResourceCard({ resource }: { resource: MockResource }) {
   const Icon = iconMap[resource.icon] ?? Layers;
-  const isDownload = resource.type === 'download';
+  const isDownload = resource.type === 'DOWNLOAD';
   const ActionIcon = isDownload ? Download : ExternalLink;
 
   return (
@@ -109,7 +110,9 @@ export default function ResourcesPage() {
         </TabsList>
 
         {tabs.map((t) => {
-          const items = mockResources.filter((r) => r.category === t.value);
+          const items = mockResources
+            .filter((r) => r.published)
+            .filter((r) => t.value === 'ALL' ? r.category === 'ALL' : r.category === t.value || r.category === 'ALL');
           return (
             <TabsContent key={t.value} value={t.value} className="mt-6">
               <p className="text-sm text-cv-muted mb-4">{t.description}</p>
