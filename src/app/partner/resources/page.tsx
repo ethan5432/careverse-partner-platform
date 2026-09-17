@@ -122,7 +122,12 @@ export default function ResourcesPage() {
                     <EmptyState
                       icon={Layers}
                       title="No resources available"
-                      description="New resources for this package are on the way. Check back soon."
+                      description="New resources for this audience are on the way. Check back soon, or message Careverse if you need something specific."
+                      action={
+                        <Button variant="outline" className="rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft text-sm" onClick={() => window.location.href = '/partner/messages'}>
+          Message Careverse
+                        </Button>
+                      }
                     />
                   </CardContent>
                 </Card>

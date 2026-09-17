@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { Wallet, Clock, CircleCheck as CheckCircle2, Banknote, CreditCard, Building2, Plus, Search, Eye } from 'lucide-react';
+import { SupportLink } from '@/components/shared/SupportLink';
 import { mockPayouts, mockCommissions } from '@/data/mock';
 import type { PayoutStatus, MockPayout } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
@@ -124,7 +125,7 @@ export default function PartnerPayoutsPage() {
       <Card className="cv-card">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
-            <EmptyState icon={Wallet} title="No payouts found" description="Try changing the filter or search. Payouts appear here once your available balance is sent." />
+            <EmptyState icon={Wallet} title="No payouts yet" description={partnerPayouts.length === 0 ? "Payouts are sent on the 1st of each month once your available balance reaches the minimum threshold. Set up your payout method in Settings to get started." : "Try changing the filter or search above."} action={partnerPayouts.length === 0 ? <Button variant="outline" className="rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft text-sm" onClick={() => {}}>Set up payouts</Button> : undefined} />
           ) : (
             <Table>
               <TableHeader>
@@ -156,6 +157,8 @@ export default function PartnerPayoutsPage() {
           )}
         </CardContent>
       </Card>
+
+      <SupportLink variant="card" context="Questions about your payout method, schedule, or balance? Reach out and we'll help." />
 
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="sm:max-w-md">

@@ -25,6 +25,9 @@ import {
 import { cn } from '@/lib/utils';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { ShareStoreDialog } from '@/components/shared/ShareStoreDialog';
+import { PublishSuccessDialog } from '@/components/shared/PublishSuccessDialog';
+import { SaveStateBadge, type SaveStatus } from '@/components/shared/SaveState';
+import { SupportLink } from '@/components/shared/SupportLink';
 import type { SocialLink } from '@/lib/store-persistence';
 
 const socialPlatforms: { value: SocialLink['platform']; label: string }[] = [
@@ -123,6 +126,8 @@ export default function PartnerStorePage() {
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [publishSuccessOpen, setPublishSuccessOpen] = useState(false);
 
   // Config state
   const [storefrontName, setStorefrontName] = useState('');
@@ -247,13 +252,20 @@ export default function PartnerStorePage() {
        socialLinks]);
 
   const handleSave = () => {
-    saveStorefrontConfig(buildConfig());
-    setSaved(true);
-    setDirty(false);
-    setTimeout(() => setSaved(false), 3000);
-    if (!onboarding.storeCustomized) updateOnboarding({ storeCustomized: true });
-    if (!onboarding.packagesChosen && selectedPackages.length > 0) updateOnboarding({ packagesChosen: true });
-    if (!onboarding.contentAdded && contentBlocks.length > 0) updateOnboarding({ contentAdded: true });
+    setSaveStatus('saving');
+    try {
+      saveStorefrontConfig(buildConfig());
+      setSaveStatus('saved');
+      setSaved(true);
+      setDirty(false);
+      setTimeout(() => { setSaved(false); setSaveStatus('idle'); }, 3000);
+      if (!onboarding.storeCustomized) updateOnboarding({ storeCustomized: true });
+      if (!onboarding.packagesChosen && selectedPackages.length > 0) updateOnboarding({ packagesChosen: true });
+      if (!onboarding.contentAdded && contentBlocks.length > 0) updateOnboarding({ contentAdded: true });
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
   };
 
   // Mark dirty on any change
@@ -543,6 +555,7 @@ export default function PartnerStorePage() {
               <Share2 className="h-4 w-4 mr-1.5" />
               Share
             </Button>
+            <SaveStateBadge status={dirty ? 'dirty' : saveStatus} />
             <Button
               className={cn('cv-btn-primary rounded-full', saved && 'bg-cv-good')}
               onClick={handleSave}
@@ -1541,6 +1554,7 @@ export default function PartnerStorePage() {
                   markDirty();
                   if (newStatus === 'LIVE') {
                     updateOnboarding({ storePublished: true, storeShared: true });
+                    setPublishSuccessOpen(true);
                   }
                 }}
               >
@@ -1590,6 +1604,17 @@ export default function PartnerStorePage() {
         storeName={storefrontName || currentPartnerStorefront.name}
         isPublished={publishStatus === 'LIVE'}
       />
+
+      <PublishSuccessDialog
+        open={publishSuccessOpen}
+        onOpenChange={setPublishSuccessOpen}
+        storeUrl={currentPartnerStorefront.url}
+        storeName={storefrontName || currentPartnerStorefront.name}
+      />
+
+      <div className="mt-6">
+        <SupportLink variant="card" context="Need help setting up your storefront, branding, or domain? Our team can guide you through it." />
+      </div>
     </div>
   );
 }

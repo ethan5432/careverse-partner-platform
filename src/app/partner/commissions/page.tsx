@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
-import { Wallet, Clock, CircleCheck as CheckCircle2, Percent, Search, Eye } from 'lucide-react';
+import { Wallet, Clock, CircleCheck as CheckCircle2, Percent, Search, Eye, Share2 } from 'lucide-react';
+import { SupportLink } from '@/components/shared/SupportLink';
 import { mockCommissions } from '@/data/mock';
 import type { CommissionStatus, MockCommission } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
@@ -92,7 +93,7 @@ export default function PartnerCommissionsPage() {
       <Card className="cv-card">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
-            <EmptyState icon={Percent} title="No commissions found" description="Try changing the filter or search. Commissions appear here once conversions are attributed to you." />
+            <EmptyState icon={Percent} title="No commissions yet" description={partnerCommissions.length === 0 ? "Commissions are earned when customers purchase through your storefront. Each approved conversion generates a commission entry here with your earnings breakdown." : "Try changing the filter or search above."} action={partnerCommissions.length === 0 ? <Button className="bg-cv-ink text-white hover:bg-cv-ink/90 rounded-full text-sm font-bold" onClick={() => {}}><Share2 className="h-4 w-4" /> Share your store</Button> : undefined} />
           ) : (
             <Table>
               <TableHeader>
@@ -123,6 +124,8 @@ export default function PartnerCommissionsPage() {
           )}
         </CardContent>
       </Card>
+
+      <SupportLink variant="card" context="Questions about your commission rates, calculations, or payout schedule? We're here to help." />
 
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="sm:max-w-lg">
