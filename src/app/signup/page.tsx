@@ -294,13 +294,13 @@ export default function SignupPage() {
             <label className="flex items-start gap-3 cursor-pointer">
               <Checkbox checked={acceptTerms} onCheckedChange={(v) => setAcceptTerms(v === true)} className="mt-0.5" />
               <span className="text-xs text-cv-body leading-relaxed">
-                I accept the <a href="#" className="font-bold text-cv-ink underline">Terms of Service</a>
+                I accept the <a href="https://careverse.ai/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-cv-ink underline">Terms of Service</a>
               </span>
             </label>
             <label className="flex items-start gap-3 cursor-pointer">
               <Checkbox checked={acceptPrivacy} onCheckedChange={(v) => setAcceptPrivacy(v === true)} className="mt-0.5" />
               <span className="text-xs text-cv-body leading-relaxed">
-                I accept the <a href="#" className="font-bold text-cv-ink underline">Privacy Policy</a>
+                I accept the <a href="https://careverse.ai/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-cv-ink underline">Privacy Policy</a>
               </span>
             </label>
           </div>

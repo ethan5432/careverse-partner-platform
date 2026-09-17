@@ -284,6 +284,12 @@ export interface MockResource {
   order: number;
   createdAt: string;
   updatedAt: string;
+  assetSource?: 'UPLOAD' | 'EXTERNAL';
+  assetId?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  fileExt?: string;
 }
 
 export interface MockPartnerProfile {

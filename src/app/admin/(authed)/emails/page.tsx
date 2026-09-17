@@ -60,16 +60,24 @@ const scheduledStatusLabel: Record<MockScheduledEmail['status'], string> = {
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 export default function AdminEmailsPage() {
+  const [campaigns, setCampaigns] = useState(mockEmailCampaigns);
   const [automations, setAutomations] = useState(mockEmailAutomations);
   const [templates, setTemplates] = useState(mockEmailTemplates);
+  const [scheduledEmails, setScheduledEmails] = useState(mockScheduledEmails);
   const [editingTemplate, setEditingTemplate] = useState<MockEmailTemplate | null>(null);
   const [editSubject, setEditSubject] = useState('');
   const [editBody, setEditBody] = useState('');
   const [viewingScheduled, setViewingScheduled] = useState<MockScheduledEmail | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<MockEmailTemplate | null>(null);
+  const [viewingCampaign, setViewingCampaign] = useState<MockEmailCampaign | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<MockEmailCampaign | null>(null);
+  const [campaignDraft, setCampaignDraft] = useState({ name: '', audience: 'All Partners', subject: '', schedule: 'Send immediately' });
+  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
+  const [automationDraft, setAutomationDraft] = useState({ name: '', trigger: 'Partner application approved', audience: 'All Partners', template: 'Welcome Email', delay: 'Immediately' });
+  const [isCreatingAutomation, setIsCreatingAutomation] = useState(false);
 
-  const totalSent = mockEmailCampaigns.reduce((s, c) => s + c.sentCount, 0);
-  const avgOpenRate = mockEmailCampaigns.filter((c) => c.openRate > 0).reduce((s, c) => s + c.openRate, 0) / (mockEmailCampaigns.filter((c) => c.openRate > 0).length || 1);
+  const totalSent = campaigns.reduce((s, c) => s + c.sentCount, 0);
+  const avgOpenRate = campaigns.filter((c) => c.openRate > 0).reduce((s, c) => s + c.openRate, 0) / (campaigns.filter((c) => c.openRate > 0).length || 1);
   const activeAutomations = automations.filter((a) => a.status === 'ACTIVE').length;
   const enabledTemplates = templates.filter((t) => t.enabled).length;
 
@@ -103,17 +111,71 @@ export default function AdminEmailsPage() {
     setEditingTemplate(null);
   };
 
+  const cancelScheduledSend = (id: string) => {
+    setScheduledEmails((prev) => prev.map((s) => s.id === id ? { ...s, status: 'CANCELLED' as const } : s));
+    setViewingScheduled(null);
+  };
+
+  const openCreateCampaign = () => {
+    setCampaignDraft({ name: '', audience: 'All Partners', subject: '', schedule: 'Send immediately' });
+    setIsCreatingCampaign(true);
+    setEditingCampaign(null);
+  };
+
+  const openEditCampaign = (c: MockEmailCampaign) => {
+    setEditingCampaign(c);
+    setCampaignDraft({ name: c.name, audience: c.audience, subject: c.subject, schedule: c.schedule });
+    setIsCreatingCampaign(false);
+  };
+
+  const saveCampaign = () => {
+    if (!campaignDraft.name.trim()) return;
+    if (isCreatingCampaign) {
+      const newCampaign: MockEmailCampaign = {
+        id: `camp-${Date.now()}`, name: campaignDraft.name, audience: campaignDraft.audience,
+        template: 'Custom', subject: campaignDraft.subject, schedule: campaignDraft.schedule,
+        status: 'DRAFT', sentCount: 0, openRate: 0,
+      };
+      setCampaigns((prev) => [...prev, newCampaign]);
+    } else if (editingCampaign) {
+      setCampaigns((prev) => prev.map((c) => c.id === editingCampaign.id ? { ...c, ...campaignDraft } : c));
+    }
+    setIsCreatingCampaign(false);
+    setEditingCampaign(null);
+  };
+
+  const closeCampaignDialog = () => {
+    setIsCreatingCampaign(false);
+    setEditingCampaign(null);
+  };
+
+  const openCreateAutomation = () => {
+    setAutomationDraft({ name: '', trigger: 'Partner application approved', audience: 'All Partners', template: 'Welcome Email', delay: 'Immediately' });
+    setIsCreatingAutomation(true);
+  };
+
+  const saveAutomation = () => {
+    if (!automationDraft.name.trim()) return;
+    const newAutomation: MockEmailAutomation = {
+      id: `auto-${Date.now()}`, name: automationDraft.name, trigger: automationDraft.trigger,
+      audience: automationDraft.audience, template: automationDraft.template, delay: automationDraft.delay,
+      status: 'ACTIVE',
+    };
+    setAutomations((prev) => [...prev, newAutomation]);
+    setIsCreatingAutomation(false);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Emails"
         title="Email Center"
         description="Broadcast campaigns, scheduled sends, lifecycle automations, and editable email templates."
-        actions={<Button className="cv-btn-primary cv-btn-sm rounded-full"><Plus className="h-4 w-4" /> New Campaign</Button>}
+        actions={<Button className="cv-btn-primary cv-btn-sm rounded-full" onClick={openCreateCampaign}><Plus className="h-4 w-4" /> New Campaign</Button>}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Campaigns" value={mockEmailCampaigns.length} icon={Megaphone} description="All time" />
+        <StatCard label="Campaigns" value={campaigns.length} icon={Megaphone} description="All time" />
         <StatCard label="Emails Sent" value={totalSent.toLocaleString()} icon={Send} trend="+8%" trendUp description="Across campaigns" />
         <StatCard label="Avg Open Rate" value={pct(avgOpenRate)} icon={MousePointerClick} trend="+3%" trendUp description="Sent campaigns" />
         <StatCard label="Active Automations" value={activeAutomations} icon={Zap} description={`${automations.length} total`} />
@@ -143,8 +205,8 @@ export default function AdminEmailsPage() {
               <p className="text-xs text-cv-muted mt-0.5">One-time broadcasts sent to partner audiences</p>
             </CardHeader>
             <CardContent className="pt-0">
-              {mockEmailCampaigns.length === 0 ? (
-                <EmptyState icon={Mail} title="No campaigns yet" description="Create your first email campaign to reach partners." action={<Button className="cv-btn-primary cv-btn-sm rounded-full">New Campaign</Button>} />
+              {campaigns.length === 0 ? (
+                <EmptyState icon={Mail} title="No campaigns yet" description="Create your first email campaign to reach partners." action={<Button className="cv-btn-primary cv-btn-sm rounded-full" onClick={openCreateCampaign}>New Campaign</Button>} />
               ) : (
                 <Table>
                   <TableHeader>
@@ -160,7 +222,7 @@ export default function AdminEmailsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockEmailCampaigns.map((c) => (
+                  {campaigns.map((c) => (
                       <TableRow key={c.id} className="border-cv-line">
                         <TableCell className="font-bold text-cv-ink text-sm">{c.name}</TableCell>
                         <TableCell className="text-sm text-cv-body">{c.audience}</TableCell>
@@ -171,8 +233,8 @@ export default function AdminEmailsPage() {
                         <TableCell className="text-right text-sm font-bold text-cv-good">{c.openRate > 0 ? pct(c.openRate) : '—'}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <button className="rounded-lg p-1.5 hover:bg-cv-soft transition-colors"><Eye className="h-3.5 w-3.5 text-cv-muted" /></button>
-                            <button className="rounded-lg p-1.5 hover:bg-cv-soft transition-colors"><Pencil className="h-3.5 w-3.5 text-cv-muted" /></button>
+                            <button onClick={() => setViewingCampaign(c)} className="rounded-lg p-1.5 hover:bg-cv-soft transition-colors" title="View"><Eye className="h-3.5 w-3.5 text-cv-muted" /></button>
+                            <button onClick={() => openEditCampaign(c)} className="rounded-lg p-1.5 hover:bg-cv-soft transition-colors" title="Edit"><Pencil className="h-3.5 w-3.5 text-cv-muted" /></button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -192,7 +254,7 @@ export default function AdminEmailsPage() {
               <p className="text-xs text-cv-muted mt-0.5">Campaigns queued for future delivery</p>
             </CardHeader>
             <CardContent className="pt-0">
-              {mockScheduledEmails.length === 0 ? (
+              {scheduledEmails.length === 0 ? (
                 <EmptyState icon={Calendar} title="No scheduled emails" description="Scheduled campaign sends will appear here." />
               ) : (
                 <Table>
@@ -208,7 +270,7 @@ export default function AdminEmailsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockScheduledEmails.map((s) => (
+                    {scheduledEmails.map((s) => (
                       <TableRow key={s.id} className="border-cv-line cursor-pointer hover:bg-cv-soft/60 transition-colors" onClick={() => setViewingScheduled(s)}>
                         <TableCell className="font-bold text-cv-ink text-sm">{s.campaignName}</TableCell>
                         <TableCell className="text-sm text-cv-body">{s.audience}</TableCell>
@@ -235,7 +297,7 @@ export default function AdminEmailsPage() {
                   <CardTitle className="text-base font-bold text-cv-ink">Automations</CardTitle>
                   <p className="text-xs text-cv-muted mt-0.5">Triggered emails sent automatically based on partner events</p>
                 </div>
-                <Button variant="outline" className="rounded-full border-cv-line text-cv-ink hover:bg-cv-soft">
+                <Button variant="outline" className="rounded-full border-cv-line text-cv-ink hover:bg-cv-soft" onClick={openCreateAutomation}>
                   <Plus className="h-3.5 w-3.5" /> New Automation
                 </Button>
               </div>
@@ -443,9 +505,112 @@ export default function AdminEmailsPage() {
           )}
           <div className="flex justify-end gap-2 pt-2">
             {viewingScheduled?.status === 'SCHEDULED' && (
-              <Button variant="outline" className="rounded-full border-cv-red text-cv-red font-bold hover:bg-cv-red/5">Cancel send</Button>
+              <Button variant="outline" className="rounded-full border-cv-red text-cv-red font-bold hover:bg-cv-red/5" onClick={() => cancelScheduledSend(viewingScheduled.id)}>Cancel send</Button>
             )}
             <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => setViewingScheduled(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Campaign view dialog */}
+      <Dialog open={!!viewingCampaign} onOpenChange={(open) => !open && setViewingCampaign(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-cv-ink">Campaign details</DialogTitle>
+            <DialogDescription className="text-sm text-cv-muted">{viewingCampaign?.name}</DialogDescription>
+          </DialogHeader>
+          {viewingCampaign && (
+            <div className="space-y-3 pt-1">
+              <DetailRow label="Name" value={viewingCampaign.name} />
+              <DetailRow label="Audience" value={viewingCampaign.audience} />
+              <DetailRow label="Subject" value={viewingCampaign.subject} />
+              <DetailRow label="Template" value={viewingCampaign.template} />
+              <DetailRow label="Schedule" value={viewingCampaign.schedule} />
+              <DetailRow label="Sent" value={viewingCampaign.sentCount.toLocaleString()} />
+              <DetailRow label="Open Rate" value={viewingCampaign.openRate > 0 ? pct(viewingCampaign.openRate) : '—'} />
+              <div className="flex items-center justify-between py-1 border-b border-cv-line">
+                <span className="text-xs font-bold uppercase tracking-wider text-cv-muted">Status</span>
+                <StatusBadge status={campaignStatusVariant[viewingCampaign.status]} label={campaignStatusLabel[viewingCampaign.status]} />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            {viewingCampaign && viewingCampaign.status === 'DRAFT' && (
+              <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => { const c = viewingCampaign; setViewingCampaign(null); openEditCampaign(c); }}>
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Button>
+            )}
+            <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => setViewingCampaign(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Campaign create/edit dialog */}
+      <Dialog open={isCreatingCampaign || !!editingCampaign} onOpenChange={(open) => !open && closeCampaignDialog()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-cv-ink">{isCreatingCampaign ? 'New Campaign' : 'Edit Campaign'}</DialogTitle>
+            <DialogDescription className="text-sm text-cv-muted">{isCreatingCampaign ? 'Create a new email campaign for partners.' : 'Update this campaign.'}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Campaign Name</label>
+              <Input value={campaignDraft.name} onChange={(e) => setCampaignDraft({ ...campaignDraft, name: e.target.value })} className="cv-input" placeholder="e.g. September Partner Newsletter" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Audience</label>
+              <Input value={campaignDraft.audience} onChange={(e) => setCampaignDraft({ ...campaignDraft, audience: e.target.value })} className="cv-input" placeholder="e.g. All Partners" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Subject Line</label>
+              <Input value={campaignDraft.subject} onChange={(e) => setCampaignDraft({ ...campaignDraft, subject: e.target.value })} className="cv-input" placeholder="Email subject" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Schedule</label>
+              <Input value={campaignDraft.schedule} onChange={(e) => setCampaignDraft({ ...campaignDraft, schedule: e.target.value })} className="cv-input" placeholder="e.g. Send immediately or Sep 25, 2026" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={closeCampaignDialog}>Cancel</Button>
+            <Button className="cv-btn-primary rounded-full" onClick={saveCampaign} disabled={!campaignDraft.name.trim()}>
+              {isCreatingCampaign ? 'Create campaign' : 'Save changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Automation create dialog */}
+      <Dialog open={isCreatingAutomation} onOpenChange={(open) => !open && setIsCreatingAutomation(false)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-cv-ink">New Automation</DialogTitle>
+            <DialogDescription className="text-sm text-cv-muted">Create an automated email triggered by partner events.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Automation Name</label>
+              <Input value={automationDraft.name} onChange={(e) => setAutomationDraft({ ...automationDraft, name: e.target.value })} className="cv-input" placeholder="e.g. Welcome Email" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Trigger</label>
+              <Input value={automationDraft.trigger} onChange={(e) => setAutomationDraft({ ...automationDraft, trigger: e.target.value })} className="cv-input" placeholder="e.g. Partner application approved" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Audience</label>
+              <Input value={automationDraft.audience} onChange={(e) => setAutomationDraft({ ...automationDraft, audience: e.target.value })} className="cv-input" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Template</label>
+              <Input value={automationDraft.template} onChange={(e) => setAutomationDraft({ ...automationDraft, template: e.target.value })} className="cv-input" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Delay</label>
+              <Input value={automationDraft.delay} onChange={(e) => setAutomationDraft({ ...automationDraft, delay: e.target.value })} className="cv-input" placeholder="e.g. Immediately or 2 hours" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => setIsCreatingAutomation(false)}>Cancel</Button>
+            <Button className="cv-btn-primary rounded-full" onClick={saveAutomation} disabled={!automationDraft.name.trim()}>Create automation</Button>
           </div>
         </DialogContent>
       </Dialog>

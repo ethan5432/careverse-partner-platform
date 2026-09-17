@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -29,19 +30,19 @@ const initialRules: CommissionRule[] = [
 interface Integration {
   id: string; name: string; description: string; category: string; connected: boolean;
 }
-const integrations: Integration[] = [
+  const [integrations, setIntegrations] = useState<Integration[]>([
   { id: 'int-1', name: 'Stripe', description: 'Process partner payouts and track payment activity.', category: 'Payments', connected: true },
   { id: 'int-2', name: 'Mailgun', description: 'Transactional email delivery for automations.', category: 'Email', connected: true },
   { id: 'int-3', name: 'Slack', description: 'Get alerts for new partner signups and conversions.', category: 'Notifications', connected: false },
   { id: 'int-4', name: 'Zapier', description: 'Connect Careverse to 5,000+ apps and automate workflows.', category: 'Automation', connected: false },
   { id: 'int-5', name: 'Google Analytics', description: 'Track storefront traffic and conversion attribution.', category: 'Analytics', connected: true },
   { id: 'int-6', name: 'Twilio', description: 'SMS notifications for partners and verification.', category: 'Notifications', connected: false },
-];
+]);
 
 interface TeamMember {
   id: string; name: string; email: string; role: 'Owner' | 'Admin' | 'Editor' | 'Viewer'; lastActive: string;
 }
-const team: TeamMember[] = [
+const initialTeam: TeamMember[] = [
   { id: 'tm-1', name: 'Sarah Chen', email: 'admin@careverse.ai', role: 'Owner', lastActive: '2026-09-15' },
   { id: 'tm-2', name: 'Marcus Johnson', email: 'marcus@careverse.ai', role: 'Admin', lastActive: '2026-09-14' },
   { id: 'tm-3', name: 'Emily Rodriguez', email: 'emily@careverse.ai', role: 'Editor', lastActive: '2026-09-13' },
@@ -80,6 +81,12 @@ export default function AdminSettingsPage() {
     timezone: 'America/New_York', dateFormat: 'MM/DD/YYYY',
     currency: 'USD', maintenanceMode: false,
   });
+  const [team, setTeam] = useState<TeamMember[]>(initialTeam);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'Admin' | 'Editor' | 'Viewer'>('Editor');
+  const [ruleDraft, setRuleDraft] = useState({ name: '', rate: '20', scope: 'All products' });
+  const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
   const [savedTab, setSavedTab] = useState<string | null>(null);
 
   const handleSave = (tab: string) => {
@@ -94,7 +101,34 @@ export default function AdminSettingsPage() {
   const deleteRule = (id: string) => setRules((prev) => prev.filter((r) => r.id !== id));
 
   const toggleIntegration = (id: string) => {
-    // mock — no state mutation needed for demo, button shows feedback
+    setIntegrations((prev) => prev.map((i) => i.id === id ? { ...i, connected: !i.connected } : i));
+  };
+
+  const addRule = () => {
+    if (!ruleDraft.name.trim()) return;
+    const newRule: CommissionRule = {
+      id: `r-${Date.now()}`, name: ruleDraft.name, rate: parseInt(ruleDraft.rate) || 20,
+      scope: ruleDraft.scope, status: 'ACTIVE',
+    };
+    setRules((prev) => [...prev, newRule]);
+    setRuleDraft({ name: '', rate: '20', scope: 'All products' });
+    setRuleDialogOpen(false);
+  };
+
+  const removeTeamMember = (id: string) => {
+    setTeam((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const inviteMember = () => {
+    if (!inviteEmail.trim()) return;
+    const newMember: TeamMember = {
+      id: `tm-${Date.now()}`, name: inviteEmail.split('@')[0], email: inviteEmail,
+      role: inviteRole, lastActive: new Date().toISOString().slice(0, 10),
+    };
+    setTeam((prev) => [...prev, newMember]);
+    setInviteEmail('');
+    setInviteRole('Editor');
+    setInviteOpen(false);
   };
 
   return (
@@ -157,7 +191,7 @@ export default function AdminSettingsPage() {
                 <CardTitle className="text-base font-bold text-cv-ink">Commission Rules</CardTitle>
                 <p className="text-xs text-cv-muted mt-0.5">Rules that determine how partners earn commission</p>
               </div>
-              <Button className="cv-btn-primary cv-btn-sm rounded-full"><Plus className="h-4 w-4" /> Add Rule</Button>
+              <Button className="cv-btn-primary cv-btn-sm rounded-full" onClick={() => setRuleDialogOpen(true)}><Plus className="h-4 w-4" /> Add Rule</Button>
             </CardHeader>
             <CardContent className="pt-0">
               <Table>
@@ -433,7 +467,7 @@ export default function AdminSettingsPage() {
                 <CardTitle className="text-base font-bold text-cv-ink">Team Members</CardTitle>
                 <p className="text-xs text-cv-muted mt-0.5">People with access to the Careverse admin</p>
               </div>
-              <Button className="cv-btn-primary cv-btn-sm rounded-full"><Plus className="h-4 w-4" /> Invite Member</Button>
+              <Button className="cv-btn-primary cv-btn-sm rounded-full" onClick={() => setInviteOpen(true)}><Plus className="h-4 w-4" /> Invite Member</Button>
             </CardHeader>
             <CardContent className="pt-0">
               <Table>
@@ -473,7 +507,7 @@ export default function AdminSettingsPage() {
                       <TableCell className="text-xs text-cv-muted">{new Date(m.lastActive).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</TableCell>
                       <TableCell className="text-right">
                         {m.role !== 'Owner' && (
-                          <button className="rounded-lg p-1.5 hover:bg-red-50 transition-colors">
+                          <button onClick={() => removeTeamMember(m.id)} className="rounded-lg p-1.5 hover:bg-red-50 transition-colors" title="Remove member">
                             <Trash2 className="h-3.5 w-3.5 text-cv-red" />
                           </button>
                         )}
@@ -601,6 +635,65 @@ export default function AdminSettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add Rule dialog */}
+      <Dialog open={ruleDialogOpen} onOpenChange={setRuleDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-cv-ink">New Commission Rule</DialogTitle>
+            <DialogDescription className="text-sm text-cv-muted">Add a new commission rule for partners.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Rule Name</Label>
+              <Input value={ruleDraft.name} onChange={(e) => setRuleDraft({ ...ruleDraft, name: e.target.value })} className="cv-input" placeholder="e.g. Holiday Bonus" />
+            </div>
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Commission Rate (%)</Label>
+              <Input type="number" value={ruleDraft.rate} onChange={(e) => setRuleDraft({ ...ruleDraft, rate: e.target.value })} className="cv-input" />
+            </div>
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Scope</Label>
+              <Input value={ruleDraft.scope} onChange={(e) => setRuleDraft({ ...ruleDraft, scope: e.target.value })} className="cv-input" placeholder="e.g. All products" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => setRuleDialogOpen(false)}>Cancel</Button>
+            <Button className="cv-btn-primary rounded-full" onClick={addRule} disabled={!ruleDraft.name.trim()}>Add rule</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Member dialog */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-cv-ink">Invite Team Member</DialogTitle>
+            <DialogDescription className="text-sm text-cv-muted">Send an invitation to join the admin panel.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Email Address</Label>
+              <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className="cv-input" placeholder="teammate@careverse.ai" />
+            </div>
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Role</Label>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as 'Admin' | 'Editor' | 'Viewer')}>
+                <SelectTrigger className="cv-input"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="Editor">Editor</SelectItem>
+                  <SelectItem value="Viewer">Viewer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => setInviteOpen(false)}>Cancel</Button>
+            <Button className="cv-btn-primary rounded-full" onClick={inviteMember} disabled={!inviteEmail.trim()}>Send invite</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

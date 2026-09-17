@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -35,6 +36,7 @@ const METHOD_META: Record<string, { label: string; icon: React.ElementType }> = 
 };
 
 export default function PartnerPayoutsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<MockPayout | null>(null);
@@ -101,7 +103,7 @@ export default function PartnerPayoutsPage() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" className="rounded-full border-cv-line font-bold shrink-0">
+            <Button variant="outline" className="rounded-full border-cv-line font-bold shrink-0" onClick={() => router.push('/partner/settings')}>
               {payoutConfigured ? 'Manage method' : (<><Plus className="h-4 w-4 mr-1.5" />Add payout method</>)}
             </Button>
           </div>
@@ -125,7 +127,7 @@ export default function PartnerPayoutsPage() {
       <Card className="cv-card">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
-            <EmptyState icon={Wallet} title="No payouts yet" description={partnerPayouts.length === 0 ? "Payouts are sent on the 1st of each month once your available balance reaches the minimum threshold. Set up your payout method in Settings to get started." : "Try changing the filter or search above."} action={partnerPayouts.length === 0 ? <Button variant="outline" className="rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft text-sm" onClick={() => {}}>Set up payouts</Button> : undefined} />
+            <EmptyState icon={Wallet} title="No payouts yet" description={partnerPayouts.length === 0 ? "Payouts are sent on the 1st of each month once your available balance reaches the minimum threshold. Set up your payout method in Settings to get started." : "Try changing the filter or search above."} action={partnerPayouts.length === 0 ? <Button variant="outline" className="rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft text-sm" onClick={() => router.push('/partner/settings')}>Set up payouts</Button> : undefined} />
           ) : (
             <Table>
               <TableHeader>

@@ -111,7 +111,7 @@ export default function AdminLoginPage() {
           </form>
 
           <div className="mt-5 text-center">
-            <Link href="#" className="text-sm text-cv-muted hover:text-cv-ink transition-colors">
+            <Link href="/forgot-password" className="text-sm text-cv-muted hover:text-cv-ink transition-colors">
               Forgot password?
             </Link>
           </div>

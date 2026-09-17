@@ -67,12 +67,15 @@ export function GetStartedChecklist() {
             const Icon = item.icon;
             return (
               <li key={item.key}>
-                <button
-                  onClick={() => router.push(item.href)}
+                <div
                   className={cn(
                     'w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all group',
-                    isDone ? 'bg-emerald-50/50' : 'hover:bg-cv-soft'
+                    isDone ? 'bg-emerald-50/50' : 'hover:bg-cv-soft cursor-pointer'
                   )}
+                  onClick={() => !isDone && router.push(item.href)}
+                  role={!isDone ? 'button' : undefined}
+                  tabIndex={!isDone ? 0 : undefined}
+                  onKeyDown={(e) => { if (!isDone && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); router.push(item.href); } }}
                 >
                   <div className="shrink-0">
                     {isDone ? (
@@ -97,18 +100,18 @@ export function GetStartedChecklist() {
                   {!isDone && (
                     <ArrowRight className="h-4 w-4 text-cv-muted group-hover:text-cv-ink shrink-0 transition-colors" />
                   )}
-                  {isDone && !onboarding[item.key] === false && (
+                  {isDone && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         updateOnboarding({ [item.key]: false });
                       }}
-                      className="text-[10px] font-bold text-cv-muted hover:text-cv-ink shrink-0"
+                      className="text-[10px] font-bold text-cv-muted hover:text-cv-ink shrink-0 px-2 py-1 rounded-md hover:bg-cv-soft transition-colors"
                     >
                       Undo
                     </button>
                   )}
-                </button>
+                </div>
               </li>
             );
           })}

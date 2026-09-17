@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
 import { StatusBadge, Avatar } from '@/components/shared/StatusBadge';
@@ -70,10 +71,12 @@ const activityDotColor: Record<string, string> = {
 };
 
 export default function AdminPartnersPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [partners, setPartners] = useState<MockPartner[]>(mockPartners);
   const [approvalEmailStatuses, setApprovalEmailStatuses] = useState<Record<string, ApprovalEmailStatus>>({});
   const [approvalActivity, setApprovalActivity] = useState<Record<string, { description: string; date: string }[]>>({});
 
@@ -84,6 +87,10 @@ export default function AdminPartnersPage() {
 
     const emailStatus: ApprovalEmailStatus = isConfigured ? 'QUEUED' : 'NOT_CONFIGURED';
     setApprovalEmailStatuses((prev) => ({ ...prev, [partner.id]: emailStatus }));
+
+    setPartners((prev) => prev.map((p) =>
+      p.id === partner.id ? { ...p, status: 'ACTIVE' as PartnerStatus } : p
+    ));
 
     const now = new Date().toISOString().slice(0, 10);
     const activities = [
@@ -96,7 +103,7 @@ export default function AdminPartnersPage() {
   };
 
   const filtered = useMemo(() => {
-    return mockPartners.filter((p) => {
+    return partners.filter((p) => {
       const matchesType = typeFilter === 'ALL' || p.type === typeFilter;
       const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
       const q = search.trim().toLowerCase();
@@ -109,14 +116,14 @@ export default function AdminPartnersPage() {
     });
   }, [search, typeFilter, statusFilter]);
 
-  const selectedPartner = mockPartners.find((p) => p.id === selectedId) || null;
+  const selectedPartner = partners.find((p) => p.id === selectedId) || null;
 
   const stats = useMemo(() => {
-    const active = mockPartners.filter((p) => p.status === 'ACTIVE').length;
-    const pending = mockPartners.filter((p) => p.status === 'PENDING').length;
-    const revenue = mockPartners.reduce((s, p) => s + p.revenue, 0);
-    return { total: mockPartners.length, active, pending, revenue };
-  }, []);
+    const active = partners.filter((p) => p.status === 'ACTIVE').length;
+    const pending = partners.filter((p) => p.status === 'PENDING').length;
+    const revenue = partners.reduce((s, p) => s + p.revenue, 0);
+    return { total: partners.length, active, pending, revenue };
+  }, [partners]);
 
   return (
     <div className="space-y-6">
@@ -125,7 +132,7 @@ export default function AdminPartnersPage() {
         title="Partners"
         description="Manage creators and businesses across the platform."
         actions={
-          <Button className="bg-cv-ink text-white hover:bg-cv-ink/90" size="sm">
+          <Button className="bg-cv-ink text-white hover:bg-cv-ink/90" size="sm" onClick={() => router.push('/signup')}>
             <UserPlus className="h-4 w-4" />
             Add Partner
           </Button>
@@ -266,6 +273,7 @@ function PartnerDialog({
   onApprove: (partner: MockPartner) => void;
   extraActivity: { description: string; date: string }[];
 }) {
+  const router = useRouter();
   const open = !!partner;
 
   const partnerConversions = useMemo(
@@ -518,10 +526,10 @@ function PartnerDialog({
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs">
+                        <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs" onClick={() => router.push('/storefront')}>
                           <ExternalLink className="h-3.5 w-3.5" /> View storefront
                         </Button>
-                        <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs">
+                        <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs" onClick={() => router.push('/partner/store')}>
                           <Pencil className="h-3.5 w-3.5" /> Edit storefront
                         </Button>
                       </div>

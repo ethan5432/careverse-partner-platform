@@ -73,7 +73,7 @@ export default function AdminProductsPage() {
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge status="connected" label="Connected" />
-              <a href="#" className="text-xs font-bold text-cv-ink flex items-center gap-1 hover:text-cv-red transition-colors">
+              <a href="https://careverse.ai" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-cv-ink flex items-center gap-1 hover:text-cv-red transition-colors">
                 View source <ExternalLink className="h-3 w-3" />
               </a>
             </div>
