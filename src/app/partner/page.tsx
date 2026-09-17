@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import {
   Wallet, TrendingUp, Users, MousePointerClick, ExternalLink, Pencil, Store,
   Rocket, Sparkles, Share2, FlaskConical, ArrowRight, Clock,
+  Link as LinkIcon, Copy, Check, Lock, ArrowUpRight, FileText,
 } from 'lucide-react';
 import {
   partnerDashboardStats, partnerPerformanceData,
@@ -24,17 +25,45 @@ import {
 } from '@/data/mock';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { cn } from '@/lib/utils';
+import {
+  loadPendingStorefrontApplication, loadStorefrontApplicationsByPartner,
+} from '@/lib/creator-persistence';
+import type { StorefrontApplication } from '@/data/mock/types';
 
 type TimeRange = '7D' | '30D' | '90D' | 'ALL';
 type Metric = 'revenue' | 'conversions' | 'commission';
 
 export default function PartnerDashboardPage() {
   const router = useRouter();
-  const { user, onboarding, isOnboardingComplete } = useMockAuth();
+  const { user, onboarding, isOnboardingComplete, hasStorefrontAccess, affiliateLink, creatorProfiles } = useMockAuth();
   const [timeRange, setTimeRange] = useState<TimeRange>('30D');
   const [metric, setMetric] = useState<Metric>('revenue');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [storefrontApps, setStorefrontApps] = useState<StorefrontApplication[]>([]);
+
+  const isCreator = user?.partnerType === 'CREATOR';
+  const storeUnlocked = isCreator ? hasStorefrontAccess() : true;
+  const isAffiliateOnly = isCreator && !storeUnlocked;
+
+  useEffect(() => {
+    if (user) {
+      const apps = loadStorefrontApplicationsByPartner(user.id);
+      setStorefrontApps(apps);
+    }
+  }, [user]);
+
+  const pendingApp = storefrontApps.find(a => a.status === 'SUBMITTED' || a.status === 'IN_REVIEW');
+  const rejectedApp = storefrontApps.find(a => a.status === 'REJECTED');
+
+  const handleCopyLink = () => {
+    if (affiliateLink) {
+      navigator.clipboard.writeText(affiliateLink.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const onboardingDone = isOnboardingComplete();
   const completedCount = Object.values(onboarding).filter(Boolean).length;
@@ -49,6 +78,7 @@ export default function PartnerDashboardPage() {
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   const incompleteSteps = useMemo(() => {
+    if (isAffiliateOnly) return [];
     const steps: { label: string; href: string }[] = [];
     if (!onboarding.profileComplete) steps.push({ label: 'Complete your profile', href: '/partner/settings' });
     if (!onboarding.storeCustomized) steps.push({ label: 'Customize your storefront', href: '/partner/store' });
@@ -58,11 +88,249 @@ export default function PartnerDashboardPage() {
     if (!onboarding.storePublished) steps.push({ label: 'Publish your store', href: '/partner/store' });
     if (!onboarding.storeShared) steps.push({ label: 'Share your store', href: '/partner/store' });
     return steps;
-  }, [onboarding]);
+  }, [onboarding, isAffiliateOnly]);
 
   const nextStep = incompleteSteps[0];
 
-  // --- Incomplete / new partner onboarding view ---
+  // --- Affiliate-only creator dashboard ---
+  if (isAffiliateOnly) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Creator Dashboard"
+          title={`Welcome, ${user?.name?.split(' ')[0] || 'Partner'}!`}
+          description="Share your affiliate link and earn commission on every Careverse membership."
+        />
+
+        {/* Affiliate Link Section */}
+        <Card className="cv-card border-cv-ink/20">
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <LinkIcon className="h-5 w-5 text-cv-ink" />
+              <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider">Your Affiliate Link</h3>
+            </div>
+            <p className="text-sm text-cv-body">
+              Share this link with your audience. Every Careverse membership purchased through this link earns you commission.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex-1 rounded-xl border border-cv-line bg-cv-soft/30 px-4 py-3 text-sm font-bold text-cv-ink truncate">
+                {affiliateLink?.url || 'https://careverse.ai/r/your-code'}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft text-sm shrink-0"
+                  onClick={handleCopyLink}
+                >
+                  {copied ? <Check className="h-4 w-4 text-cv-good" /> : <Copy className="h-4 w-4" />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </Button>
+                <a
+                  href={affiliateLink?.url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-cv-ink text-white px-4 py-2 text-sm font-bold hover:bg-cv-ink/90 transition-colors shrink-0"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open
+                </a>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button
+                className="rounded-full bg-cv-ink text-white hover:bg-cv-ink/90 text-sm font-bold"
+                onClick={() => router.push('/partner/storefront-application')}
+              >
+                <Store className="h-4 w-4 mr-1.5" />
+                Apply for a storefront
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft text-sm"
+                onClick={() => setShareDialogOpen(true)}
+              >
+                <Share2 className="h-4 w-4 mr-1.5" />
+                Share affiliate link
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Affiliate Stats */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Link Clicks"
+            value={affiliateLink?.clicks || 0}
+            icon={MousePointerClick}
+            description="All time"
+          />
+          <StatCard
+            label="Conversions"
+            value={affiliateLink?.conversions || 0}
+            icon={Users}
+            description="From your link"
+          />
+          <StatCard
+            label="Available"
+            value={fmtMoney(partnerDashboardStats.available)}
+            icon={Wallet}
+            description="Ready for payout"
+          />
+          <StatCard
+            label="Pending"
+            value={fmtMoney(partnerDashboardStats.pending)}
+            icon={TrendingUp}
+            description="Awaiting approval"
+          />
+        </div>
+
+        {/* Storefront Application Status */}
+        {pendingApp ? (
+          <Card className="cv-card border-amber-200 bg-amber-50/50">
+            <CardContent className="pt-6 space-y-3">
+              <div className="flex items-center gap-3">
+                <Clock className="h-5 w-5 text-amber-700" />
+                <div>
+                  <p className="text-sm font-bold text-amber-700">Storefront Application Under Review</p>
+                  <p className="text-xs text-cv-muted">Submitted on {new Date(pendingApp.submittedAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <p className="text-sm text-cv-body">
+                Your application is being reviewed. You'll be notified when a decision is made.
+              </p>
+              <Button variant="outline" className="rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft text-sm" onClick={() => router.push('/partner/storefront-application')}>
+                View application <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </CardContent>
+          </Card>
+        ) : rejectedApp ? (
+          <Card className="cv-card border-red-200 bg-red-50/50">
+            <CardContent className="pt-6 space-y-3">
+              <div className="flex items-center gap-3">
+                <Lock className="h-5 w-5 text-red-700" />
+                <div>
+                  <p className="text-sm font-bold text-red-700">Storefront Application Not Approved</p>
+                  <p className="text-xs text-cv-muted">You can apply again with new content.</p>
+                </div>
+              </div>
+              {rejectedApp.feedback && (
+                <p className="text-sm text-cv-body">
+                  <span className="font-bold">Feedback: </span>{rejectedApp.feedback}
+                </p>
+              )}
+              <Button className="rounded-full bg-cv-ink text-white hover:bg-cv-ink/90 text-sm font-bold" onClick={() => router.push('/partner/storefront-application')}>
+                Apply again <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="cv-card border-cv-line bg-cv-soft/30">
+            <CardContent className="pt-6 space-y-3">
+              <div className="flex items-center gap-3">
+                <Store className="h-5 w-5 text-cv-ink" />
+                <div>
+                  <p className="text-sm font-bold text-cv-ink">Want your own storefront?</p>
+                  <p className="text-xs text-cv-muted">Apply to get a full Careverse storefront with your branding.</p>
+                </div>
+              </div>
+              <p className="text-sm text-cv-body">
+                A storefront lets you customize your page, showcase your content, and sell Careverse memberships directly. Submit 5 pieces of content for review.
+              </p>
+              <Button className="rounded-full bg-cv-ink text-white hover:bg-cv-ink/90 text-sm font-bold" onClick={() => router.push('/partner/storefront-application')}>
+                <FileText className="h-4 w-4 mr-1.5" />
+                Apply for a storefront
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Creator Profiles */}
+        {creatorProfiles.length > 0 && (
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold text-cv-ink uppercase tracking-wider">Your Profiles</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {creatorProfiles.map(p => (
+                <div key={p.id} className="flex items-center justify-between rounded-lg border border-cv-line px-3 py-2">
+                  <div>
+                    <p className="text-sm font-bold text-cv-ink">{p.platform}</p>
+                    <p className="text-xs text-cv-muted">{p.handle}</p>
+                  </div>
+                  {p.profileUrl && (
+                    <a href={p.profileUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-cv-ink hover:text-cv-red flex items-center gap-1">
+                      Visit <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Conversions (affiliate) */}
+        <Card className="cv-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-bold text-cv-ink">Recent Conversions</CardTitle>
+            <Button variant="ghost" size="sm" className="text-xs font-bold text-cv-muted" onClick={() => router.push('/partner/conversions')}>
+              View all
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {recentConversions.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="No conversions yet"
+                description="When customers purchase Careverse memberships through your affiliate link, their conversions will appear here. Share your link to start earning."
+                action={
+                  <Button className="bg-cv-ink text-white hover:bg-cv-ink/90 rounded-full text-sm font-bold" onClick={() => setShareDialogOpen(true)}>
+                    <Share2 className="h-4 w-4" /> Share your link
+                  </Button>
+                }
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-cv-line">
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Plan</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Sale</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Commission</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead>
+                    <TableHead className="text-xs font-bold uppercase text-cv-muted">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentConversions.map((c) => (
+                    <TableRow key={c.id} className="border-cv-line">
+                      <TableCell className="font-bold text-cv-ink text-sm">{c.plan}</TableCell>
+                      <TableCell className="text-right text-sm text-cv-body">${c.saleAmount}</TableCell>
+                      <TableCell className="text-right text-sm font-bold text-cv-ink">${c.commission.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={c.status.toLowerCase() as any} />
+                      </TableCell>
+                      <TableCell className="text-xs text-cv-muted">{fmtDate(c.date)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <SupportLink variant="card" context="Questions about your affiliate link, earnings, or applying for a storefront? We're here to help." />
+
+        <ShareStoreDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          storeUrl={affiliateLink?.url || currentPartnerStorefront.url}
+          storeName="Your Affiliate Link"
+          isPublished={true}
+        />
+      </div>
+    );
+  }
+
+  // --- Incomplete / new partner onboarding view (business or unlocked creators) ---
   if (!onboardingDone) {
     return (
       <div className="space-y-6">

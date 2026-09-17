@@ -982,3 +982,103 @@ Partner dashboard → Store (sidebar) → /partner/store (editor)
 ### Support Access
 - Reusable support card on store editor, conversions, commissions, payouts, and settings pages
 - Direct "Contact Careverse Support" action links to `/partner/messages`
+
+---
+
+## Phase 17 — Creator Partner Path & Storefront Application System
+
+### Creator Default Path
+- Creators always start as affiliate-only partners with no storefront access
+- On creator account creation/approval, an affiliate link is automatically generated (deterministic, tied to the partner ID, not to a storefront)
+- The creator dashboard shows an affiliate-focused view: affiliate link (with Copy and Open), clicks, conversions, revenue, commission, and recent conversion data
+- An "Apply for a storefront" action appears prominently beside the affiliate link
+- Business/storefront experience remains unchanged for business partners
+- The creator's affiliate link persists even after storefront access is granted
+
+### Affiliate Link
+- Stored in `src/lib/creator-persistence.ts` as `AffiliateLink` (id, partnerId, code, url, clicks, conversions)
+- URL format: `https://careverse.ai/r/<code>` — deterministic per partner
+- The affiliate link is separate from the storefront; it survives storefront access changes
+- Attribution model uses affiliate ID + click ID/order attribution (types in `src/data/mock/types.ts`)
+- No fake checkout integration — data model/types are ready for the real Careverse conversion integration
+
+### Multiple Creator Profiles
+- Signup page collects multiple public profiles (platform, handle, profile URL, follower count)
+- "Add another profile" and remove (trash icon) actions on each profile card
+- All profiles attach to one creator account — no separate accounts
+- Profiles persist via `src/lib/creator-persistence.ts` (localStorage keyed by partner ID)
+- Profiles are shown on the creator dashboard and on the storefront application for reference
+
+### Storefront Application (`/partner/storefront-application`)
+- Requirements displayed at the top before the form:
+  - Submit 5 pieces of high-quality content
+  - Can come from one or multiple platforms
+  - Original, high quality, professional, on-brand, appropriate to represent Careverse
+  - Exactly 5 publicly viewable content links
+  - All submissions reviewed before storefront access is granted
+- 5 clearly numbered content submission fields, each with platform + public content URL
+- Different platforms allowed across the 5 submissions
+- Exactly 5 valid URL entries required before submission
+- Creator's existing profiles shown for reference
+- States: SUBMITTED → IN_REVIEW → APPROVED or REJECTED
+- Pending state shows application under review with submitted content list
+- Rejection shows optional admin feedback and an "Apply again" action
+- Approval shows success and links to the store editor
+- Duplicate pending submissions are prevented (one pending application at a time)
+
+### Partner Navigation / Store Gating
+- Store tab remains visible in the sidebar and mobile nav for creators
+- Before storefront approval, the Store tab is darker/muted and disabled (shows a lock icon)
+- Clicking the locked Store tab navigates to `/partner/storefront-application` instead of `/partner/store`
+- `/partner/store` is guarded: creators without storefront access are redirected to `/partner/storefront-application`
+- For approved creators, Store becomes fully clickable and opens the existing `/partner/store` editor
+- No second storefront editor was created — the existing one is reused
+- Business partners always have Store access
+
+### Admin / CRM — Storefront Applications
+- "Storefront Applications" tab added inside Admin → Partners (not a separate top-level area)
+- Pending applications shown prominently with a count badge on the tab
+- Application rows show: creator name, number of profiles, content count, submitted date, and status
+- Review dialog shows:
+  - Creator name and email
+  - All creator profiles with links and follower counts
+  - All 5 submitted content pieces with platform and content URL + "Open content" action
+  - Application status
+  - Optional review feedback (if rejected)
+- Admin actions:
+  - Approve storefront — grants storefront access, no feedback required
+  - Deny application — opens a feedback dialog, feedback is optional
+  - On approval: storefront access enabled for the creator, Store tab unlocks
+  - On denial: Store remains locked, creator can reapply
+- Reviewed date and admin reviewer are recorded
+- PartnerApplication and StorefrontApplication are separate types representing different approval events
+
+### Data Model (`src/data/mock/types.ts`)
+- `CreatorProfile` — id, platform, handle, profileUrl, followerCount
+- `StorefrontApplication` — id, partnerId, partnerName, partnerEmail, profiles[], contentSubmissions[], status, submittedAt, reviewedAt, reviewedBy, feedback
+- `StorefrontApplicationContent` — id, platform, contentUrl
+- `StorefrontApplicationStatus` — 'SUBMITTED' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED'
+- `StorefrontAccessState` — 'NONE' | 'LOCKED' | 'UNLOCKED'
+- `AffiliateLink` — id, partnerId, code, url, clicks, conversions
+
+### Persistence (`src/lib/creator-persistence.ts`)
+- localStorage-based persistence for:
+  - Creator profiles (keyed by partner ID)
+  - Storefront applications (global list)
+  - Storefront access state (keyed by partner ID)
+  - Affiliate links (keyed by partner ID)
+- All data survives refreshes
+- Structured so the existing Prisma/backend layer can replace mock persistence later
+
+### Creator Dashboard Copy
+- Affiliate-only creators see "Share your affiliate link" instead of "Share your store"
+- Conversions page description changes to "affiliate link and referral clicks" for affiliate-only creators
+- Empty states use affiliate-appropriate language ("Share your link to start earning")
+- Storefront metrics only appear once storefront access is granted (the full dashboard view)
+
+### Auth Context Updates (`src/hooks/useMockAuth.tsx`)
+- New context values: `creatorProfiles`, `storefrontAccess`, `affiliateLink`
+- New methods: `updateCreatorProfiles`, `hasStorefrontAccess()`, `grantStorefrontAccess()`, `refreshStorefrontAccess()`
+- On creator signup: profiles are saved, storefront access is set to LOCKED, affiliate link is auto-generated
+- On business signup: storefront access is set to UNLOCKED
+- On user change (login/logout): profiles, access state, and affiliate link are refreshed

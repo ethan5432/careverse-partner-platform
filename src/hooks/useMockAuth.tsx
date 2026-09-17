@@ -9,7 +9,17 @@ import type {
   PartnerApplication,
   ApplicationState,
   OnboardingProgress,
+  CreatorProfile,
+  StorefrontAccessState,
+  AffiliateLink,
 } from '@/data/mock/types';
+import {
+  loadCreatorProfiles,
+  saveCreatorProfiles,
+  loadStorefrontAccess,
+  saveStorefrontAccess,
+  loadAffiliateLink,
+} from '@/lib/creator-persistence';
 
 type MockRole = 'ADMIN' | 'PARTNER';
 
@@ -32,6 +42,7 @@ interface SignupData {
   brandName?: string;
   businessWebsite?: string;
   businessDescription?: string;
+  creatorProfiles?: CreatorProfile[];
 }
 
 interface MockAuthContextValue {
@@ -40,6 +51,9 @@ interface MockAuthContextValue {
   application: PartnerApplication | null;
   onboarding: OnboardingProgress;
   emailVerified: boolean;
+  creatorProfiles: CreatorProfile[];
+  storefrontAccess: StorefrontAccessState;
+  affiliateLink: AffiliateLink | null;
   login: (email: string, password: string, role: MockRole) => { success: boolean; error?: string };
   logout: () => void;
   switchPartnerType: (type: PartnerType) => void;
@@ -52,6 +66,10 @@ interface MockAuthContextValue {
   setEmailVerified: (verified: boolean) => void;
   requestPasswordReset: (email: string) => { success: boolean; error?: string };
   resetPassword: (email: string, newPassword: string) => { success: boolean; error?: string };
+  updateCreatorProfiles: (profiles: CreatorProfile[]) => void;
+  hasStorefrontAccess: () => boolean;
+  grantStorefrontAccess: () => void;
+  refreshStorefrontAccess: () => void;
 }
 
 const defaultOnboarding: OnboardingProgress = {
@@ -77,6 +95,9 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
   const [onboarding, setOnboarding] = useState<OnboardingProgress>(defaultOnboarding);
   const [emailVerified, setEmailVerifiedState] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [creatorProfiles, setCreatorProfiles] = useState<CreatorProfile[]>([]);
+  const [storefrontAccess, setStorefrontAccess] = useState<StorefrontAccessState>('NONE');
+  const [affiliateLink, setAffiliateLink] = useState<AffiliateLink | null>(null);
 
   useEffect(() => {
     try {
@@ -95,6 +116,15 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       const storedVerified = localStorage.getItem(EMAIL_VERIFIED_KEY);
       if (storedVerified === 'true') {
         setEmailVerifiedState(true);
+      }
+      if (stored) {
+        const parsedUser = JSON.parse(stored) as MockUser;
+        const profiles = loadCreatorProfiles(parsedUser.id);
+        setCreatorProfiles(profiles);
+        const access = loadStorefrontAccess(parsedUser.id);
+        setStorefrontAccess(access);
+        const affLink = loadAffiliateLink(parsedUser.id);
+        setAffiliateLink(affLink);
       }
     } catch {
       // ignore
@@ -217,6 +247,10 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       submittedAt: new Date().toISOString(),
     };
     persistApplication(app);
+    if (data.creatorProfiles && data.creatorProfiles.length > 0) {
+      const tempId = `u-${Date.now()}`;
+      saveCreatorProfiles(tempId, data.creatorProfiles);
+    }
     return { success: true };
   }, []);
 
@@ -255,6 +289,22 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       lastActive: new Date().toISOString().slice(0, 10),
     };
     persistUser(newUser);
+    // Load creator profiles and affiliate link for the new user
+    if (app.partnerType === 'CREATOR') {
+      const profiles = loadCreatorProfiles(newUser.id);
+      setCreatorProfiles(profiles);
+      const access = loadStorefrontAccess(newUser.id);
+      setStorefrontAccess(access === 'NONE' ? 'LOCKED' : access);
+      if (access === 'NONE') {
+        saveStorefrontAccess(newUser.id, 'LOCKED');
+      }
+      const affLink = loadAffiliateLink(newUser.id);
+      setAffiliateLink(affLink);
+    } else {
+      // Business partners get storefront access by default
+      saveStorefrontAccess(newUser.id, 'UNLOCKED');
+      setStorefrontAccess('UNLOCKED');
+    }
     const updatedApp: PartnerApplication = {
       ...app,
       applicationState: 'APPROVED',
@@ -294,6 +344,49 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   }, []);
 
+  const updateCreatorProfiles = useCallback((profiles: CreatorProfile[]) => {
+    setCreatorProfiles(profiles);
+    if (user) {
+      saveCreatorProfiles(user.id, profiles);
+    }
+  }, [user]);
+
+  const hasStorefrontAccessFn = useCallback(() => {
+    if (!user) return false;
+    if (user.partnerType === 'BUSINESS') return true;
+    return storefrontAccess === 'UNLOCKED';
+  }, [user, storefrontAccess]);
+
+  const grantStorefrontAccessFn = useCallback(() => {
+    if (user) {
+      saveStorefrontAccess(user.id, 'UNLOCKED');
+      setStorefrontAccess('UNLOCKED');
+    }
+  }, [user]);
+
+  const refreshStorefrontAccess = useCallback(() => {
+    if (user) {
+      const access = loadStorefrontAccess(user.id);
+      setStorefrontAccess(access);
+    }
+  }, [user]);
+
+  // Also refresh access and profiles when user changes (e.g. after login)
+  useEffect(() => {
+    if (user) {
+      const profiles = loadCreatorProfiles(user.id);
+      setCreatorProfiles(profiles);
+      const access = loadStorefrontAccess(user.id);
+      setStorefrontAccess(access);
+      const affLink = loadAffiliateLink(user.id);
+      setAffiliateLink(affLink);
+    } else {
+      setCreatorProfiles([]);
+      setStorefrontAccess('NONE');
+      setAffiliateLink(null);
+    }
+  }, [user?.id]);
+
   return (
     <MockAuthContext.Provider
       value={{
@@ -302,6 +395,9 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
         application,
         onboarding,
         emailVerified,
+        creatorProfiles,
+        storefrontAccess,
+        affiliateLink,
         login,
         logout,
         switchPartnerType,
@@ -314,6 +410,10 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
         setEmailVerified,
         requestPasswordReset,
         resetPassword,
+        updateCreatorProfiles,
+        hasStorefrontAccess: hasStorefrontAccessFn,
+        grantStorefrontAccess: grantStorefrontAccessFn,
+        refreshStorefrontAccess,
       }}
     >
       {children}

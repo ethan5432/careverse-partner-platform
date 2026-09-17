@@ -12,9 +12,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Mail, Lock, User, Phone, Globe, ArrowRight, ArrowLeft,
   Loader as Loader2, Check, User as UserIcon, Building,
+  Plus, Trash2, Link as LinkIcon,
 } from 'lucide-react';
 import { useMockAuth } from '@/hooks/useMockAuth';
-import type { PartnerType } from '@/data/mock/types';
+import type { PartnerType, CreatorProfile } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
 
 const countries = [
@@ -46,8 +47,9 @@ export default function SignupPage() {
   // Creator fields
   const [displayName, setDisplayName] = useState('');
   const [website, setWebsite] = useState('');
-  const [socialPlatform, setSocialPlatform] = useState('Instagram');
-  const [socialHandle, setSocialHandle] = useState('');
+  const [creatorProfiles, setCreatorProfiles] = useState<CreatorProfile[]>([
+    { id: `cp-${Date.now()}`, platform: 'Instagram', handle: '', profileUrl: '' },
+  ]);
 
   // Business fields
   const [legalBusinessName, setLegalBusinessName] = useState('');
@@ -80,7 +82,8 @@ export default function SignupPage() {
     const result = signup({
       firstName, lastName, email, phone, country, stateProvince,
       partnerType, password, acceptTerms, acceptPrivacy,
-      displayName, website, socialPlatform, socialHandle,
+      displayName, website,
+      creatorProfiles: partnerType === 'CREATOR' ? creatorProfiles.filter(p => p.handle.trim() || p.profileUrl.trim()) : undefined,
       legalBusinessName, brandName, businessWebsite, businessDescription,
     });
     setLoading(false);
@@ -218,22 +221,81 @@ export default function SignupPage() {
                 <Label htmlFor="website" className="text-xs font-bold uppercase text-cv-muted">Website</Label>
                 <Input id="website" type="url" value={website} onChange={(e) => setWebsite(e.target.value)} className="cv-input" placeholder="https://janesmith.com" />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="socialPlatform" className="text-xs font-bold uppercase text-cv-muted">Primary Social Platform</Label>
-                  <select
-                    id="socialPlatform"
-                    value={socialPlatform}
-                    onChange={(e) => setSocialPlatform(e.target.value)}
-                    className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                  >
-                    {socialPlatforms.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
+
+              {/* Multiple creator profiles */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold uppercase text-cv-muted">Public Profiles</Label>
+                  <span className="text-[10px] text-cv-muted">Add one or more platforms</span>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="socialHandle" className="text-xs font-bold uppercase text-cv-muted">Social Handle / Profile URL</Label>
-                  <Input id="socialHandle" value={socialHandle} onChange={(e) => setSocialHandle(e.target.value)} className="cv-input" placeholder="@janesmith" />
-                </div>
+                {creatorProfiles.map((profile, idx) => (
+                  <div key={profile.id} className="rounded-xl border border-cv-line p-4 space-y-3 bg-cv-soft/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-cv-ink">Profile {idx + 1}</span>
+                      {creatorProfiles.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setCreatorProfiles(prev => prev.filter(p => p.id !== profile.id))}
+                          className="text-cv-muted hover:text-cv-red transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-cv-muted">Platform</Label>
+                        <select
+                          value={profile.platform}
+                          onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, platform: e.target.value } : p))}
+                          className="cv-input h-11 w-full rounded-xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
+                        >
+                          {socialPlatforms.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-cv-muted">Handle</Label>
+                        <Input
+                          value={profile.handle}
+                          onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, handle: e.target.value } : p))}
+                          className="cv-input"
+                          placeholder="@janesmith"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-cv-muted">Profile URL</Label>
+                      <div className="relative">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                        <Input
+                          type="url"
+                          value={profile.profileUrl}
+                          onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, profileUrl: e.target.value } : p))}
+                          className="cv-input pl-10"
+                          placeholder="https://instagram.com/janesmith"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-cv-muted">Follower Count (optional)</Label>
+                      <Input
+                        type="number"
+                        value={profile.followerCount ?? ''}
+                        onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, followerCount: e.target.value ? parseInt(e.target.value) : undefined } : p))}
+                        className="cv-input"
+                        placeholder="50000"
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCreatorProfiles(prev => [...prev, { id: `cp-${Date.now()}`, platform: 'Instagram', handle: '', profileUrl: '' }])}
+                  className="flex items-center gap-2 text-xs font-bold text-cv-ink hover:text-cv-red transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add another profile
+                </button>
               </div>
             </div>
           )}

@@ -402,6 +402,47 @@ export interface MockOrder {
   membershipId?: string;
 }
 
+export interface CreatorProfile {
+  id: string;
+  platform: string;
+  handle: string;
+  profileUrl: string;
+  followerCount?: number;
+}
+
+export type StorefrontApplicationStatus = 'SUBMITTED' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED';
+
+export interface StorefrontApplicationContent {
+  id: string;
+  platform: string;
+  contentUrl: string;
+}
+
+export interface StorefrontApplication {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  partnerEmail: string;
+  profiles: CreatorProfile[];
+  contentSubmissions: StorefrontApplicationContent[];
+  status: StorefrontApplicationStatus;
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  feedback?: string;
+}
+
+export type StorefrontAccessState = 'NONE' | 'LOCKED' | 'UNLOCKED';
+
+export interface AffiliateLink {
+  id: string;
+  partnerId: string;
+  code: string;
+  url: string;
+  clicks: number;
+  conversions: number;
+}
+
 export interface MockMembership {
   id: string;
   customerId: string;
