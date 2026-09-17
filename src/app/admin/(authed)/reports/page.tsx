@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DollarSign, ArrowLeftRight, Percent, Users, Store, Download, Calendar, TrendingUp, Network, Wallet, Check, Clock, X } from 'lucide-react';
-import { adminPerformanceData, mockPartners, mockStorefronts, mockConversions, mockCommissions, mockPayouts, mockNetworks, mockReportSummaries } from '@/data/mock';
+import { DollarSign, ArrowLeftRight, Percent, Users, Store, Download, Calendar, TrendingUp, Wallet, Check, Clock, X } from 'lucide-react';
+import { adminPerformanceData, mockPartners, mockStorefronts, mockConversions, mockCommissions, mockPayouts, mockReportSummaries } from '@/data/mock';
 import { cn } from '@/lib/utils';
 
 type TimeRange = '7D' | '30D' | '90D' | 'ALL';
-type ReportTab = 'partners' | 'storefronts' | 'conversions' | 'revenue' | 'commissions' | 'payouts' | 'networks';
+type ReportTab = 'partners' | 'storefronts' | 'conversions' | 'revenue' | 'commissions' | 'payouts';
 
 const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -26,7 +26,6 @@ const tabConfig: { value: ReportTab; label: string }[] = [
   { value: 'revenue', label: 'Revenue' },
   { value: 'commissions', label: 'Commissions' },
   { value: 'payouts', label: 'Payouts' },
-  { value: 'networks', label: 'Networks' },
 ];
 
 export default function AdminReportsPage() {
@@ -137,10 +136,9 @@ export default function AdminReportsPage() {
           <Card className="cv-card">
             <CardHeader className="pb-3"><CardTitle className="text-base font-bold text-cv-ink">Partner Breakdown</CardTitle></CardHeader>
             <CardContent className="pt-0">
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="rounded-xl bg-cv-soft p-3 text-center"><p className="text-xs font-bold uppercase text-cv-muted">Creators</p><p className="text-2xl font-bold text-cv-ink mt-1">{s.partners.creators}</p></div>
                 <div className="rounded-xl bg-cv-soft p-3 text-center"><p className="text-xs font-bold uppercase text-cv-muted">Businesses</p><p className="text-2xl font-bold text-cv-ink mt-1">{s.partners.businesses}</p></div>
-                <div className="rounded-xl bg-cv-soft p-3 text-center"><p className="text-xs font-bold uppercase text-cv-muted">Networks</p><p className="text-2xl font-bold text-cv-ink mt-1">{s.partners.networks}</p></div>
               </div>
               <Table>
                 <TableHeader><TableRow className="border-cv-line"><TableHead className="text-xs font-bold uppercase text-cv-muted">Partner</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted">Type</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Conversions</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Revenue</TableHead></TableRow></TableHeader>
@@ -300,37 +298,6 @@ export default function AdminReportsPage() {
                       <TableCell className="text-sm text-cv-body">{p.method.charAt(0) + p.method.slice(1).toLowerCase()}</TableCell>
                       <TableCell><StatusBadge status={p.status === 'PAID' ? 'active' : 'pending'} label={p.status.charAt(0) + p.status.slice(1).toLowerCase()} /></TableCell>
                       <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(p.amount)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Networks report */}
-        <TabsContent value="networks" className="mt-0 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total Networks" value={s.networks.total} icon={Network} />
-            <StatCard label="Network Partners" value={s.networks.totalPartners} icon={Users} description="Active sub-partners" />
-            <StatCard label="Network Revenue" value={fmtMoney(s.networks.totalRevenue)} icon={DollarSign} trend="+18%" trendUp />
-            <StatCard label="Network Earnings" value={fmtMoney(s.networks.totalEarnings)} icon={TrendingUp} description="Network share" />
-          </div>
-          <Card className="cv-card">
-            <CardHeader className="pb-3"><CardTitle className="text-base font-bold text-cv-ink">Network Performance</CardTitle></CardHeader>
-            <CardContent className="pt-0">
-              <Table>
-                <TableHeader><TableRow className="border-cv-line"><TableHead className="text-xs font-bold uppercase text-cv-muted">Network</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted">Owner</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted">Status</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Partners</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Conversions</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Revenue</TableHead><TableHead className="text-xs font-bold uppercase text-cv-muted text-right">Earnings</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {mockNetworks.map((n) => (
-                    <TableRow key={n.id} className="border-cv-line">
-                      <TableCell className="text-sm font-bold text-cv-ink">{n.name}</TableCell>
-                      <TableCell className="text-sm text-cv-body">{n.ownerName}</TableCell>
-                      <TableCell><StatusBadge status={n.status.toLowerCase() as 'active' | 'pending' | 'suspended'} /></TableCell>
-                      <TableCell className="text-right text-sm text-cv-body">{n.activePartnerCount}</TableCell>
-                      <TableCell className="text-right text-sm text-cv-body">{n.conversions}</TableCell>
-                      <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(n.revenue)}</TableCell>
-                      <TableCell className="text-right text-sm font-bold text-cv-good">{fmtMoney(n.networkEarnings)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

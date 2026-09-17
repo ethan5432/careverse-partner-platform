@@ -21,7 +21,7 @@ interface CommissionRule {
 }
 const initialRules: CommissionRule[] = [
   { id: 'r-1', name: 'Standard', rate: 20, scope: 'All products', status: 'ACTIVE' },
-  { id: 'r-2', name: 'Network Bonus', rate: 25, scope: 'Network partners', status: 'ACTIVE' },
+  { id: 'r-2', name: 'Business Bonus', rate: 25, scope: 'Business partners', status: 'ACTIVE' },
   { id: 'r-3', name: 'Creator Boost', rate: 22, scope: 'Creator partners', status: 'ACTIVE' },
   { id: 'r-4', name: 'Care Circle Premium', rate: 18, scope: 'Care Circle plan', status: 'PAUSED' },
 ];
@@ -62,7 +62,7 @@ const tabConfig = [
 ] as const;
 
 export default function AdminSettingsPage() {
-  const [program, setProgram] = useState({ name: 'Careverse Partner Program', description: 'The Careverse Partner Program helps creators, businesses, and networks earn commission by referring families to Careverse membership plans.', defaultRate: '20' });
+  const [program, setProgram] = useState({ name: 'Careverse Partner Program', description: 'The Careverse Partner Program helps creators and businesses earn commission by referring families to Careverse membership plans.', defaultRate: '20' });
   const [rules, setRules] = useState<CommissionRule[]>(initialRules);
   const [tracking, setTracking] = useState({ attributionWindow: '30', cookieDuration: '60', firstClick: true, crossDomain: false });
   const [emailCfg, setEmailCfg] = useState({ fromEmail: 'team@careverse.ai', replyTo: 'support@careverse.ai', testEmail: '' });

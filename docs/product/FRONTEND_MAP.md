@@ -29,7 +29,6 @@ Phase 1 frontend prototype of the Careverse Partner Platform. All data is mocked
 | `/partner/conversions` | Conversions | All partners |
 | `/partner/commissions` | Commissions | All partners |
 | `/partner/payouts` | Payouts | All partners |
-| `/partner/network` | Network | Network partners only |
 | `/partner/resources` | Resources | All partners |
 | `/partner/messages` | Messages | All partners |
 | `/partner/settings` | Settings | All partners |
@@ -45,7 +44,6 @@ Phase 1 frontend prototype of the Careverse Partner Platform. All data is mocked
 | `/admin/conversions` | Conversions | All platform conversions |
 | `/admin/commissions` | Commissions | Commission ledger with status filters |
 | `/admin/payouts` | Payouts | All platform payouts |
-| `/admin/networks` | Networks | Network management |
 | `/admin/products` | Products | Product catalog (Family, Family Plus, Care Circle) with product detail dialog |
 | `/admin/messages` | Messages | Admin-to-partner messaging (two-column layout) |
 | `/admin/emails` | Emails | Email campaigns + automations |
@@ -57,9 +55,8 @@ Phase 1 frontend prototype of the Careverse Partner Platform. All data is mocked
 ## Role / Account States
 
 ### Partner Types
-- **Creator** — Partner experience without Network
-- **Business / Agency** — Partner experience without Network
-- **Network** — Partner experience including Network
+- **Creator** — Partner experience for content creators and influencers
+- **Business / Agency** — Partner experience for agencies and businesses
 
 ### Account Statuses
 - **Active** — Full access
@@ -74,12 +71,10 @@ Role switching is available via the user dropdown in the partner sidebar (mock o
 ## Navigation
 
 ### Partner Navigation
-Overview, Store, Conversions, Commissions, Payouts, [Network]*, Resources, Messages, Settings
-
-*Network only appears for Network partner type.
+Overview, Store, Conversions, Commissions, Payouts, Resources, Messages, Settings
 
 ### Admin Navigation
-Dashboard, Partners, Storefronts, Conversions, Commissions, Payouts, Networks, Products, Messages, Emails, Reports, Settings
+Dashboard, Partners, Storefronts, Conversions, Commissions, Payouts, Products, Messages, Emails, Reports, Settings
 
 ---
 
@@ -113,7 +108,6 @@ All mock data lives in `src/data/mock/`.
 | mockConversations | MockConversation[] | Message threads |
 | mockEmailCampaigns | MockEmailCampaign[] | Email campaigns |
 | mockEmailAutomations | MockEmailAutomation[] | Automated email triggers |
-| mockNetworks | MockNetwork[] | Partner networks |
 | mockResources | MockResource[] | Resource library items |
 | mockPartnerProfile | MockPartnerProfile | Current partner profile |
 | mockStorefrontSettings | MockStorefrontSettings | Storefront settings |
@@ -261,7 +255,7 @@ All mock data lives in `src/data/mock/`.
 - Recent Activity feed (applications, approvals, storefronts published, conversions, commissions, payouts)
 
 ### Admin Partners CRM
-- Search and filter partners by type (All, Creator, Business, Network) and status (All, Active, Pending, Incomplete, Suspended)
+- Search and filter partners by type (All, Creator, Business) and status (All, Active, Pending, Incomplete, Suspended)
 - Click partner to open detail dialog with 8 tabs:
   - **Overview** — name, type, status, contact, joined, performance summary, commercial summary
   - **Activity** — timeline (application, approval, activation, storefront created/published, conversions, commissions, messages)
@@ -288,11 +282,11 @@ All mock data lives in `src/data/mock/`.
 - Click a product to open detail dialog with three tabs:
   - **Details** — editable name, description, price, and billing type
   - **Benefits** — editable benefit cards (title + description) with add/remove; package features list
-  - **Availability** — editable status, availability, partner availability (ALL/CREATOR/BUSINESS/NETWORK), and popular toggle
+  - **Availability** — editable status, availability, partner availability (ALL/CREATOR/BUSINESS), and popular toggle
 - Edit mode toggles between view and edit with save confirmation state
 
 ### Partner Resources
-- Three package tabs: Creator, Business / Agency, Network
+- Two package tabs: Creator, Business / Agency
 - Default tab auto-selected based on logged-in partner's type
 - Each package has curated resources: brand kits, guides, copy templates, product info, videos
 - Resource cards with icon, title, description, and download/view action button

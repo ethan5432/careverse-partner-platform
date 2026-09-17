@@ -1,4 +1,4 @@
-export type PartnerType = 'CREATOR' | 'BUSINESS' | 'NETWORK';
+export type PartnerType = 'CREATOR' | 'BUSINESS';
 export type PartnerStatus = 'ACTIVE' | 'PENDING' | 'INCOMPLETE' | 'SUSPENDED';
 export type AccountState = 'ACTIVE' | 'PENDING' | 'INCOMPLETE' | 'SUSPENDED';
 
@@ -40,7 +40,7 @@ export interface MockProduct {
   description: string;
   features: string[];
   popular?: boolean;
-  partnerAvailability: 'ALL' | 'CREATOR' | 'BUSINESS' | 'NETWORK';
+  partnerAvailability: 'ALL' | 'CREATOR' | 'BUSINESS';
   benefits: { title: string; description: string }[];
   sourceId?: string;
   syncStatus: 'SYNCED' | 'PENDING_SYNC' | 'LOCAL_ONLY';
@@ -219,52 +219,8 @@ export interface MockScheduledEmail {
   recipientCount: number;
 }
 
-export type NetworkStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED';
-
-export interface MockNetworkPartner {
-  id: string;
-  name: string;
-  type: PartnerType;
-  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
-  storefrontName: string;
-  storefrontStatus: 'LIVE' | 'DRAFT';
-  conversions: number;
-  revenue: number;
-  commission: number;
-  networkEarnings: number;
-  joinedDate: string;
-  lastActive: string;
-  avatarColor: string;
-}
-
-export interface MockNetworkActivity {
-  id: string;
-  networkId: string;
-  type: 'PARTNER_JOINED' | 'CONVERSION' | 'PAYOUT' | 'STOREFRONT_PUBLISHED' | 'COMMISSION';
-  description: string;
-  partnerName: string;
-  amount?: number;
-  date: string;
-}
-
-export interface MockNetwork {
-  id: string;
-  name: string;
-  ownerId: string;
-  ownerName: string;
-  status: NetworkStatus;
-  partnerCount: number;
-  activePartnerCount: number;
-  conversions: number;
-  revenue: number;
-  networkEarnings: number;
-  createdDate: string;
-  partners: MockNetworkPartner[];
-  activity: MockNetworkActivity[];
-}
-
 export type ResourceIconKey = 'palette' | 'file-text' | 'info' | 'book-open' | 'video' | 'image' | 'file' | 'layers' | 'megaphone' | 'gift' | 'presentation' | 'users';
-export type ResourcePackage = 'CREATOR' | 'BUSINESS' | 'NETWORK';
+export type ResourcePackage = 'CREATOR' | 'BUSINESS';
 
 export interface MockResource {
   id: string;

@@ -1,20 +1,20 @@
 import type {
   MockUser, MockPartner, MockProduct, MockStorefront,
   MockConversion, MockCommission, MockPayout, MockConversation,
-  MockEmailCampaign, MockEmailAutomation, MockNetwork, MockResource,
+  MockEmailCampaign, MockEmailAutomation, MockResource,
   MockPartnerProfile, MockStorefrontSettings, MockNotificationSettings,
   MockPayoutSetup, MockAdminActivity, MockNeedsAttentionItem,
   MockPartnerNote, MockPartnerActivityItem, AdminTimeRange, AdminMetric,
   AdminPerformancePoint, CommissionStatus,
   MockEmailTemplate, MockScheduledEmail,
-  NetworkStatus, MockNetworkActivity, MockOrder,
+  MockOrder,
   MockCreatorContent, ContentSource, ContentPlacement, ContentLayout,
   MockMembership,
 } from './types';
 
 export const mockUsers: MockUser[] = [
   { id: 'u-admin-1', name: 'Sarah Chen', email: 'admin@careverse.ai', role: 'ADMIN', partnerType: 'CREATOR', status: 'ACTIVE', joinedDate: '2025-01-15', lastActive: '2026-09-15' },
-  { id: 'u-partner-1', name: 'Marcus Johnson', email: 'marcus@carepartners.co', role: 'PARTNER', partnerType: 'NETWORK', status: 'ACTIVE', joinedDate: '2025-03-22', lastActive: '2026-09-14' },
+  { id: 'u-partner-1', name: 'Marcus Johnson', email: 'marcus@carepartners.co', role: 'PARTNER', partnerType: 'BUSINESS', status: 'ACTIVE', joinedDate: '2025-03-22', lastActive: '2026-09-14' },
   { id: 'u-partner-2', name: 'Emily Rodriguez', email: 'emily@healthhub.com', role: 'PARTNER', partnerType: 'CREATOR', status: 'ACTIVE', joinedDate: '2025-05-10', lastActive: '2026-09-13' },
   { id: 'u-partner-3', name: 'David Kim', email: 'david@careagency.io', role: 'PARTNER', partnerType: 'BUSINESS', status: 'ACTIVE', joinedDate: '2025-06-01', lastActive: '2026-09-12' },
   { id: 'u-partner-4', name: 'Lisa Thompson', email: 'lisa@wellnessgroup.net', role: 'PARTNER', partnerType: 'CREATOR', status: 'PENDING', joinedDate: '2026-09-01', lastActive: '2026-09-01' },
@@ -23,13 +23,13 @@ export const mockUsers: MockUser[] = [
 ];
 
 export const mockPartners: MockPartner[] = [
-  { id: 'p-1', name: 'Marcus Johnson', email: 'marcus@carepartners.co', type: 'NETWORK', status: 'ACTIVE', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', conversions: 142, revenue: 28480, commission: 5696, joinedDate: '2025-03-22', lastActive: '2026-09-14', avatarColor: '#E1062C' },
+  { id: 'p-1', name: 'Marcus Johnson', email: 'marcus@carepartners.co', type: 'BUSINESS', status: 'ACTIVE', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', conversions: 142, revenue: 28480, commission: 5696, joinedDate: '2025-03-22', lastActive: '2026-09-14', avatarColor: '#E1062C' },
   { id: 'p-2', name: 'Emily Rodriguez', email: 'emily@healthhub.com', type: 'CREATOR', status: 'ACTIVE', storefrontId: 's-2', storefrontName: 'Emily\'s Health Hub', conversions: 87, revenue: 17400, commission: 3480, joinedDate: '2025-05-10', lastActive: '2026-09-13', avatarColor: '#0B9B6B' },
   { id: 'p-3', name: 'David Kim', email: 'david@careagency.io', type: 'BUSINESS', status: 'ACTIVE', storefrontId: 's-3', storefrontName: 'Care Agency Direct', conversions: 64, revenue: 12800, commission: 2560, joinedDate: '2025-06-01', lastActive: '2026-09-12', avatarColor: '#18191D' },
   { id: 'p-4', name: 'Lisa Thompson', email: 'lisa@wellnessgroup.net', type: 'CREATOR', status: 'PENDING', storefrontId: 's-4', storefrontName: 'Wellness with Lisa', conversions: 0, revenue: 0, commission: 0, joinedDate: '2026-09-01', lastActive: '2026-09-01', avatarColor: '#6B6E76' },
   { id: 'p-5', name: 'James Wilson', email: 'james@carecollective.org', type: 'BUSINESS', status: 'INCOMPLETE', storefrontId: 's-5', storefrontName: 'Care Collective', conversions: 0, revenue: 0, commission: 0, joinedDate: '2026-08-20', lastActive: '2026-08-25', avatarColor: '#4A4D55' },
   { id: 'p-6', name: 'Aisha Patel', email: 'aisha@familycarepartners.com', type: 'BUSINESS', status: 'SUSPENDED', storefrontId: 's-6', storefrontName: 'Family Care Partners', conversions: 23, revenue: 4600, commission: 920, joinedDate: '2025-04-12', lastActive: '2026-07-30', avatarColor: '#B10522' },
-  { id: 'p-7', name: 'Tom Bradley', email: 'tom@bradleynetwork.com', type: 'NETWORK', status: 'ACTIVE', storefrontId: 's-7', storefrontName: 'Bradley Care Network', conversions: 98, revenue: 19600, commission: 3920, joinedDate: '2025-02-14', lastActive: '2026-09-11', avatarColor: '#0B9B6B' },
+  { id: 'p-7', name: 'Tom Bradley', email: 'tom@bradleynetwork.com', type: 'BUSINESS', status: 'ACTIVE', storefrontId: 's-7', storefrontName: 'Bradley Care Network', conversions: 98, revenue: 19600, commission: 3920, joinedDate: '2025-02-14', lastActive: '2026-09-11', avatarColor: '#0B9B6B' },
   { id: 'p-8', name: 'Nina Garcia', email: 'nina@carereferrals.co', type: 'CREATOR', status: 'ACTIVE', storefrontId: 's-8', storefrontName: 'Nina\'s Care Referrals', conversions: 51, revenue: 10200, commission: 2040, joinedDate: '2025-07-08', lastActive: '2026-09-10', avatarColor: '#E1062C' },
   { id: 'p-9', name: 'Robert Chang', email: 'robert@changcare.com', type: 'BUSINESS', status: 'ACTIVE', storefrontId: 's-9', storefrontName: 'Chang Care Solutions', conversions: 38, revenue: 7600, commission: 1520, joinedDate: '2025-08-15', lastActive: '2026-09-09', avatarColor: '#18191D' },
   { id: 'p-10', name: 'Sophie Martin', email: 'sophie@martinwellness.com', type: 'CREATOR', status: 'ACTIVE', storefrontId: 's-10', storefrontName: 'Sophie\'s Wellness Corner', conversions: 29, revenue: 5800, commission: 1160, joinedDate: '2025-09-20', lastActive: '2026-09-08', avatarColor: '#0B9B6B' },
@@ -235,38 +235,6 @@ export const mockScheduledEmails: MockScheduledEmail[] = [
   { id: 'se-2', campaignId: 'ec-3', campaignName: 'Care Circle Launch', audience: 'Active Partners', subject: 'Introducing Care Circle — our most comprehensive plan', scheduledDate: '2026-09-25', status: 'SCHEDULED', recipientCount: 8 },
 ];
 
-export const mockNetworks: MockNetwork[] = [
-  { id: 'net-1', name: 'Marcus Care Network', ownerId: 'p-1', ownerName: 'Marcus Johnson', status: 'ACTIVE', partnerCount: 5, activePartnerCount: 4, conversions: 269, revenue: 53800, networkEarnings: 5380, createdDate: '2025-04-01',
-    partners: [
-      { id: 'np-1', name: 'Emily Rodriguez', type: 'CREATOR', status: 'ACTIVE', storefrontName: 'Emily Care Tips', storefrontStatus: 'LIVE', conversions: 87, revenue: 17400, commission: 3480, networkEarnings: 870, joinedDate: '2025-05-10', lastActive: '2026-09-14', avatarColor: '#0B9B6B' },
-      { id: 'np-2', name: 'David Kim', type: 'BUSINESS', status: 'ACTIVE', storefrontName: 'Care Agency Pro', storefrontStatus: 'LIVE', conversions: 64, revenue: 12800, commission: 2560, networkEarnings: 640, joinedDate: '2025-06-01', lastActive: '2026-09-12', avatarColor: '#18191D' },
-      { id: 'np-3', name: 'Nina Garcia', type: 'CREATOR', status: 'ACTIVE', storefrontName: 'Nina Wellness Hub', storefrontStatus: 'LIVE', conversions: 51, revenue: 10200, commission: 2040, networkEarnings: 510, joinedDate: '2025-07-08', lastActive: '2026-09-13', avatarColor: '#E1062C' },
-      { id: 'np-4', name: 'Robert Chang', type: 'BUSINESS', status: 'ACTIVE', storefrontName: 'Chang Care Solutions', storefrontStatus: 'LIVE', conversions: 38, revenue: 7600, commission: 1520, networkEarnings: 380, joinedDate: '2025-08-15', lastActive: '2026-09-10', avatarColor: '#0B9B6B' },
-      { id: 'np-5', name: 'Sophie Martin', type: 'CREATOR', status: 'PENDING', storefrontName: 'Sophie Care Corner', storefrontStatus: 'DRAFT', conversions: 29, revenue: 5800, commission: 1160, networkEarnings: 290, joinedDate: '2025-09-20', lastActive: '2026-09-08', avatarColor: '#E1062C' },
-    ],
-    activity: [
-      { id: 'na-1-1', networkId: 'net-1', type: 'CONVERSION', description: 'Family Plus conversion', partnerName: 'Emily Rodriguez', amount: 199, date: '2026-09-14' },
-      { id: 'na-1-2', networkId: 'net-1', type: 'STOREFRONT_PUBLISHED', description: 'Storefront published', partnerName: 'Nina Garcia', date: '2026-09-13' },
-      { id: 'na-1-3', networkId: 'net-1', type: 'CONVERSION', description: 'Care Circle conversion', partnerName: 'David Kim', amount: 399, date: '2026-09-12' },
-      { id: 'na-1-4', networkId: 'net-1', type: 'PAYOUT', description: 'Commission payout sent', partnerName: 'Robert Chang', amount: 1520, date: '2026-09-10' },
-      { id: 'na-1-5', networkId: 'net-1', type: 'PARTNER_JOINED', description: 'New partner joined network', partnerName: 'Sophie Martin', date: '2025-09-20' },
-    ],
-  },
-  { id: 'net-2', name: 'Bradley Care Network', ownerId: 'p-7', ownerName: 'Tom Bradley', status: 'ACTIVE', partnerCount: 3, activePartnerCount: 2, conversions: 72, revenue: 14400, networkEarnings: 1440, createdDate: '2025-03-15',
-    partners: [
-      { id: 'np-6', name: 'Aisha Patel', type: 'BUSINESS', status: 'SUSPENDED', storefrontName: 'Patel Care Group', storefrontStatus: 'DRAFT', conversions: 23, revenue: 4600, commission: 920, networkEarnings: 230, joinedDate: '2025-04-12', lastActive: '2026-07-30', avatarColor: '#18191D' },
-      { id: 'np-7', name: 'Lisa Thompson', type: 'CREATOR', status: 'ACTIVE', storefrontName: 'Lisa Care Stories', storefrontStatus: 'LIVE', conversions: 31, revenue: 6200, commission: 1240, networkEarnings: 310, joinedDate: '2025-07-15', lastActive: '2026-09-15', avatarColor: '#E1062C' },
-      { id: 'np-8', name: 'James Wilson', type: 'BUSINESS', status: 'ACTIVE', storefrontName: 'Wilson Care Partners', storefrontStatus: 'LIVE', conversions: 18, revenue: 3600, commission: 720, networkEarnings: 180, joinedDate: '2025-08-20', lastActive: '2026-09-11', avatarColor: '#0B9B6B' },
-    ],
-    activity: [
-      { id: 'na-2-1', networkId: 'net-2', type: 'PARTNER_JOINED', description: 'New partner joined network', partnerName: 'Lisa Thompson', date: '2025-07-15' },
-      { id: 'na-2-2', networkId: 'net-2', type: 'CONVERSION', description: 'Family conversion', partnerName: 'Lisa Thompson', amount: 99, date: '2026-09-15' },
-      { id: 'na-2-3', networkId: 'net-2', type: 'COMMISSION', description: 'Commission approved', partnerName: 'James Wilson', amount: 720, date: '2026-09-11' },
-      { id: 'na-2-4', networkId: 'net-2', type: 'STOREFRONT_PUBLISHED', description: 'Storefront published', partnerName: 'James Wilson', date: '2025-08-25' },
-    ],
-  },
-];
-
 export const mockResources: MockResource[] = [
   { id: 'r-1', title: 'Careverse Brand Guidelines', type: 'BRAND_ASSET', category: 'CREATOR', description: 'Logos, colors, and typography for your storefront and promotions.', url: '#', icon: 'palette' },
   { id: 'r-2', title: 'Approved Social Media Copy', type: 'COPY', category: 'CREATOR', description: 'Pre-written posts for Instagram, TikTok, and Facebook.', url: '#', icon: 'file-text' },
@@ -278,11 +246,6 @@ export const mockResources: MockResource[] = [
   { id: 'r-8', title: 'Full Product Catalog', type: 'PRODUCT_INFO', category: 'BUSINESS', description: 'Detailed catalog with pricing, features, and comparison sheets for all plans.', url: '#', icon: 'info' },
   { id: 'r-9', title: 'Agency Playbook', type: 'GUIDE', category: 'BUSINESS', description: 'How to build and manage a portfolio of Careverse storefronts for your clients.', url: '#', icon: 'book-open' },
   { id: 'r-10', title: 'Client Management Best Practices', type: 'VIDEO', category: 'BUSINESS', description: 'Strategies for managing multiple partner accounts and reporting to clients.', url: '#', icon: 'video' },
-  { id: 'r-11', title: 'Network Brand System', type: 'BRAND_ASSET', category: 'NETWORK', description: 'Complete brand system for network-level branding across all sub-partner storefronts.', url: '#', icon: 'palette' },
-  { id: 'r-12', title: 'Network Recruiting Kit', type: 'COPY', category: 'NETWORK', description: 'Outreach templates and scripts for recruiting partners into your network.', url: '#', icon: 'file-text' },
-  { id: 'r-13', title: 'Network Product Guide', type: 'PRODUCT_INFO', category: 'NETWORK', description: 'Advanced product documentation with network-specific commission structures.', url: '#', icon: 'info' },
-  { id: 'r-14', title: 'Network Growth Playbook', type: 'GUIDE', category: 'NETWORK', description: 'Comprehensive guide to building, scaling, and managing a successful Careverse network.', url: '#', icon: 'book-open' },
-  { id: 'r-15', title: 'Network Management Dashboard', type: 'VIDEO', category: 'NETWORK', description: 'Full walkthrough of the network management tools and reporting features.', url: '#', icon: 'video' },
 ];
 
 export const currentPartner = mockPartners[0];
@@ -474,7 +437,6 @@ export const mockReportSummaries = {
     suspended: mockPartners.filter((p) => p.status === 'SUSPENDED').length,
     creators: mockPartners.filter((p) => p.type === 'CREATOR').length,
     businesses: mockPartners.filter((p) => p.type === 'BUSINESS').length,
-    networks: mockPartners.filter((p) => p.type === 'NETWORK').length,
   },
   storefronts: {
     total: mockStorefronts.length,
@@ -507,12 +469,6 @@ export const mockReportSummaries = {
     paid: mockPayouts.filter((p) => p.status === 'PAID').reduce((s, p) => s + p.amount, 0),
     pending: mockPayouts.filter((p) => p.status === 'PENDING').reduce((s, p) => s + p.amount, 0),
     count: mockPayouts.length,
-  },
-  networks: {
-    total: mockNetworks.length,
-    totalPartners: mockNetworks.reduce((s, n) => s + n.activePartnerCount, 0),
-    totalRevenue: mockNetworks.reduce((s, n) => s + n.revenue, 0),
-    totalEarnings: mockNetworks.reduce((s, n) => s + n.networkEarnings, 0),
   },
 };
 

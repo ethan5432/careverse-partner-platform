@@ -12,12 +12,11 @@ import { Mail, Lock, Loader as Loader2, ArrowRight } from 'lucide-react';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import type { PartnerType } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
-import { User, Building, Network as NetworkIcon, Check } from 'lucide-react';
+import { User, Building, Check } from 'lucide-react';
 
 const roleOptions: { value: PartnerType; label: string; description: string; icon: typeof User }[] = [
   { value: 'CREATOR', label: 'Creator', description: 'Content creators & influencers', icon: User },
   { value: 'BUSINESS', label: 'Business / Agency', description: 'Agencies & businesses', icon: Building },
-  { value: 'NETWORK', label: 'Network', description: 'Network partners managing sub-partners', icon: NetworkIcon },
 ];
 
 export default function PartnerLoginPage() {
@@ -109,7 +108,7 @@ export default function PartnerLoginPage() {
               <Label className="text-xs font-bold text-cv-ink uppercase tracking-wider">
                 Partner Type
               </Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {roleOptions.map((opt) => {
                   const isSelected = selectedType === opt.value;
                   return (

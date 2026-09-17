@@ -11,7 +11,6 @@ import {
   ArrowLeftRight,
   Percent,
   Wallet,
-  Network,
   BookOpen,
   MessageSquare,
   Settings,
@@ -37,10 +36,6 @@ const baseNavItems = [
   { title: 'Payouts', url: '/partner/payouts', icon: Wallet },
 ];
 
-const networkNavItems = [
-  { title: 'Network', url: '/partner/network', icon: Network },
-];
-
 const bottomNavItems = [
   { title: 'Resources', url: '/partner/resources', icon: BookOpen },
   { title: 'Messages', url: '/partner/messages', icon: MessageSquare },
@@ -52,14 +47,12 @@ function PartnerSidebar() {
   const router = useRouter();
   const { user, logout, switchPartnerType, switchStatus } = useMockAuth();
 
-  const isNetwork = user?.partnerType === 'NETWORK';
-
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';
     return pathname.startsWith(url);
   };
 
-  const navItems = isNetwork ? [...baseNavItems, ...networkNavItems] : baseNavItems;
+  const navItems = baseNavItems;
 
   return (
     <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-cv-line h-screen sticky top-0">
@@ -114,7 +107,7 @@ function PartnerSidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-cv-soft transition-colors">
-              <Avatar name={user?.name || 'User'} color={user?.partnerType === 'NETWORK' ? '#E1062C' : '#0B9B6B'} size={32} />
+              <Avatar name={user?.name || 'User'} color={user?.partnerType === 'BUSINESS' ? '#18191D' : '#0B9B6B'} size={32} />
               <div className="flex-1 text-left min-w-0">
                 <p className="text-sm font-bold text-cv-ink truncate">{user?.name}</p>
                 <p className="text-xs text-cv-muted truncate">{user?.partnerType}</p>
@@ -131,9 +124,6 @@ function PartnerSidebar() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { switchPartnerType('BUSINESS'); router.push('/partner'); }}>
               Business / Agency
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { switchPartnerType('NETWORK'); router.push('/partner'); }}>
-              Network
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <div className="px-2 py-1.5">
@@ -159,8 +149,7 @@ function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useMockAuth();
-  const isNetwork = user?.partnerType === 'NETWORK';
-  const navItems = isNetwork ? [...baseNavItems, ...networkNavItems, ...bottomNavItems] : [...baseNavItems, ...bottomNavItems];
+  const navItems = [...baseNavItems, ...bottomNavItems];
 
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';
