@@ -8,23 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail, Lock, Loader as Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Loader as Loader2, ArrowRight, UserPlus } from 'lucide-react';
 import { useMockAuth } from '@/hooks/useMockAuth';
-import type { PartnerType } from '@/data/mock/types';
-import { cn } from '@/lib/utils';
-import { User, Building, Check } from 'lucide-react';
-
-const roleOptions: { value: PartnerType; label: string; description: string; icon: typeof User }[] = [
-  { value: 'CREATOR', label: 'Creator', description: 'Content creators & influencers', icon: User },
-  { value: 'BUSINESS', label: 'Business / Agency', description: 'Agencies & businesses', icon: Building },
-];
 
 export default function PartnerLoginPage() {
   const router = useRouter();
-  const { login, switchPartnerType } = useMockAuth();
+  const { login, switchPartnerType, application } = useMockAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedType, setSelectedType] = useState<PartnerType>('CREATOR');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,8 +26,13 @@ export default function PartnerLoginPage() {
 
     const result = login(email, password, 'PARTNER');
     if (result.success) {
-      switchPartnerType(selectedType);
-      router.push('/partner');
+      if (application && application.applicationState === 'SUBMITTED') {
+        router.push('/activate');
+      } else if (application && application.applicationState === 'APPROVED' && !application.activatedAt) {
+        router.push('/activate');
+      } else {
+        router.push('/partner');
+      }
     } else {
       setError(result.error || 'Sign in failed');
     }
@@ -86,9 +82,17 @@ export default function PartnerLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs font-bold text-cv-ink uppercase tracking-wider">
-                Password
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-xs font-bold text-cv-ink uppercase tracking-wider">
+                  Password
+                </Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-bold text-cv-muted hover:text-cv-ink transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
                 <Input
@@ -101,44 +105,6 @@ export default function PartnerLoginPage() {
                   required
                 />
               </div>
-            </div>
-
-            {/* Role selector */}
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-cv-ink uppercase tracking-wider">
-                Partner Type
-              </Label>
-              <div className="grid grid-cols-2 gap-2">
-                {roleOptions.map((opt) => {
-                  const isSelected = selectedType === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setSelectedType(opt.value)}
-                      className={cn(
-                        'relative flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all',
-                        isSelected
-                          ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink'
-                          : 'border-cv-line hover:border-cv-ink/30 hover:bg-cv-soft/50'
-                      )}
-                    >
-                      {isSelected && (
-                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-cv-ink">
-                          <Check className="h-2.5 w-2.5 text-white" />
-                        </span>
-                      )}
-                      <opt.icon className={cn('h-4 w-4', isSelected ? 'text-cv-ink' : 'text-cv-muted')} />
-                      <span className={cn('text-[10px] font-bold leading-tight', isSelected ? 'text-cv-ink' : 'text-cv-muted')}>
-                        {opt.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-cv-muted">
-                {roleOptions.find((o) => o.value === selectedType)?.description}
-              </p>
             </div>
 
             <button
@@ -157,9 +123,18 @@ export default function PartnerLoginPage() {
             </button>
           </form>
 
-          <div className="mt-5 text-center">
-            <Link href="#" className="text-sm text-cv-muted hover:text-cv-ink transition-colors">
-              Forgot password?
+          <div className="mt-6 pt-5 border-t border-cv-line">
+            <p className="text-center text-sm text-cv-muted mb-3">
+              New to Careverse?
+            </p>
+            <Link href="/signup">
+              <Button
+                variant="outline"
+                className="w-full rounded-full border-cv-ink font-bold text-cv-ink hover:bg-cv-soft"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Create a partner account
+              </Button>
             </Link>
           </div>
         </div>

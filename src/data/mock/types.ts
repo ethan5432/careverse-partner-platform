@@ -2,6 +2,54 @@ export type PartnerType = 'CREATOR' | 'BUSINESS';
 export type PartnerStatus = 'ACTIVE' | 'PENDING' | 'INCOMPLETE' | 'SUSPENDED';
 export type AccountState = 'ACTIVE' | 'PENDING' | 'INCOMPLETE' | 'SUSPENDED';
 
+export type ApplicationState = 'SUBMITTED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+
+export interface PartnerApplication {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  country: string;
+  stateProvince: string;
+  partnerType: PartnerType;
+  password: string;
+  acceptTerms: boolean;
+  acceptPrivacy: boolean;
+  // Creator-specific
+  displayName?: string;
+  website?: string;
+  socialPlatform?: string;
+  socialHandle?: string;
+  // Business-specific
+  legalBusinessName?: string;
+  brandName?: string;
+  businessWebsite?: string;
+  businessDescription?: string;
+  // State
+  applicationState: ApplicationState;
+  submittedAt: string;
+  approvedAt?: string;
+  activatedAt?: string;
+}
+
+export interface OnboardingProgress {
+  profileComplete: boolean;
+  storeCustomized: boolean;
+  packagesChosen: boolean;
+  contentAdded: boolean;
+  payoutsSetup: boolean;
+  storePublished: boolean;
+  storeShared: boolean;
+}
+
+export interface AccountSession {
+  application: PartnerApplication | null;
+  activated: boolean;
+  onboarding: OnboardingProgress;
+  emailVerified: boolean;
+}
+
 export interface MockUser {
   id: string;
   name: string;
