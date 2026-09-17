@@ -22,6 +22,7 @@ import {
   FONT_OPTIONS, FONT_WEIGHTS, DEFAULT_BRANDING, BrandMode,
 } from '@/lib/store-persistence';
 import { cn } from '@/lib/utils';
+import { useMockAuth } from '@/hooks/useMockAuth';
 
 type BuilderTab = 'overview' | 'packages' | 'branding' | 'positioning' | 'content' | 'sections' | 'domain' | 'preview' | 'publish';
 
@@ -105,6 +106,7 @@ function ToggleRow({ label, desc, value, onChange }: { label: string; desc: stri
 
 export default function PartnerStorePage() {
   const router = useRouter();
+  const { onboarding, updateOnboarding } = useMockAuth();
   const [activeTab, setActiveTab] = useState<BuilderTab>('overview');
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -232,6 +234,9 @@ export default function PartnerStorePage() {
     setSaved(true);
     setDirty(false);
     setTimeout(() => setSaved(false), 3000);
+    if (!onboarding.storeCustomized) updateOnboarding({ storeCustomized: true });
+    if (!onboarding.packagesChosen && selectedPackages.length > 0) updateOnboarding({ packagesChosen: true });
+    if (!onboarding.contentAdded && contentBlocks.length > 0) updateOnboarding({ contentAdded: true });
   };
 
   // Mark dirty on any change
@@ -1415,7 +1420,14 @@ export default function PartnerStorePage() {
               </div>
               <Button
                 className={cn('w-full rounded-full', publishStatus === 'LIVE' ? 'cv-btn-outline border-cv-line' : 'cv-btn-primary')}
-                onClick={() => { setPublishStatus(publishStatus === 'LIVE' ? 'DRAFT' : 'LIVE'); markDirty(); }}
+                onClick={() => {
+                  const newStatus = publishStatus === 'LIVE' ? 'DRAFT' : 'LIVE';
+                  setPublishStatus(newStatus);
+                  markDirty();
+                  if (newStatus === 'LIVE') {
+                    updateOnboarding({ storePublished: true, storeShared: true });
+                  }
+                }}
               >
                 {publishStatus === 'LIVE' ? 'Unpublish Store' : 'Publish Store'}
               </Button>

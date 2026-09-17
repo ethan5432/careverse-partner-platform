@@ -126,7 +126,7 @@ const payoutStatusToBadge: Record<PayoutSetupStatus, 'connected' | 'none' | 'pro
 };
 
 export default function SettingsPage() {
-  const { user } = useMockAuth();
+  const { user, updateOnboarding, onboarding } = useMockAuth();
 
   // Profile
   const [profile, setProfile] = useState(mockPartnerProfile);
@@ -157,6 +157,7 @@ export default function SettingsPage() {
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     flash(setProfileSaved);
+    if (!onboarding.profileComplete) updateOnboarding({ profileComplete: true });
   };
 
   const handleSavePassword = (e: React.FormEvent) => {
@@ -186,6 +187,7 @@ export default function SettingsPage() {
   const handleSavePayout = (e: React.FormEvent) => {
     e.preventDefault();
     flash(setPayoutSaved);
+    if (!onboarding.payoutsSetup) updateOnboarding({ payoutsSetup: true });
   };
 
   const notificationItems: { key: keyof MockNotificationSettings; label: string; description: string }[] = [

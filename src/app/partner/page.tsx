@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { GetStartedChecklist } from '@/components/shared/GetStartedChecklist';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Wallet, TrendingUp, Users, MousePointerClick, ExternalLink, Pencil, Store } from 'lucide-react';
-import { partnerDashboardStats, partnerPerformanceData, mockConversions, currentPartnerStorefront } from '@/data/mock';
+import {
+  Wallet, TrendingUp, Users, MousePointerClick, ExternalLink, Pencil, Store,
+  Rocket, Sparkles,
+} from 'lucide-react';
+import {
+  partnerDashboardStats, partnerPerformanceData,
+  mockConversions, currentPartnerStorefront,
+} from '@/data/mock';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { cn } from '@/lib/utils';
 
@@ -18,9 +25,11 @@ type Metric = 'revenue' | 'conversions' | 'commission';
 
 export default function PartnerDashboardPage() {
   const router = useRouter();
-  const { user } = useMockAuth();
+  const { user, onboarding, isOnboardingComplete } = useMockAuth();
   const [timeRange, setTimeRange] = useState<TimeRange>('30D');
   const [metric, setMetric] = useState<Metric>('revenue');
+
+  const onboardingDone = isOnboardingComplete();
 
   const recentConversions = mockConversions.filter(c => c.partnerId === 'p-1').slice(0, 5);
   const performanceData = partnerPerformanceData[timeRange];
@@ -29,11 +38,102 @@ export default function PartnerDashboardPage() {
   const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
+  // Onboarding view — shown when setup is not yet complete
+  if (!onboardingDone) {
+    const completedCount = Object.values(onboarding).filter(Boolean).length;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Get Started"
+          title={`Welcome, ${user?.name?.split(' ')[0] || 'Partner'}!`}
+          description="Let&apos;s get your store set up and ready to launch."
+        />
+
+        {/* Welcome banner */}
+        <div className="rounded-2xl bg-gradient-to-br from-cv-ink to-cv-night p-6 sm:p-8 text-white">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Welcome to Careverse Partners</h2>
+              <p className="text-sm text-white/70 mt-1 max-w-lg">
+                You&apos;re just a few steps away from launching your storefront and starting to earn
+                commission. Follow the checklist below to get everything set up.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Onboarding checklist */}
+          <div className="lg:col-span-2">
+            <GetStartedChecklist />
+          </div>
+
+          {/* Quick stats and actions */}
+          <div className="space-y-4">
+            <Card className="cv-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold text-cv-ink uppercase tracking-wider">Progress</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-3xl font-bold text-cv-ink">{completedCount}/7</p>
+                  <p className="text-xs text-cv-muted">Setup steps completed</p>
+                </div>
+                <div className="h-2 rounded-full bg-cv-soft overflow-hidden">
+                  <div
+                    className="h-full bg-cv-good rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round((completedCount / 7) * 100)}%` }}
+                  />
+                </div>
+                <Button
+                  onClick={() => router.push('/partner/store')}
+                  className="w-full rounded-full bg-cv-ink text-white font-bold hover:opacity-90"
+                >
+                  <Rocket className="h-4 w-4 mr-1.5" />
+                  Continue setup
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="cv-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold text-cv-ink uppercase tracking-wider">Your Store</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-soft">
+                    <Store className="h-5 w-5 text-cv-ink" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-cv-ink">{currentPartnerStorefront.name}</p>
+                    <StatusBadge status={currentPartnerStorefront.status === 'LIVE' ? 'live' : 'draft'} />
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft"
+                  onClick={() => router.push('/partner/store')}
+                >
+                  <Pencil className="h-4 w-4 mr-1.5" />
+                  Edit store
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal dashboard view — shown when onboarding is complete
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Overview"
-        title={`Welcome, ${user?.name?.split(' ')[0] || 'Partner'}`}
+        title={`Welcome back, ${user?.name?.split(' ')[0] || 'Partner'}`}
         description="Your earnings, storefront performance, and recent conversions at a glance."
       />
 
@@ -77,7 +177,6 @@ export default function PartnerDashboardPage() {
             <p className="text-xs text-cv-muted mt-0.5">Track your revenue, conversions, and commission over time</p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Time range tabs */}
             <div className="flex bg-cv-soft rounded-lg p-0.5">
               {(['7D', '30D', '90D', 'ALL'] as TimeRange[]).map((tr) => (
                 <button
@@ -92,7 +191,6 @@ export default function PartnerDashboardPage() {
                 </button>
               ))}
             </div>
-            {/* Metric selector */}
             <div className="flex bg-cv-soft rounded-lg p-0.5">
               {([
                 { key: 'revenue' as Metric, label: 'Revenue' },
@@ -114,7 +212,6 @@ export default function PartnerDashboardPage() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          {/* Simple bar chart */}
           <div className="flex items-end justify-between gap-2 h-48 pt-4">
             {performanceData.map((d, i) => {
               const value = d[metric];
