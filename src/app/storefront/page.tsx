@@ -61,51 +61,52 @@ export default function StorefrontPage() {
   // Render sections in order
   const visibleSections = sections.filter(s => s.visible);
 
-  const renderCreatorVideo = (sectionId: string, sectionIndex: number) => {
-    const blockIdx = visibleSections.filter(s => s.type === 'creatorVideo').indexOf(visibleSections.find(s => s.id === sectionId)!);
-    const block = contentBlocks[blockIdx];
-    if (!block) return null;
-
-    const layoutCols: Record<string, string> = {
-      ONE_COLUMN: 'grid-cols-1',
-      TWO_COLUMN: 'grid-cols-2',
-      THREE_COLUMN: 'grid-cols-3',
-    };
+  const renderCreatorVideo = (sectionId: string) => {
+    const section = visibleSections.find(s => s.id === sectionId);
+    if (!section) return null;
+    const sectionBlocks = contentBlocks.filter(b => b.sectionId === sectionId).sort((a, b) => a.order - b.order);
+    if (sectionBlocks.length === 0) return null;
+    const cols = section.columns || 1;
+    const gridClass = cols === 2 ? 'grid-cols-2' : cols === 3 ? 'grid-cols-3' : 'grid-cols-1';
 
     return (
       <section key={sectionId} className="bg-cv-soft py-12 lg:py-16">
         <div className="max-w-6xl mx-auto px-5 lg:px-8">
-          {block.title && (
+          {sectionBlocks[0].title && (
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <div className="cv-red-rule" />
                 <span className="cv-eyebrow uppercase">Video</span>
               </div>
-              <h2 className="cv-h2">{block.title}</h2>
+              <h2 className="cv-h2">{sectionBlocks[0].title}</h2>
             </div>
           )}
-          <div className={cn('grid gap-4', layoutCols[block.layout] || 'grid-cols-1')}>
-            {block.source === 'EMBED' && block.url ? (
-              <div className="rounded-2xl overflow-hidden border border-cv-line shadow-sm">
-                <iframe
-                  src={block.url}
-                  className="w-full aspect-video"
-                  title={block.title || 'Video content'}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+          <div className={cn('grid gap-4', gridClass)}>
+            {sectionBlocks.map((block) => (
+              <div key={block.id}>
+                {block.source === 'EMBED' && block.url ? (
+                  <div className="rounded-2xl overflow-hidden border border-cv-line shadow-sm">
+                    <iframe
+                      src={block.url}
+                      className="w-full aspect-video"
+                      title={block.title || 'Video content'}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : block.source === 'UPLOAD' && videoUrls[block.id] ? (
+                  <div className="rounded-2xl overflow-hidden border border-cv-line shadow-sm">
+                    <video src={videoUrls[block.id]} controls className="w-full aspect-video" />
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border-2 border-dashed border-cv-line aspect-video flex items-center justify-center bg-cv-soft">
+                    <Play className="h-10 w-10 text-cv-muted" />
+                  </div>
+                )}
+                {block.caption && <p className="text-sm text-cv-muted text-center mt-3 max-w-2xl mx-auto">{block.caption}</p>}
               </div>
-            ) : block.source === 'UPLOAD' && videoUrls[block.id] ? (
-              <div className="rounded-2xl overflow-hidden border border-cv-line shadow-sm">
-                <video src={videoUrls[block.id]} controls className="w-full aspect-video" />
-              </div>
-            ) : (
-              <div className="rounded-2xl border-2 border-dashed border-cv-line aspect-video flex items-center justify-center bg-cv-soft">
-                <Play className="h-10 w-10 text-cv-muted" />
-              </div>
-            )}
+            ))}
           </div>
-          {block.caption && <p className="text-sm text-cv-muted text-center mt-4 max-w-2xl mx-auto">{block.caption}</p>}
         </div>
       </section>
     );
@@ -328,14 +329,14 @@ export default function StorefrontPage() {
 
   // Build dynamic section order
   const renderedSections: React.ReactNode[] = [];
-  let creatorVideoCount = 0;
 
   if (visibleSections.length === 0) {
     // Fallback to default order if no sections configured
     renderedSections.push(renderHero());
     if (contentBlocks.length > 0) {
-      contentBlocks.forEach((_, i) => {
-        renderedSections.push(renderCreatorVideo(`fallback-${i}`, i));
+      const sectionIds = [...new Set(contentBlocks.map(b => b.sectionId))];
+      sectionIds.forEach((sid) => {
+        renderedSections.push(renderCreatorVideo(sid));
       });
     }
     renderedSections.push(renderPackages());
@@ -348,8 +349,7 @@ export default function StorefrontPage() {
           renderedSections.push(renderHero());
           break;
         case 'creatorVideo':
-          renderedSections.push(renderCreatorVideo(section.id, creatorVideoCount));
-          creatorVideoCount++;
+          renderedSections.push(renderCreatorVideo(section.id));
           break;
         case 'packages':
           renderedSections.push(renderPackages());

@@ -33,6 +33,7 @@ export interface StorefrontConfig {
     caption: string;
     layout: 'ONE_COLUMN' | 'TWO_COLUMN' | 'THREE_COLUMN';
     order: number;
+    sectionId: string;
   }[];
   brandingMode: 'partner-first' | 'careverse-first' | 'co-branded';
   savedAt: string;
@@ -59,12 +60,12 @@ function defaultConfig(): StorefrontConfig {
     selectedPackages: sf.packages,
     sections: [
       { id: 'sec-hero', type: 'hero', visible: true },
-      { id: 'sec-creator-0', type: 'creatorVideo', visible: true },
+      { id: 'sec-creator-0', type: 'creatorVideo', visible: true, columns: 1 },
       { id: 'sec-packages', type: 'packages', visible: true },
       { id: 'sec-benefits', type: 'benefits', visible: true },
       { id: 'sec-about', type: 'about', visible: true },
     ],
-    creatorContent: (sf.creatorContent || []).map((c) => ({
+    creatorContent: (sf.creatorContent || []).map((c, i) => ({
       id: c.id,
       source: c.source,
       url: c.url,
@@ -73,6 +74,7 @@ function defaultConfig(): StorefrontConfig {
       caption: c.caption || '',
       layout: c.layout,
       order: c.order,
+      sectionId: c.sectionId || `sec-creator-${i}`,
     })),
     brandingMode: 'co-branded',
     savedAt: new Date().toISOString(),

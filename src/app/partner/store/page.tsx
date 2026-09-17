@@ -52,14 +52,8 @@ const sectionTypeIcons: Record<StoreSectionType, typeof Package> = {
   about: LayoutDashboard,
 };
 
-const layoutCols: Record<string, string> = {
-  ONE_COLUMN: 'grid-cols-1',
-  TWO_COLUMN: 'grid-cols-2',
-  THREE_COLUMN: 'grid-cols-3',
-};
-
 function fmtMoney(n: number) {
-  return `$${n}/mo`;
+  return `${n}/mo`;
 }
 
 interface CreatorBlock {
@@ -71,6 +65,13 @@ interface CreatorBlock {
   caption: string;
   layout: 'ONE_COLUMN' | 'TWO_COLUMN' | 'THREE_COLUMN';
   order: number;
+  sectionId: string;
+}
+
+function gridColsFor(n: number): string {
+  if (n === 2) return 'grid-cols-2';
+  if (n === 3) return 'grid-cols-3';
+  return 'grid-cols-1';
 }
 
 export default function PartnerStorePage() {
@@ -194,16 +195,19 @@ export default function PartnerStorePage() {
   };
 
   const addCreatorVideoSection = () => {
+    const sectionId = `sec-creator-${Date.now()}`;
     const newSection: StoreSection = {
-      id: `sec-creator-${Date.now()}`,
+      id: sectionId,
       type: 'creatorVideo',
       visible: true,
+      columns: 1,
     };
     const insertIdx = sections.length - 1 < 0 ? 0 : sections.length - 1;
     const newSections = [...sections];
     newSections.splice(insertIdx, 0, newSection);
     setSections(newSections);
     markDirty();
+    return sectionId;
   };
 
   const removeSection = (id: string) => {
@@ -236,7 +240,11 @@ export default function PartnerStorePage() {
 
   // ─── Content block management ────────────────────────────────────────────
 
-  const addContentBlock = () => {
+  const addContentBlock = (sectionId?: string) => {
+    let targetSectionId = sectionId;
+    if (!targetSectionId) {
+      targetSectionId = addCreatorVideoSection();
+    }
     const newBlock: CreatorBlock = {
       id: `cc-${Date.now()}`,
       source: 'EMBED',
@@ -245,10 +253,9 @@ export default function PartnerStorePage() {
       caption: '',
       layout: 'ONE_COLUMN',
       order: contentBlocks.length,
+      sectionId: targetSectionId,
     };
     setContentBlocks([...contentBlocks, newBlock]);
-    // Also add a section for this content block
-    addCreatorVideoSection();
     markDirty();
   };
 
@@ -258,28 +265,60 @@ export default function PartnerStorePage() {
   };
 
   const removeContentBlock = (id: string) => {
-    setContentBlocks(contentBlocks.filter(b => b.id !== id));
-    // Remove associated section
     const block = contentBlocks.find(b => b.id === id);
+    setContentBlocks(contentBlocks.filter(b => b.id !== id));
+    // Remove the section if this was the last video in it
     if (block) {
-      const sectionIdx = sections.findIndex(s => s.id === `sec-creator-${block.order}`);
-      if (sectionIdx >= 0) {
-        setSections(sections.filter(s => s.id !== `sec-creator-${block.order}`));
+      const remainingInSection = contentBlocks.filter(b => b.sectionId === block.sectionId && b.id !== id);
+      if (remainingInSection.length === 0) {
+        setSections(prev => prev.filter(s => s.id !== block.sectionId));
       }
     }
     markDirty();
   };
 
-  const moveContentBlock = (idx: number, dir: 'up' | 'down') => {
-    const target = dir === 'up' ? idx - 1 : idx + 1;
-    if (target < 0 || target >= contentBlocks.length) return;
-    const newBlocks = [...contentBlocks];
-    [newBlocks[idx], newBlocks[target]] = [newBlocks[target], newBlocks[idx]];
-    // Re-index order
-    newBlocks.forEach((b, i) => b.order = i);
+  const moveContentBlock = (blockId: string, dir: 'up' | 'down') => {
+    const block = contentBlocks.find(b => b.id === blockId);
+    if (!block) return;
+    const sectionBlocks = contentBlocks.filter(b => b.sectionId === block.sectionId).sort((a, b) => a.order - b.order);
+    const idxInSection = sectionBlocks.findIndex(b => b.id === blockId);
+    const target = dir === 'up' ? idxInSection - 1 : idxInSection + 1;
+    if (target < 0 || target >= sectionBlocks.length) return;
+    const targetBlock = sectionBlocks[target];
+    const newBlocks = contentBlocks.map(b => {
+      if (b.id === blockId) return { ...b, order: targetBlock.order };
+      if (b.id === targetBlock.id) return { ...b, order: block.order };
+      return b;
+    });
     setContentBlocks(newBlocks);
     markDirty();
   };
+
+  const moveContentBlockToSection = (blockId: string, targetSectionId: string) => {
+    const targetBlocks = contentBlocks.filter(b => b.sectionId === targetSectionId);
+    const maxOrder = targetBlocks.reduce((max, b) => Math.max(max, b.order), -1);
+    setContentBlocks(contentBlocks.map(b =>
+      b.id === blockId ? { ...b, sectionId: targetSectionId, order: maxOrder + 1 } : b
+    ));
+    // Remove source section if empty
+    const block = contentBlocks.find(b => b.id === blockId);
+    if (block) {
+      const remaining = contentBlocks.filter(b => b.sectionId === block.sectionId && b.id !== blockId);
+      if (remaining.length === 0) {
+        setSections(prev => prev.filter(s => s.id !== block.sectionId));
+      }
+    }
+    markDirty();
+  };
+
+  const updateSectionColumns = (sectionId: string, columns: 1 | 2 | 3) => {
+    setSections(sections.map(s => s.id === sectionId ? { ...s, columns } : s));
+    markDirty();
+  };
+
+  const videoSections = sections.filter(s => s.type === 'creatorVideo');
+  const blocksBySection = (sectionId: string) =>
+    contentBlocks.filter(b => b.sectionId === sectionId).sort((a, b) => a.order - b.order);
 
   // ─── Video upload ────────────────────────────────────────────────────────
 
@@ -703,145 +742,182 @@ export default function PartnerStorePage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-xs text-cv-muted">
                 <Video className="h-3.5 w-3.5" />
-                Add video content to your storefront. Embed from YouTube/Vimeo or upload a video file directly. Multiple video blocks are supported and can be reordered.
+                Create video sections, add multiple videos to each section, and choose how many columns they display in. Videos can be reordered within a section or moved between sections.
               </div>
             </CardContent>
           </Card>
 
-          {contentBlocks.length === 0 && (
+          {videoSections.length === 0 && (
             <Card className="cv-card">
               <CardContent className="p-8 text-center">
                 <Video className="h-10 w-10 text-cv-muted mx-auto mb-3" />
-                <p className="text-sm font-bold text-cv-ink mb-1">No content blocks yet</p>
-                <p className="text-xs text-cv-muted mb-4">Add a video to engage visitors on your storefront.</p>
-                <Button className="cv-btn-primary rounded-full" onClick={addContentBlock}><Plus className="h-4 w-4 mr-1.5" /> Add Content Block</Button>
+                <p className="text-sm font-bold text-cv-ink mb-1">No video sections yet</p>
+                <p className="text-xs text-cv-muted mb-4">Create a video section to start adding videos to your storefront.</p>
+                <Button className="cv-btn-primary rounded-full" onClick={() => addContentBlock()}><Plus className="h-4 w-4 mr-1.5" /> Create Video Section</Button>
               </CardContent>
             </Card>
           )}
 
-          {contentBlocks.map((block, idx) => (
-            <Card key={block.id} className="cv-card">
-              <CardContent className="p-4 space-y-4">
-                {/* Header */}
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col">
-                    <button onClick={() => moveContentBlock(idx, 'up')} disabled={idx === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => moveContentBlock(idx, 'down')} disabled={idx === contentBlocks.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+          {videoSections.map((vSection, sIdx) => {
+            const sectionBlocks = blocksBySection(vSection.id);
+            const otherSections = videoSections.filter(s => s.id !== vSection.id);
+            return (
+              <Card key={vSection.id} className="cv-card">
+                <CardContent className="p-4 space-y-4">
+                  {/* Section header */}
+                  <div className="flex items-center gap-2 pb-3 border-b border-cv-line">
+                    <div className="flex flex-col">
+                      <button onClick={() => moveSection(sections.indexOf(vSection), 'up')} disabled={sections.indexOf(vSection) === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => moveSection(sections.indexOf(vSection), 'down')} disabled={sections.indexOf(vSection) === sections.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+                    </div>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cv-soft shrink-0">
+                      <Video className="h-4 w-4 text-cv-ink" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-cv-ink">Video Section {sIdx + 1}</p>
+                      <p className="text-[10px] text-cv-muted">{sectionBlocks.length} video{sectionBlocks.length !== 1 ? 's' : ''}</p>
+                    </div>
+                    <button onClick={() => { sectionBlocks.forEach(b => removeContentBlock(b.id)); }} className="text-cv-muted hover:text-cv-red transition-colors"><Trash2 className="h-4 w-4" /></button>
                   </div>
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-[10px] font-extrabold">{idx + 1}</span>
-                  <p className="text-sm font-bold text-cv-ink flex-1">{block.title || `Content Block ${idx + 1}`}</p>
-                  <button onClick={() => removeContentBlock(block.id)} className="text-cv-muted hover:text-cv-red transition-colors"><Trash2 className="h-4 w-4" /></button>
-                </div>
 
-                {/* Source toggle */}
-                <div className="grid grid-cols-2 gap-2">
-                  {(['EMBED', 'UPLOAD'] as const).map((src) => (
-                    <button
-                      key={src}
-                      onClick={() => updateContentBlock(block.id, { source: src })}
-                      className={cn(
-                        'rounded-lg border p-2 text-center text-xs font-bold transition-all',
-                        block.source === src ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink text-cv-ink' : 'border-cv-line text-cv-muted'
-                      )}
-                    >
-                      {src === 'EMBED' ? 'Embed URL' : 'Upload Video'}
-                    </button>
-                  ))}
-                </div>
-
-                {/* URL or upload */}
-                {block.source === 'EMBED' ? (
+                  {/* Column selector */}
                   <div className="grid gap-2">
-                    <Label className="text-xs font-bold text-cv-ink">Video Embed URL</Label>
-                    <Input
-                      value={block.url}
-                      onChange={(e) => updateContentBlock(block.id, { url: e.target.value })}
-                      className="cv-input"
-                      placeholder="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                    />
-                    <p className="text-[10px] text-cv-muted">YouTube or Vimeo embed URL</p>
-                    {block.url && (
-                      <div className="mt-2 rounded-lg overflow-hidden border border-cv-line">
-                        <iframe src={block.url} className="w-full aspect-video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="grid gap-2">
-                    <Label className="text-xs font-bold text-cv-ink">Upload Video File</Label>
-                    <input
-                      ref={(el) => { fileInputRefs.current[block.id] = el; }}
-                      type="file"
-                      accept="video/mp4,video/webm,video/ogg"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleVideoUpload(block.id, file);
-                      }}
-                    />
-                    {videoPreviews[block.id] ? (
-                      <div className="relative rounded-lg overflow-hidden border border-cv-line">
-                        <video src={videoPreviews[block.id]} controls className="w-full aspect-video" />
+                    <Label className="text-xs font-bold text-cv-ink">Columns</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {([1, 2, 3] as const).map((n) => (
                         <button
-                          onClick={() => {
-                            URL.revokeObjectURL(videoPreviews[block.id]);
-                            setVideoPreviews(prev => { const c = { ...prev }; delete c[block.id]; return c; });
-                            updateContentBlock(block.id, { videoId: undefined, url: '' });
-                          }}
-                          className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                          key={n}
+                          onClick={() => updateSectionColumns(vSection.id, n)}
+                          className={cn(
+                            'rounded-lg border p-2 text-center text-[10px] font-bold transition-all',
+                            (vSection.columns || 1) === n ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink text-cv-ink' : 'border-cv-line text-cv-muted'
+                          )}
                         >
-                          <X className="h-4 w-4" />
+                          {n === 1 ? '1 Column' : n === 2 ? '2 Columns' : '3 Columns'}
                         </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Videos in this section */}
+                  {sectionBlocks.map((block, bIdx) => (
+                    <div key={block.id} className="rounded-xl border border-cv-line p-3 space-y-3 bg-cv-cream/40">
+                      {/* Block header */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col">
+                          <button onClick={() => moveContentBlock(block.id, 'up')} disabled={bIdx === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowUp className="h-3 w-3" /></button>
+                          <button onClick={() => moveContentBlock(block.id, 'down')} disabled={bIdx === sectionBlocks.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowDown className="h-3 w-3" /></button>
+                        </div>
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cv-ink text-white text-[9px] font-extrabold">{bIdx + 1}</span>
+                        <p className="text-xs font-bold text-cv-ink flex-1">{block.title || `Video ${bIdx + 1}`}</p>
+                        <button onClick={() => removeContentBlock(block.id)} className="text-cv-muted hover:text-cv-red transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => fileInputRefs.current[block.id]?.click()}
-                        className="w-full rounded-xl border-2 border-dashed border-cv-line p-6 text-center hover:border-cv-ink hover:bg-cv-soft/50 transition-colors"
-                      >
-                        <Upload className="h-6 w-6 text-cv-muted mx-auto mb-2" />
-                        <p className="text-xs font-bold text-cv-ink">Click to upload video</p>
-                        <p className="text-[10px] text-cv-muted mt-0.5">MP4, WebM, or OGG — stored locally in your browser</p>
-                      </button>
-                    )}
-                  </div>
-                )}
 
-                {/* Title + Caption */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5">
-                    <Label className="text-xs font-bold text-cv-ink">Title (optional)</Label>
-                    <Input value={block.title} onChange={(e) => updateContentBlock(block.id, { title: e.target.value })} className="cv-input" placeholder="Why I chose Careverse" />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label className="text-xs font-bold text-cv-ink">Caption (optional)</Label>
-                    <Input value={block.caption} onChange={(e) => updateContentBlock(block.id, { caption: e.target.value })} className="cv-input" placeholder="A quick story about how Careverse helped my family." />
-                  </div>
-                </div>
+                      {/* Source toggle */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['EMBED', 'UPLOAD'] as const).map((src) => (
+                          <button
+                            key={src}
+                            onClick={() => updateContentBlock(block.id, { source: src })}
+                            className={cn(
+                              'rounded-lg border p-1.5 text-center text-[10px] font-bold transition-all',
+                              block.source === src ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink text-cv-ink' : 'border-cv-line text-cv-muted'
+                            )}
+                          >
+                            {src === 'EMBED' ? 'Embed URL' : 'Upload Video'}
+                          </button>
+                        ))}
+                      </div>
 
-                {/* Layout */}
-                <div className="grid gap-2">
-                  <Label className="text-xs font-bold text-cv-ink">Layout</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['ONE_COLUMN', 'TWO_COLUMN', 'THREE_COLUMN'] as const).map((lay) => (
-                      <button
-                        key={lay}
-                        onClick={() => updateContentBlock(block.id, { layout: lay })}
-                        className={cn(
-                          'rounded-lg border p-2 text-center text-[10px] font-bold transition-all',
-                          block.layout === lay ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink text-cv-ink' : 'border-cv-line text-cv-muted'
-                        )}
-                      >
-                        {lay === 'ONE_COLUMN' ? '1 Column' : lay === 'TWO_COLUMN' ? '2 Columns' : '3 Columns'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                      {/* URL or upload */}
+                      {block.source === 'EMBED' ? (
+                        <div className="grid gap-1.5">
+                          <Input
+                            value={block.url}
+                            onChange={(e) => updateContentBlock(block.id, { url: e.target.value })}
+                            className="cv-input text-xs"
+                            placeholder="https://www.youtube.com/embed/..."
+                          />
+                          {block.url && (
+                            <div className="rounded-lg overflow-hidden border border-cv-line">
+                              <iframe src={block.url} className="w-full aspect-video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="grid gap-1.5">
+                          <input
+                            ref={(el) => { fileInputRefs.current[block.id] = el; }}
+                            type="file"
+                            accept="video/mp4,video/webm,video/ogg"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleVideoUpload(block.id, file);
+                            }}
+                          />
+                          {videoPreviews[block.id] ? (
+                            <div className="relative rounded-lg overflow-hidden border border-cv-line">
+                              <video src={videoPreviews[block.id]} controls className="w-full aspect-video" />
+                              <button
+                                onClick={() => {
+                                  URL.revokeObjectURL(videoPreviews[block.id]);
+                                  setVideoPreviews(prev => { const c = { ...prev }; delete c[block.id]; return c; });
+                                  updateContentBlock(block.id, { videoId: undefined, url: '' });
+                                }}
+                                className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => fileInputRefs.current[block.id]?.click()}
+                              className="w-full rounded-lg border-2 border-dashed border-cv-line p-4 text-center hover:border-cv-ink hover:bg-cv-soft/50 transition-colors"
+                            >
+                              <Upload className="h-5 w-5 text-cv-muted mx-auto mb-1" />
+                              <p className="text-[10px] font-bold text-cv-ink">Upload video</p>
+                            </button>
+                          )}
+                        </div>
+                      )}
 
-          <Button variant="outline" className="w-full rounded-xl border-cv-line font-bold" onClick={addContentBlock}>
-            <Plus className="h-4 w-4 mr-1.5" /> Add Content Block
+                      {/* Title + Caption */}
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <Input value={block.title} onChange={(e) => updateContentBlock(block.id, { title: e.target.value })} className="cv-input text-xs" placeholder="Title (optional)" />
+                        <Input value={block.caption} onChange={(e) => updateContentBlock(block.id, { caption: e.target.value })} className="cv-input text-xs" placeholder="Caption (optional)" />
+                      </div>
+
+                      {/* Move to section */}
+                      {otherSections.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-cv-muted">Move to:</span>
+                          <select
+                            value=""
+                            onChange={(e) => { if (e.target.value) moveContentBlockToSection(block.id, e.target.value); }}
+                            className="text-[10px] font-bold border border-cv-line rounded-md px-2 py-1 bg-white text-cv-ink"
+                          >
+                            <option value="">Select section...</option>
+                            {otherSections.map((s, i) => (
+                              <option key={s.id} value={s.id}>Video Section {videoSections.indexOf(s) + 1}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add video to this section */}
+                  <Button variant="outline" className="w-full rounded-xl border-cv-line font-bold text-xs" onClick={() => addContentBlock(vSection.id)}>
+                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Video to Section
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          <Button variant="outline" className="w-full rounded-xl border-cv-line font-bold" onClick={() => addContentBlock()}>
+            <Plus className="h-4 w-4 mr-1.5" /> Add Video Section
           </Button>
         </div>
       )}
@@ -929,30 +1005,32 @@ export default function PartnerStorePage() {
                       );
                     }
                     if (section.type === 'creatorVideo') {
-                      // Find content blocks for this section
-                      const block = contentBlocks.find((_, i) => `sec-creator-${i}` === section.id || section.id === 'sec-creator-0');
-                      const blockIdx = sections.filter(s => s.visible && s.type === 'creatorVideo').indexOf(section);
-                      const matchingBlock = contentBlocks[blockIdx];
-                      if (!matchingBlock) return null;
+                      const sectionBlocks = contentBlocks.filter(b => b.sectionId === section.id).sort((a, b) => a.order - b.order);
+                      if (sectionBlocks.length === 0) return null;
+                      const cols = section.columns || 1;
                       return (
                         <div key={section.id} className="px-6 py-6 bg-cv-cream">
-                          {matchingBlock.title && <p className="text-sm font-bold text-cv-ink mb-2">{matchingBlock.title}</p>}
-                          <div className={cn('grid gap-3', layoutCols[matchingBlock.layout] || 'grid-cols-1')}>
-                            {matchingBlock.source === 'EMBED' && matchingBlock.url ? (
-                              <div className="rounded-lg overflow-hidden border border-cv-line">
-                                <iframe src={matchingBlock.url} className="w-full aspect-video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                          {sectionBlocks[0].title && <p className="text-sm font-bold text-cv-ink mb-2">{sectionBlocks[0].title}</p>}
+                          <div className={cn('grid gap-3', gridColsFor(cols))}>
+                            {sectionBlocks.map((block) => (
+                              <div key={block.id}>
+                                {block.source === 'EMBED' && block.url ? (
+                                  <div className="rounded-lg overflow-hidden border border-cv-line">
+                                    <iframe src={block.url} className="w-full aspect-video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                                  </div>
+                                ) : block.source === 'UPLOAD' && videoPreviews[block.id] ? (
+                                  <div className="rounded-lg overflow-hidden border border-cv-line">
+                                    <video src={videoPreviews[block.id]} controls className="w-full aspect-video" />
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg border-2 border-dashed border-cv-line aspect-video flex items-center justify-center">
+                                    <Play className="h-8 w-8 text-cv-muted" />
+                                  </div>
+                                )}
+                                {block.caption && <p className="text-xs text-cv-muted mt-1">{block.caption}</p>}
                               </div>
-                            ) : matchingBlock.source === 'UPLOAD' && videoPreviews[matchingBlock.id] ? (
-                              <div className="rounded-lg overflow-hidden border border-cv-line">
-                                <video src={videoPreviews[matchingBlock.id]} controls className="w-full aspect-video" />
-                              </div>
-                            ) : (
-                              <div className="rounded-lg border-2 border-dashed border-cv-line aspect-video flex items-center justify-center">
-                                <Play className="h-8 w-8 text-cv-muted" />
-                              </div>
-                            )}
+                            ))}
                           </div>
-                          {matchingBlock.caption && <p className="text-xs text-cv-muted mt-2">{matchingBlock.caption}</p>}
                         </div>
                       );
                     }
