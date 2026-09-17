@@ -187,7 +187,7 @@ export default function PartnerDashboardPage() {
               <Button
                 variant="outline"
                 className="flex-1 rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft"
-                onClick={() => router.push('/storefront-builder')}
+                onClick={() => router.push('/partner/store')}
               >
                 <Pencil className="h-4 w-4 mr-1.5" />
                 Edit storefront

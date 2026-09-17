@@ -69,16 +69,26 @@ export interface MockStorefront {
   aboutContent?: string;
   brandPresentation?: string;
   creatorContent?: MockCreatorContent[];
+  sections?: StoreSection[];
 }
 
 export type ContentSource = 'EMBED' | 'UPLOAD';
 export type ContentPlacement = 'TOP' | 'MIDDLE' | 'BOTTOM';
 export type ContentLayout = 'ONE_COLUMN' | 'TWO_COLUMN' | 'THREE_COLUMN';
 
+export type StoreSectionType = 'hero' | 'creatorVideo' | 'packages' | 'benefits' | 'about';
+
+export interface StoreSection {
+  id: string;
+  type: StoreSectionType;
+  visible: boolean;
+}
+
 export interface MockCreatorContent {
   id: string;
   source: ContentSource;
   url: string;
+  videoId?: string;
   title?: string;
   caption?: string;
   placement: ContentPlacement;
