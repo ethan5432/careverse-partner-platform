@@ -82,6 +82,7 @@ export interface StoreSection {
   id: string;
   type: StoreSectionType;
   visible: boolean;
+  columns?: 1 | 2 | 3;
 }
 
 export interface MockCreatorContent {
@@ -94,6 +95,7 @@ export interface MockCreatorContent {
   placement: ContentPlacement;
   layout: ContentLayout;
   order: number;
+  sectionId?: string;
 }
 
 export type ConversionStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'REVERSED';
