@@ -17,15 +17,15 @@ Phase 1 frontend prototype of the Careverse Partner Platform. All data is mocked
 | `/` | Redirects to `/login` |
 | `/login` | Partner login (Careverse Partners branding) |
 | `/admin/login` | Admin login (Careverse Admin branding) |
-| `/storefront` | Customer-facing white-label storefront |
-| `/storefront-builder` | Storefront builder for partners |
+| `/storefront` | Customer-facing storefront (reads saved partner config) |
+| `/partner/store` | Partner store editor (builder + persistence) |
 
 ### Partner (`/partner/*`)
 
 | Route | Nav Label | Visible To |
 |-------|-----------|------------|
 | `/partner` | Overview | All partners |
-| `/partner/storefront` | Storefront | All partners (redirects to builder) |
+| `/partner/store` | Store | All partners |
 | `/partner/conversions` | Conversions | All partners |
 | `/partner/commissions` | Commissions | All partners |
 | `/partner/payouts` | Payouts | All partners |
@@ -74,7 +74,7 @@ Role switching is available via the user dropdown in the partner sidebar (mock o
 ## Navigation
 
 ### Partner Navigation
-Overview, Storefront, Conversions, Commissions, Payouts, [Network]*, Resources, Messages, Settings
+Overview, Store, Conversions, Commissions, Payouts, [Network]*, Resources, Messages, Settings
 
 *Network only appears for Network partner type.
 
@@ -167,23 +167,33 @@ All mock data lives in `src/data/mock/`.
 - View storefront status with quick links to view/edit
 - Recent conversions table
 
-### Customer Storefront
+### Customer Storefront (`/storefront`)
+- Reads saved storefront configuration from localStorage (falls back to mock data if none saved)
+- Renders sections dynamically based on the partner's configured section order
 - Partner logo/profile image with verified badge, rating, and family count
-- Hero with partner intro copy and proof chips
-- Careverse membership packages (Family, Family Plus, Care Circle) with plan details toggle
+- Hero with partner headline, supporting copy, CTA text, and proof chips
+- Creator video sections render actual embedded or uploaded videos
+- Careverse membership packages (only the partner's selected packages) with plan details toggle
 - Benefits overview grid (6 benefits)
+- About section (if configured)
 - Lidia AI section
-- Footer with plan links, learn links, contact info, legal links (Terms, Privacy, Refund), and membership disclaimer
+- Footer with plan links, learn links, contact info, legal links, and membership disclaimer
 - Mock purchase flow with confirmation dialog and purchased state
 
-### Storefront Builder
-- Tab navigation: Overview, Packages, Branding, Domain, Preview, Publish
-- **Overview** — stat cards (storefront status, URL, visitors, conversions, revenue, commission), quick action cards (packages, domain, preview), View Storefront button
-- **Packages** — toggle which Careverse packages appear on the storefront
-- **Branding** — storefront name, logo upload, partner photo upload, short intro copy with character counter
+### Partner Store Editor (`/partner/store`)
+- The main store management area for partners (replaces the old `/storefront-builder`)
+- Header includes "View Store" button (opens `/storefront` in same tab) and Save button
+- Tab navigation: Overview, Sections, Packages, Branding, Positioning, Creator Content, Domain, Preview, Publish
+- **Overview** — stat cards (status, URL, visitors, conversions, revenue, selected packages), quick action cards
+- **Sections** — reorderable section list (Hero, Creator Video, Packages, Benefits, About) with up/down arrows, visibility toggle, and add creator video section
+- **Packages** — select and reorder Careverse packages (content is Careverse-managed, read-only)
+- **Branding** — storefront name, functional logo upload, functional partner photo upload, brand presentation tagline, intro copy, presentation mode (partner-first, Careverse-first, co-branded)
+- **Positioning** — hero headline, hero supporting copy, CTA button text, about/positioning content
+- **Creator Content** — add video content blocks with embed URL or direct video upload, optional title and caption, layout selection (1/2/3 columns), reorder and remove blocks, multiple video blocks supported
 - **Domain** — Careverse-hosted URL display, custom domain input with DNS configuration
-- **Preview** — desktop/mobile preview that reflects builder changes (storefront name, intro copy, selected packages)
+- **Preview** — desktop/mobile preview that reflects the exact section order, actual video rendering, branding, positioning, and selected packages
 - **Publish** — draft/published status toggle, storefront checklist, publish/unpublish controls
+- **Persistence** — all configuration saved to localStorage; uploaded videos stored in IndexedDB; changes preserved across refreshes and reopening
 
 ### Partner Conversions
 - Conversion list with columns: Customer, Storefront, Package, Date, Amount, Commission, Status
@@ -399,8 +409,8 @@ All mock data lives in `src/data/mock/`.
 - `/login` — partner login with role selector; redirects to `/partner` on success
 - `/partner/*` — partner layout with sidebar, header, auth guard; redirects to `/login` if not partner
 - `/partner/network` — only visible to Network partners in nav; accessible by direct URL but shows access-required state for non-network partners
-- `/storefront` — public storefront page
-- `/storefront-builder` — storefront builder
+- `/storefront` — public storefront page (reads saved config from localStorage)
+- `/partner/store` — partner store editor (writes config to localStorage + IndexedDB)
 - All sidebar items link to correct pages with `router.push()`
 - Refreshing any authenticated route preserves auth state via localStorage
 - Logout from admin → `/admin/login`; logout from partner → `/login`
@@ -495,7 +505,7 @@ All mock data lives in `src/data/mock/`.
 - Partners can only see and select packages with `availability === 'AVAILABLE'`
 - The Storefront Builder filters packages by availability before rendering the selection list
 
-### Partner Storefront Builder (`/storefront-builder` — Packages tab)
+### Partner Store Editor (`/partner/store` — Packages tab)
 - Info banner explaining Careverse manages all package content
 - Two sections: "Your storefront packages" (selected, with reordering) and "Available Careverse packages" (to add)
 - Selected packages section shows numbered ordering with up/down arrows to reorder
@@ -516,7 +526,7 @@ Admin Products (availability toggle only)
   ↓ availability filter
 Storefront Builder (select + reorder only)
   ↓ selected package names
-Storefront page (display to customers)
+Storefront page (display to customers, reads from saved config)
 ```
 
 ---
@@ -740,11 +750,11 @@ src/
       resources/        Resource library
       messages/         Partner messaging
       settings/         Partner settings
-    storefront/         Customer storefront
-    storefront-builder/ Storefront builder
+    storefront/         Customer storefront (reads saved config)
     checkout/           Checkout flow (form → processing → success/failed)
       confirmation/     Purchase confirmation page
     lidia/              Lidia AI care assistant (member experience)
+    partner/store/      Partner store editor (builder + persistence)
   components/
     shared/             Shared Careverse components
     ui/                 shadcn/ui primitives
@@ -752,7 +762,8 @@ src/
     mock/               Mock data and types
   hooks/
     useMockAuth.tsx     Mock authentication context
-  lib/                  Utilities
+  lib/
+    store-persistence.ts  Storefront config (localStorage) + video files (IndexedDB)
 ```
 
 ---
@@ -764,3 +775,94 @@ src/
 **Backend (later):** Database, authentication, attribution, tracking, S2S, payment events, conversion ingestion, commission engine, commission ledger, payouts, tax, webhooks, queues, production email, integrations.
 
 Backend API specifications will be documented in `docs/backend/`.
+
+---
+
+## Phase 15 — Partner Store Architecture & Persistence
+
+### Partner Store Navigation
+- Sidebar nav item renamed from "Storefront" to "Store"
+- Routes to `/partner/store` (the partner's store management area)
+- Partners are no longer sent directly to `/storefront` from the sidebar
+- The customer-facing storefront remains a separate route at `/storefront`
+
+### Partner Store Editor (`/partner/store`)
+- Replaces the old `/storefront-builder` page
+- "Edit Store" is the main view with a clear "View Store" button in the header that opens the actual customer-facing storefront (`/storefront`)
+- All existing storefront builder functionality moved here: Packages, Branding, Positioning, Creator Content, Domain, Preview, Publish
+- Partner dashboard "Edit storefront" button now links to `/partner/store`
+
+### Reorderable Store Sections
+- Store sections are now reorderable as actual sections, not just Top/Middle/Bottom placement
+- Editable section order supports: Hero, Creator Video/Content, Packages, Benefits, About, and additional creator video blocks
+- Partners can move sections up and down with arrow buttons
+- Sections can be toggled visible/hidden
+- Additional creator video sections can be added
+- The Preview tab reflects the exact section order
+- The public storefront renders sections in the saved order
+
+### Creator Video Content (enhanced)
+- Supports video embed URLs (YouTube, Vimeo, etc.) with live iframe rendering
+- Supports direct video file upload (MP4, WebM, OGG)
+- Uploaded videos are stored in IndexedDB and their references are preserved in the storefront configuration
+- Video blocks store the selected video on the content block (videoId for uploads, url for embeds)
+- Actual video renders in both the Preview tab and on the public storefront
+- Optional title and caption preserved
+- Multiple video blocks supported
+- Video blocks can be reordered
+
+### Branding (enhanced)
+- Logo upload is now functional (file picker, image preview, stored as data URL in localStorage)
+- Partner photo upload is now functional (file picker, image preview, stored as data URL in localStorage)
+- Existing partner branding fields preserved (storefront name, brand presentation tagline, intro copy)
+- Presentation mode selector: partner-first, Careverse-first, co-branded
+- Uploaded logo renders in the storefront header and partner profile card
+- Uploaded partner photo renders in the About section
+
+### Persistence (temporary browser-based)
+- **localStorage** stores the complete storefront configuration: branding, positioning, selected/reordered packages, section order, creator content metadata, publish state, domain settings, and branding mode
+- **IndexedDB** stores uploaded video files and preserves their references (videoId) in the storefront configuration
+- Configuration is loaded when `/partner/store` opens
+- Changes are saved when the user clicks Save (or Cmd/Ctrl+S)
+- The public storefront reads the saved configuration from localStorage on load
+- Uploaded videos are retrieved from IndexedDB and rendered as object URLs on the public storefront
+- Everything persists across refreshes and reopening the site in the same browser
+- This is a temporary mock persistence layer designed to be replaced by the real backend/database and storage later
+- No backend required for this step
+
+### Package Identity (unchanged)
+- Package identity, pricing, benefits, and core package content remain controlled by Careverse
+- Partners can select and reorder packages but cannot edit package definitions
+- Package data comes from the centralized `mockProducts` source (Phase 11)
+- Package features and benefits are displayed as read-only with lock icons in the editor
+
+### Public Storefront (updated)
+- Reads saved storefront configuration from localStorage on page load
+- Falls back to mock data if no saved configuration exists
+- Renders sections dynamically in the exact order configured by the partner
+- Renders actual embedded videos (iframe) and uploaded videos (HTML5 video element)
+- Shows only the partner's selected packages (not all available packages)
+- Uses the partner's configured hero headline, supporting copy, CTA text, and about content
+- Displays uploaded logo and partner photo when configured
+- Footer plan links reflect the partner's selected packages
+
+### View Store
+- The "View Store" button in the store editor header always opens `/storefront`
+- The public storefront always reflects the latest saved configuration
+- No intermediate steps — one click from editor to live storefront
+
+### Data Extensions
+- New `StoreSection` type: `{ id, type: StoreSectionType, visible }` where `StoreSectionType` = `'hero' | 'creatorVideo' | 'packages' | 'benefits' | 'about'`
+- `MockStorefront` extended with optional `sections: StoreSection[]`
+- `MockCreatorContent` extended with optional `videoId` field for uploaded video references
+- New `StorefrontConfig` interface in `store-persistence.ts` for the persisted configuration shape
+- New `src/lib/store-persistence.ts` module with localStorage config functions and IndexedDB video file functions
+
+### Complete Flow
+```
+Partner dashboard → Store (sidebar) → /partner/store (editor)
+  → Edit sections, packages, branding, positioning, creator content
+  → Save (writes to localStorage + IndexedDB)
+  → View Store → /storefront (reads from localStorage + IndexedDB)
+  → Customer sees the exact configured storefront
+```
