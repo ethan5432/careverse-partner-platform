@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Mail, Send, Zap, MousePointerClick, Megaphone, Plus, Pencil, Play, Pause, Eye, Calendar, FileText, Clock } from 'lucide-react';
+import { Mail, Send, Zap, MousePointerClick, Megaphone, Plus, Pencil, Play, Pause, Eye, Calendar, FileText, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { mockEmailCampaigns, mockEmailAutomations, mockEmailTemplates, mockScheduledEmails } from '@/data/mock';
 import type { MockEmailCampaign, MockEmailAutomation, MockEmailTemplate, MockScheduledEmail } from '@/data/mock/types';
 
@@ -66,6 +66,7 @@ export default function AdminEmailsPage() {
   const [editSubject, setEditSubject] = useState('');
   const [editBody, setEditBody] = useState('');
   const [viewingScheduled, setViewingScheduled] = useState<MockScheduledEmail | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<MockEmailTemplate | null>(null);
 
   const totalSent = mockEmailCampaigns.reduce((s, c) => s + c.sentCount, 0);
   const avgOpenRate = mockEmailCampaigns.filter((c) => c.openRate > 0).reduce((s, c) => s + c.openRate, 0) / (mockEmailCampaigns.filter((c) => c.openRate > 0).length || 1);
@@ -326,6 +327,9 @@ export default function AdminEmailsPage() {
                       <Button variant="outline" size="sm" className="rounded-full border-cv-line text-xs h-7" onClick={() => openTemplateEditor(t)}>
                         <Pencil className="h-3 w-3 mr-1" /> Edit
                       </Button>
+                      <Button variant="outline" size="sm" className="rounded-full border-cv-line text-xs h-7" onClick={() => setPreviewTemplate(t)}>
+                        <Eye className="h-3 w-3 mr-1" /> Preview
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -356,14 +360,63 @@ export default function AdminEmailsPage() {
                 <label className="text-xs font-bold uppercase tracking-wider text-cv-muted block mb-1.5">Email Body</label>
                 <Textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={12} className="cv-input font-mono text-xs" />
                 <p className="text-[10px] text-cv-muted mt-1">
-                  Use <code className="bg-cv-soft px-1 rounded">{'{{partner_name}}'}</code>, <code className="bg-cv-soft px-1 rounded">{'{{commission_amount}}'}</code>, <code className="bg-cv-soft px-1 rounded">{'{{package_name}}'}</code> as merge variables.
+                  Variables: <code className="bg-cv-soft px-1 rounded">{'{{partner_name}}'}</code>, <code className="bg-cv-soft px-1 rounded">{'{{activation_link}}'}</code>, <code className="bg-cv-soft px-1 rounded">{'{{partner_portal_link}}'}</code>, <code className="bg-cv-soft px-1 rounded">{'{{storefront_link}}'}</code>, <code className="bg-cv-soft px-1 rounded">{'{{commission_amount}}'}</code>, <code className="bg-cv-soft px-1 rounded">{'{{package_name}}'}</code>
                 </p>
               </div>
             </div>
           )}
           <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => { if (editingTemplate) setPreviewTemplate(editingTemplate); }}>Preview</Button>
             <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => setEditingTemplate(null)}>Cancel</Button>
             <Button className="cv-btn-primary rounded-full" onClick={saveTemplate}>Save template</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template preview dialog */}
+      <Dialog open={!!previewTemplate} onOpenChange={(open) => !open && setPreviewTemplate(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-cv-ink">Email Preview</DialogTitle>
+            <DialogDescription className="text-sm text-cv-muted">{previewTemplate?.name}</DialogDescription>
+          </DialogHeader>
+          {previewTemplate && (
+            <div className="space-y-3 pt-1 max-h-[60vh] overflow-y-auto">
+              <div className="rounded-lg border border-cv-line">
+                <div className="border-b border-cv-line bg-cv-soft px-4 py-2.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Subject</p>
+                  <p className="text-sm font-bold text-cv-ink mt-0.5">
+                    {renderEmailPreview(previewTemplate.subject, previewTemplate.trigger)}
+                  </p>
+                </div>
+                <div className="px-4 py-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Body</p>
+                  <div className="rounded-lg bg-white border border-cv-line p-4">
+                    <pre className="whitespace-pre-wrap text-sm text-cv-body font-sans leading-relaxed">
+{renderEmailPreview(previewTemplate.body, previewTemplate.trigger)}
+                    </pre>
+                  </div>
+                </div>
+                <div className="border-t border-cv-line bg-cv-soft px-4 py-2.5">
+                  <p className="text-[10px] text-cv-muted">Preview uses sample data. Actual variables will be replaced with real partner data when sent.</p>
+                </div>
+              </div>
+              {previewTemplate.trigger.includes('approved') && (
+                <div className={cn('rounded-lg p-3 flex items-start gap-2', previewTemplate.enabled ? 'bg-emerald-50' : 'bg-amber-50')}>
+                  {previewTemplate.enabled
+                    ? <CheckCircle2 className="h-4 w-4 text-cv-good shrink-0 mt-0.5" />
+                    : <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />}
+                  <p className="text-xs text-cv-body">
+                    {previewTemplate.enabled
+                      ? 'This automation is enabled. Approval emails will be sent automatically when a partner application is approved.'
+                      : 'This automation is disabled. Approval emails will NOT be sent when a partner application is approved. Enable it in the Automations tab.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => setPreviewTemplate(null)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -407,4 +460,29 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <span className="text-sm font-bold text-cv-ink text-right">{value}</span>
     </div>
   );
+}
+
+function renderEmailPreview(text: string, trigger: string): string {
+  const isApproval = trigger.toLowerCase().includes('approved');
+  const sampleVars: Record<string, string> = {
+    partner_name: 'Marcus Johnson',
+    activation_link: 'https://careverse.ai/activate?token=abc123',
+    partner_portal_link: 'https://careverse.ai/partner',
+    storefront_link: 'https://careverse.ai/s/marcus',
+    commission_amount: '$17.80',
+    package_name: 'Family Plus',
+    customer_name: 'Jennifer Smith',
+    storefront_name: 'Marcus Care Partners',
+    storefront_url: 'https://careverse.ai/s/marcus',
+    payout_amount: '$1,240',
+    payout_method: 'Bank Transfer',
+    payout_reference: 'PAY-2026-0901',
+  };
+  let result = text.replace(/\{\{(\w+)\}\}/g, (_, key) => sampleVars[key] || `{{${key}}}`);
+  if (isApproval) {
+    result = result.replace(/\{\{#if\s+\w+\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, content) => content.trim());
+  } else {
+    result = result.replace(/\{\{#if\s+\w+\}\}([\s\S]*?)\{\{\/if\}\}/g, '');
+  }
+  return result;
 }

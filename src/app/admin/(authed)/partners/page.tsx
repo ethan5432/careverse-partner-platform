@@ -16,13 +16,14 @@ import { cn } from '@/lib/utils';
 import {
   Users, Search, UserPlus, ArrowLeftRight, DollarSign,
   Store, MessageSquare, StickyNote, Settings as SettingsIcon, Activity as ActivityIcon,
-  Send, ExternalLink, Pencil, Check,
+  Send, ExternalLink, Pencil, Check, Mail, Clock, AlertCircle, CheckCircle2, XCircle,
 } from 'lucide-react';
 import {
   mockPartners, mockConversions, mockCommissions, mockStorefronts,
   mockConversations, mockPartnerNotes, getPartnerActivity, adminDashboardStats,
+  mockEmailTemplates, mockEmailAutomations,
 } from '@/data/mock';
-import type { MockPartner, PartnerType, PartnerStatus, MockPartnerNote, MockMessage } from '@/data/mock/types';
+import type { MockPartner, PartnerType, PartnerStatus, MockPartnerNote, MockMessage, ApprovalEmailStatus } from '@/data/mock/types';
 
 const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -73,6 +74,26 @@ export default function AdminPartnersPage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [approvalEmailStatuses, setApprovalEmailStatuses] = useState<Record<string, ApprovalEmailStatus>>({});
+  const [approvalActivity, setApprovalActivity] = useState<Record<string, { description: string; date: string }[]>>({});
+
+  const handleApprove = (partner: MockPartner) => {
+    const approvalTemplate = mockEmailTemplates.find((t) => t.trigger.toLowerCase().includes('approved'));
+    const approvalAutomation = mockEmailAutomations.find((a) => a.trigger.toLowerCase().includes('approved'));
+    const isConfigured = approvalTemplate?.enabled && approvalAutomation?.status === 'ACTIVE';
+
+    const emailStatus: ApprovalEmailStatus = isConfigured ? 'QUEUED' : 'NOT_CONFIGURED';
+    setApprovalEmailStatuses((prev) => ({ ...prev, [partner.id]: emailStatus }));
+
+    const now = new Date().toISOString().slice(0, 10);
+    const activities = [
+      { description: `Partner application approved by admin`, date: now },
+      ...(isConfigured
+        ? [{ description: `Approval email queued — subject: &ldquo;${approvalTemplate?.subject}&rdquo;`, date: now }]
+        : [{ description: `Approval email NOT sent — automation not configured`, date: now }]),
+    ];
+    setApprovalActivity((prev) => ({ ...prev, [partner.id]: [...(prev[partner.id] || []), ...activities] }));
+  };
 
   const filtered = useMemo(() => {
     return mockPartners.filter((p) => {
@@ -225,12 +246,26 @@ export default function AdminPartnersPage() {
       </Card>
 
       {/* Partner detail dialog */}
-      <PartnerDialog partner={selectedPartner} onClose={() => setSelectedId(null)} />
+      <PartnerDialog
+        partner={selectedPartner}
+        onClose={() => setSelectedId(null)}
+        approvalEmailStatus={selectedPartner ? approvalEmailStatuses[selectedPartner.id] : undefined}
+        onApprove={handleApprove}
+        extraActivity={selectedPartner ? approvalActivity[selectedPartner.id] || [] : []}
+      />
     </div>
   );
 }
 
-function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onClose: () => void }) {
+function PartnerDialog({
+  partner, onClose, approvalEmailStatus, onApprove, extraActivity,
+}: {
+  partner: MockPartner | null;
+  onClose: () => void;
+  approvalEmailStatus?: ApprovalEmailStatus;
+  onApprove: (partner: MockPartner) => void;
+  extraActivity: { description: string; date: string }[];
+}) {
   const open = !!partner;
 
   const partnerConversions = useMemo(
@@ -352,6 +387,36 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
                     <DetailField label="Storefront" value={partner.storefrontName} />
                   </div>
 
+                  {/* Approval action */}
+                  <div className="mt-4 rounded-xl border border-cv-line p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Application</p>
+                        <p className="text-sm font-bold text-cv-ink mt-0.5">
+                          {partner.status === 'PENDING' || partner.status === 'INCOMPLETE'
+                            ? 'Awaiting approval'
+                            : partner.status === 'ACTIVE'
+                              ? 'Approved'
+                              : partner.status === 'SUSPENDED'
+                                ? 'Suspended'
+                                : 'Unknown'}
+                        </p>
+                      </div>
+                      {(partner.status === 'PENDING' || partner.status === 'INCOMPLETE') && !approvalEmailStatus && (
+                        <Button
+                          className="bg-cv-good text-white hover:bg-cv-good/90 rounded-full text-sm font-bold"
+                          onClick={() => onApprove(partner)}
+                        >
+                          <Check className="h-4 w-4" /> Approve
+                        </Button>
+                      )}
+                    </div>
+
+                    {approvalEmailStatus && (
+                      <ApprovalEmailBanner status={approvalEmailStatus} />
+                    )}
+                  </div>
+
                   <div className="mt-4 rounded-xl bg-cv-soft p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Commercial Summary</p>
                     <div className="grid grid-cols-3 gap-3">
@@ -373,12 +438,19 @@ function PartnerDialog({ partner, onClose }: { partner: MockPartner | null; onCl
 
                 {/* Activity */}
                 <TabsContent value="activity" className="mt-4">
-                  {partnerActivity.length === 0 ? (
+                  {(partnerActivity.length === 0 && extraActivity.length === 0) ? (
                     <EmptyState icon={ActivityIcon} title="No activity" description="Activity will appear here as the partner takes actions." />
                   ) : (
                     <div className="relative pl-6">
                       <div className="absolute left-2 top-1 bottom-1 w-px bg-cv-line" />
                       <div className="space-y-4">
+                        {extraActivity.map((item, i) => (
+                          <div key={`extra-${i}`} className="relative">
+                            <div className="absolute -left-[18px] top-1 h-3 w-3 rounded-full border-2 border-white bg-cv-good" />
+                            <p className="text-sm font-bold text-cv-ink" dangerouslySetInnerHTML={{ __html: item.description }} />
+                            <p className="text-xs text-cv-muted mt-0.5">{fmtDate(item.date)}</p>
+                          </div>
+                        ))}
                         {partnerActivity.map((item) => (
                           <div key={item.id} className="relative">
                             <div className={cn('absolute -left-[18px] top-1 h-3 w-3 rounded-full border-2 border-white', activityDotColor[item.type] || 'bg-cv-muted')} />
@@ -590,6 +662,42 @@ function DetailField({ label, value }: { label: string; value: React.ReactNode }
     <div className="rounded-xl bg-cv-soft p-3">
       <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">{label}</p>
       <div className="text-sm font-bold text-cv-ink">{value}</div>
+    </div>
+  );
+}
+
+function ApprovalEmailBanner({ status }: { status: ApprovalEmailStatus }) {
+  const config = {
+    NOT_CONFIGURED: {
+      icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50',
+      label: 'Approval email not configured',
+      desc: 'No approval email automation is enabled. Go to Emails > Automations to configure it.',
+    },
+    QUEUED: {
+      icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50',
+      label: 'Approval email queued',
+      desc: 'The approval email has been queued and will be sent to the partner automatically.',
+    },
+    SENT: {
+      icon: CheckCircle2, color: 'text-cv-good', bg: 'bg-emerald-50',
+      label: 'Approval email sent',
+      desc: 'The approval email was successfully sent to the partner.',
+    },
+    FAILED: {
+      icon: XCircle, color: 'text-cv-red', bg: 'bg-red-50',
+      label: 'Approval email failed',
+      desc: 'The approval email could not be sent. Check the email configuration and try again.',
+    },
+  }[status];
+
+  const Icon = config.icon;
+  return (
+    <div className={cn('rounded-lg p-3 flex items-start gap-2', config.bg)}>
+      <Icon className={cn('h-4 w-4 shrink-0 mt-0.5', config.color)} />
+      <div>
+        <p className={cn('text-xs font-bold', config.color)}>{config.label}</p>
+        <p className="text-xs text-cv-body mt-0.5">{config.desc}</p>
+      </div>
     </div>
   );
 }
