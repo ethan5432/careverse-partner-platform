@@ -12,6 +12,10 @@ import type {
   CreatorProfile,
   StorefrontAccessState,
   AffiliateLink,
+  BusinessProfile,
+  BusinessEntityType,
+  BusinessCategory,
+  BusinessOperatingDuration,
 } from '@/data/mock/types';
 import {
   loadCreatorProfiles,
@@ -38,11 +42,24 @@ interface SignupData {
   website?: string;
   socialPlatform?: string;
   socialHandle?: string;
+  creatorProfiles?: CreatorProfile[];
   legalBusinessName?: string;
   brandName?: string;
+  businessEntityType?: BusinessEntityType;
+  businessRegistrationNumber?: string;
+  registrationStateProvinceCountry?: string;
   businessWebsite?: string;
+  businessMailingAddress?: string;
   businessDescription?: string;
-  creatorProfiles?: CreatorProfile[];
+  businessCategory?: BusinessCategory;
+  businessOperatingDuration?: BusinessOperatingDuration;
+  bookOfBusinessSize?: string;
+  estimatedMonthlyVolume?: string;
+  expectedPerformance?: string;
+  howCustomersReachCareverse?: string;
+  paidAdvertising?: string;
+  decisionMakingAuthority?: string;
+  businessProfiles?: BusinessProfile[];
 }
 
 interface MockAuthContextValue {
@@ -239,10 +256,24 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       website: data.website,
       socialPlatform: data.socialPlatform,
       socialHandle: data.socialHandle,
+      creatorProfiles: data.creatorProfiles,
       legalBusinessName: data.legalBusinessName,
       brandName: data.brandName,
+      businessEntityType: data.businessEntityType,
+      businessRegistrationNumber: data.businessRegistrationNumber,
+      registrationStateProvinceCountry: data.registrationStateProvinceCountry,
       businessWebsite: data.businessWebsite,
+      businessMailingAddress: data.businessMailingAddress,
       businessDescription: data.businessDescription,
+      businessCategory: data.businessCategory,
+      businessOperatingDuration: data.businessOperatingDuration,
+      bookOfBusinessSize: data.bookOfBusinessSize,
+      estimatedMonthlyVolume: data.estimatedMonthlyVolume,
+      expectedPerformance: data.expectedPerformance,
+      howCustomersReachCareverse: data.howCustomersReachCareverse,
+      paidAdvertising: data.paidAdvertising,
+      decisionMakingAuthority: data.decisionMakingAuthority,
+      businessProfiles: data.businessProfiles,
       applicationState: 'SUBMITTED',
       submittedAt: new Date().toISOString(),
     };

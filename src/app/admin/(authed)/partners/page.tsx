@@ -25,7 +25,7 @@ import {
   mockConversations, mockPartnerNotes, getPartnerActivity, adminDashboardStats,
   mockEmailTemplates, mockEmailAutomations,
 } from '@/data/mock';
-import type { MockPartner, PartnerType, PartnerStatus, MockPartnerNote, MockMessage, ApprovalEmailStatus, StorefrontApplication, StorefrontApplicationStatus } from '@/data/mock/types';
+import type { MockPartner, PartnerType, PartnerStatus, MockPartnerNote, MockMessage, ApprovalEmailStatus, StorefrontApplication, StorefrontApplicationStatus, PartnerApplication, BusinessEntityType, BusinessCategory, BusinessOperatingDuration } from '@/data/mock/types';
 import {
   loadStorefrontApplications,
   updateStorefrontApplicationStatus,
@@ -325,6 +325,28 @@ export default function AdminPartnersPage() {
   );
 }
 
+const businessEntityTypeLabels: Record<BusinessEntityType, string> = {
+  LLC: 'LLC', CORPORATION: 'Corporation', PARTNERSHIP: 'Partnership', SOLE_PROPRIETOR: 'Sole proprietor', NONPROFIT: 'Nonprofit', OTHER: 'Other',
+};
+const businessCategoryLabels: Record<BusinessCategory, string> = {
+  BENEFITS_HR: 'Benefits / HR', FINANCIAL_SERVICES: 'Financial services', INSURANCE_BROKER: 'Insurance / broker', CARE_HEALTHCARE_SERVICES: 'Care / healthcare services', WELLNESS: 'Wellness', PROFESSIONAL_SERVICES: 'Professional services', MARKETING_AGENCY: 'Marketing / agency', COMMUNITY_MEMBERSHIP_ORGANIZATION: 'Community / membership organization', OTHER: 'Other',
+};
+const operatingDurationLabels: Record<BusinessOperatingDuration, string> = {
+  LESS_THAN_1_YEAR: 'Less than 1 year', '1_TO_2_YEARS': '1–2 years', '3_TO_5_YEARS': '3–5 years', '6_TO_10_YEARS': '6–10 years', '10_PLUS_YEARS': '10+ years',
+};
+
+function loadApplicationByEmail(email: string): PartnerApplication | null {
+  try {
+    const raw = localStorage.getItem('careverse_mock_application');
+    if (!raw) return null;
+    const app = JSON.parse(raw) as PartnerApplication;
+    if (app.email === email) return app;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function PartnerDialog({
   partner, onClose, approvalEmailStatus, onApprove, extraActivity,
 }: {
@@ -432,6 +454,9 @@ function PartnerDialog({
               <Tabs defaultValue="overview">
                 <TabsList className="bg-cv-soft h-auto p-1 flex flex-wrap gap-1">
                   <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+                  {partner.type === 'BUSINESS' && (
+                    <TabsTrigger value="application" className="text-xs">Application</TabsTrigger>
+                  )}
                   <TabsTrigger value="activity" className="text-xs">Activity</TabsTrigger>
                   <TabsTrigger value="conversions" className="text-xs">Conversions</TabsTrigger>
                   <TabsTrigger value="commissions" className="text-xs">Commissions</TabsTrigger>
@@ -504,6 +529,13 @@ function PartnerDialog({
                     </div>
                   </div>
                 </TabsContent>
+
+                {/* Application (Business) */}
+                {partner.type === 'BUSINESS' && (
+                  <TabsContent value="application" className="mt-4">
+                    <BusinessApplicationTab email={partner.email} />
+                  </TabsContent>
+                )}
 
                 {/* Activity */}
                 <TabsContent value="activity" className="mt-4">
@@ -882,6 +914,83 @@ function CommissionTable({ commissions }: { commissions: typeof mockCommissions 
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function BusinessApplicationTab({ email }: { email: string }) {
+  const [app, setApp] = useState<PartnerApplication | null>(null);
+
+  useEffect(() => {
+    setApp(loadApplicationByEmail(email));
+  }, [email]);
+
+  if (!app) {
+    return (
+      <EmptyState
+        icon={FileText}
+        title="No application on file"
+        description="This partner's application data is not available in this session."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Business Information */}
+      <div className="space-y-2">
+        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Business Information</p>
+        <DetailField label="Legal Business Name" value={app.legalBusinessName || '—'} />
+        <DetailField label="Brand / Company Name" value={app.brandName || '—'} />
+        <DetailField label="Entity Type" value={app.businessEntityType ? businessEntityTypeLabels[app.businessEntityType] : '—'} />
+        <DetailField label="Registration Number" value={app.businessRegistrationNumber || '—'} />
+        <DetailField label="Registration State / Province / Country" value={app.registrationStateProvinceCountry || '—'} />
+        <DetailField label="Business Website" value={app.businessWebsite || '—'} />
+        <DetailField label="Mailing Address" value={app.businessMailingAddress || '—'} />
+        <DetailField label="Category" value={app.businessCategory ? businessCategoryLabels[app.businessCategory] : '—'} />
+        <DetailField label="Operating Duration" value={app.businessOperatingDuration ? operatingDurationLabels[app.businessOperatingDuration] : '—'} />
+      </div>
+
+      {app.businessDescription && (
+        <div className="rounded-xl bg-cv-soft p-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">What the business does</p>
+          <p className="text-sm text-cv-body">{app.businessDescription}</p>
+        </div>
+      )}
+
+      {/* Business Profiles */}
+      {app.businessProfiles && app.businessProfiles.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Public Business Profiles</p>
+          {app.businessProfiles.map(p => (
+            <div key={p.id} className="flex items-center justify-between rounded-lg border border-cv-line px-3 py-2">
+              <span className="text-sm font-bold text-cv-ink">{p.platform}</span>
+              {p.profileUrl ? (
+                <a href={p.profileUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-cv-ink hover:text-cv-red flex items-center gap-1">
+                  Visit <ExternalLink className="h-3 w-3" />
+                </a>
+              ) : (
+                <span className="text-xs text-cv-muted">No URL</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Partnership Questions */}
+      <div className="space-y-2">
+        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Business & Partnership Questions</p>
+        <DetailField label="Book of Business Size" value={app.bookOfBusinessSize || '—'} />
+        <DetailField label="Estimated Monthly Volume" value={app.estimatedMonthlyVolume || '—'} />
+        <DetailField label="Expected Performance" value={app.expectedPerformance || '—'} />
+        <DetailField label="How Customers Reach Careverse" value={app.howCustomersReachCareverse || '—'} />
+        <DetailField label="Paid Advertising" value={app.paidAdvertising || '—'} />
+        <DetailField label="Decision-Making Authority" value={app.decisionMakingAuthority || '—'} />
+      </div>
+
+      <div className="text-xs text-cv-muted pt-2">
+        Application submitted on {fmtDate(app.submittedAt)}
+      </div>
+    </div>
   );
 }
 
