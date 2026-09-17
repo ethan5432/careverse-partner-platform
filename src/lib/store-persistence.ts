@@ -6,6 +6,30 @@ const VIDEO_DB_NAME = 'careverse_videos';
 const VIDEO_STORE_NAME = 'videos';
 const DB_VERSION = 1;
 
+export type BrandMode = 'white-label' | 'co-branded' | 'careverse-branded';
+
+export interface FontConfig {
+  family: string;
+  weight: string;
+}
+
+export interface StoreBranding {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  surfaceColor: string;
+  primaryTextColor: string;
+  mutedTextColor: string;
+  borderColor: string;
+  buttonTextColor: string;
+  headingFont: string;
+  bodyFont: string;
+  headingWeight: string;
+  bodyWeight: string;
+  buttonWeight: string;
+}
+
 export interface StorefrontConfig {
   id: string;
   partnerId: string;
@@ -13,7 +37,10 @@ export interface StorefrontConfig {
   url: string;
   status: 'LIVE' | 'DRAFT';
   logo: string;
+  favicon: string;
   partnerPhoto: string;
+  heroImage: string;
+  sectionImages: Record<string, string>;
   introCopy: string;
   brandPresentation: string;
   heroHeadline: string;
@@ -35,9 +62,52 @@ export interface StorefrontConfig {
     order: number;
     sectionId: string;
   }[];
-  brandingMode: 'partner-first' | 'careverse-first' | 'co-branded';
+  brandMode: BrandMode;
+  branding: StoreBranding;
+  showProfile: boolean;
+  showVerifiedBadge: boolean;
+  showPoweredByFooter: boolean;
+  showCareverseInHeader: boolean;
+  showCareverseInFooter: boolean;
   savedAt: string;
 }
+
+export const FONT_OPTIONS = [
+  { label: 'Inter', value: 'Inter, sans-serif', preview: 'Aa' },
+  { label: 'Georgia', value: 'Georgia, serif', preview: 'Aa' },
+  { label: 'Poppins', value: 'Poppins, sans-serif', preview: 'Aa' },
+  { label: 'Playfair Display', value: '"Playfair Display", serif', preview: 'Aa' },
+  { label: 'Roboto', value: 'Roboto, sans-serif', preview: 'Aa' },
+  { label: 'Lora', value: 'Lora, serif', preview: 'Aa' },
+  { label: 'Montserrat', value: 'Montserrat, sans-serif', preview: 'Aa' },
+  { label: 'Source Sans Pro', value: '"Source Sans Pro", sans-serif', preview: 'Aa' },
+] as const;
+
+export const FONT_WEIGHTS = [
+  { label: 'Light (300)', value: '300' },
+  { label: 'Regular (400)', value: '400' },
+  { label: 'Medium (500)', value: '500' },
+  { label: 'Semi-Bold (600)', value: '600' },
+  { label: 'Bold (700)', value: '700' },
+  { label: 'Extra-Bold (800)', value: '800' },
+] as const;
+
+export const DEFAULT_BRANDING: StoreBranding = {
+  primaryColor: '#18191D',
+  secondaryColor: '#E1062C',
+  accentColor: '#0B9B6B',
+  backgroundColor: '#F6F3EE',
+  surfaceColor: '#FFFFFF',
+  primaryTextColor: '#18191D',
+  mutedTextColor: '#6B6E76',
+  borderColor: '#E6E1D8',
+  buttonTextColor: '#FFFFFF',
+  headingFont: 'Inter, sans-serif',
+  bodyFont: 'Inter, sans-serif',
+  headingWeight: '700',
+  bodyWeight: '400',
+  buttonWeight: '800',
+};
 
 function defaultConfig(): StorefrontConfig {
   const sf = currentPartnerStorefront;
@@ -48,7 +118,10 @@ function defaultConfig(): StorefrontConfig {
     url: sf.url,
     status: sf.status,
     logo: sf.logo || '',
+    favicon: '',
     partnerPhoto: sf.partnerPhoto || '',
+    heroImage: '',
+    sectionImages: {},
     introCopy: sf.introCopy,
     brandPresentation: sf.brandPresentation || '',
     heroHeadline: sf.heroHeadline || 'Quality care for your family',
@@ -76,7 +149,13 @@ function defaultConfig(): StorefrontConfig {
       order: c.order,
       sectionId: c.sectionId || `sec-creator-${i}`,
     })),
-    brandingMode: 'co-branded',
+    brandMode: 'co-branded',
+    branding: { ...DEFAULT_BRANDING },
+    showProfile: true,
+    showVerifiedBadge: true,
+    showPoweredByFooter: true,
+    showCareverseInHeader: true,
+    showCareverseInFooter: true,
     savedAt: new Date().toISOString(),
   };
 }
@@ -86,8 +165,14 @@ export function loadStorefrontConfig(): StorefrontConfig {
   try {
     const raw = localStorage.getItem(STORE_CONFIG_KEY);
     if (!raw) return defaultConfig();
-    const parsed = JSON.parse(raw) as StorefrontConfig;
-    return { ...defaultConfig(), ...parsed };
+    const parsed = JSON.parse(raw) as Partial<StorefrontConfig>;
+    const defaults = defaultConfig();
+    return {
+      ...defaults,
+      ...parsed,
+      branding: { ...defaults.branding, ...(parsed.branding || {}) },
+      sectionImages: { ...(parsed.sectionImages || {}) },
+    };
   } catch {
     return defaultConfig();
   }

@@ -76,7 +76,7 @@ export type ContentSource = 'EMBED' | 'UPLOAD';
 export type ContentPlacement = 'TOP' | 'MIDDLE' | 'BOTTOM';
 export type ContentLayout = 'ONE_COLUMN' | 'TWO_COLUMN' | 'THREE_COLUMN';
 
-export type StoreSectionType = 'hero' | 'creatorVideo' | 'packages' | 'benefits' | 'about';
+export type StoreSectionType = 'hero' | 'creatorVideo' | 'packages' | 'benefits' | 'about' | 'footer';
 
 export interface StoreSection {
   id: string;

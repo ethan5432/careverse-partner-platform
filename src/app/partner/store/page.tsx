@@ -17,8 +17,9 @@ import {
 import { mockProducts, currentPartnerStorefront, partnerDashboardStats } from '@/data/mock';
 import type { StoreSection, StoreSectionType } from '@/data/mock/types';
 import {
-  loadStorefrontConfig, saveStorefrontConfig, StorefrontConfig,
+  loadStorefrontConfig, saveStorefrontConfig, StorefrontConfig, StoreBranding,
   storeVideoFile, getVideoObjectURL, deleteVideoFile,
+  FONT_OPTIONS, FONT_WEIGHTS, DEFAULT_BRANDING, BrandMode,
 } from '@/lib/store-persistence';
 import { cn } from '@/lib/utils';
 
@@ -36,12 +37,25 @@ const tabs: { value: BuilderTab; label: string; icon: typeof Package }[] = [
   { value: 'publish', label: 'Publish', icon: Rocket },
 ];
 
+const colorFields: { key: keyof StoreBranding; label: string }[] = [
+  { key: 'primaryColor', label: 'Primary' },
+  { key: 'secondaryColor', label: 'Secondary' },
+  { key: 'accentColor', label: 'Accent' },
+  { key: 'backgroundColor', label: 'Background' },
+  { key: 'surfaceColor', label: 'Surface / Card' },
+  { key: 'primaryTextColor', label: 'Primary Text' },
+  { key: 'mutedTextColor', label: 'Muted Text' },
+  { key: 'borderColor', label: 'Border' },
+  { key: 'buttonTextColor', label: 'Button Text' },
+];
+
 const sectionTypeLabels: Record<StoreSectionType, string> = {
   hero: 'Hero',
   creatorVideo: 'Creator Video / Content',
   packages: 'Packages',
   benefits: 'Benefits',
   about: 'About',
+  footer: 'Footer',
 };
 
 const sectionTypeIcons: Record<StoreSectionType, typeof Package> = {
@@ -50,6 +64,7 @@ const sectionTypeIcons: Record<StoreSectionType, typeof Package> = {
   packages: Package,
   benefits: Star,
   about: LayoutDashboard,
+  footer: Globe,
 };
 
 function fmtMoney(n: number) {
@@ -74,6 +89,20 @@ function gridColsFor(n: number): string {
   return 'grid-cols-1';
 }
 
+function ToggleRow({ label, desc, value, onChange }: { label: string; desc: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button onClick={() => onChange(!value)} className="w-full flex items-start gap-3 text-left rounded-xl border border-cv-line p-3 hover:bg-cv-soft/50 transition-colors">
+      <div className={cn('flex h-5 w-5 items-center justify-center rounded-md border-2 shrink-0 mt-0.5 transition-all', value ? 'border-cv-ink bg-cv-ink' : 'border-cv-line')}>
+        {value && <Check className="h-3 w-3 text-white" />}
+      </div>
+      <div className="flex-1">
+        <p className="text-sm font-bold text-cv-ink">{label}</p>
+        <p className="text-xs text-cv-muted">{desc}</p>
+      </div>
+    </button>
+  );
+}
+
 export default function PartnerStorePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<BuilderTab>('overview');
@@ -87,7 +116,16 @@ export default function PartnerStorePage() {
   const [partnerPhoto, setPartnerPhoto] = useState('');
   const [introCopy, setIntroCopy] = useState('');
   const [brandPresentation, setBrandPresentation] = useState('');
-  const [brandingMode, setBrandingMode] = useState<'partner-first' | 'careverse-first' | 'co-branded'>('co-branded');
+  const [brandingMode, setBrandingMode] = useState<BrandMode>('co-branded');
+  const [branding, setBranding] = useState<StoreBranding>({ ...DEFAULT_BRANDING });
+  const [favicon, setFavicon] = useState('');
+  const [heroImage, setHeroImage] = useState('');
+  const [sectionImages, setSectionImages] = useState<Record<string, string>>({});
+  const [showProfile, setShowProfile] = useState(true);
+  const [showVerifiedBadge, setShowVerifiedBadge] = useState(true);
+  const [showPoweredByFooter, setShowPoweredByFooter] = useState(true);
+  const [showCareverseInHeader, setShowCareverseInHeader] = useState(true);
+  const [showCareverseInFooter, setShowCareverseInFooter] = useState(true);
   const [heroHeadline, setHeroHeadline] = useState('');
   const [heroSupportingCopy, setHeroSupportingCopy] = useState('');
   const [ctaText, setCtaText] = useState('');
@@ -106,6 +144,8 @@ export default function PartnerStorePage() {
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const faviconInputRef = useRef<HTMLInputElement | null>(null);
+  const heroImageInputRef = useRef<HTMLInputElement | null>(null);
 
   // Load saved config on mount
   useEffect(() => {
@@ -115,7 +155,16 @@ export default function PartnerStorePage() {
     setPartnerPhoto(config.partnerPhoto);
     setIntroCopy(config.introCopy);
     setBrandPresentation(config.brandPresentation);
-    setBrandingMode(config.brandingMode);
+    setBrandingMode(config.brandMode);
+    setBranding(config.branding);
+    setFavicon(config.favicon);
+    setHeroImage(config.heroImage);
+    setSectionImages(config.sectionImages);
+    setShowProfile(config.showProfile);
+    setShowVerifiedBadge(config.showVerifiedBadge);
+    setShowPoweredByFooter(config.showPoweredByFooter);
+    setShowCareverseInHeader(config.showCareverseInHeader);
+    setShowCareverseInFooter(config.showCareverseInFooter);
     setHeroHeadline(config.heroHeadline);
     setHeroSupportingCopy(config.heroSupportingCopy);
     setCtaText(config.ctaText);
@@ -150,7 +199,10 @@ export default function PartnerStorePage() {
     url: currentPartnerStorefront.url,
     status: publishStatus,
     logo,
+    favicon,
     partnerPhoto,
+    heroImage,
+    sectionImages,
     introCopy,
     brandPresentation,
     heroHeadline,
@@ -162,11 +214,18 @@ export default function PartnerStorePage() {
     selectedPackages,
     sections,
     creatorContent: contentBlocks,
-    brandingMode,
+    brandMode: brandingMode,
+    branding,
+    showProfile,
+    showVerifiedBadge,
+    showPoweredByFooter,
+    showCareverseInHeader,
+    showCareverseInFooter,
     savedAt: new Date().toISOString(),
-  }), [storefrontName, logo, partnerPhoto, introCopy, brandPresentation, brandingMode,
+  }), [storefrontName, logo, favicon, partnerPhoto, heroImage, sectionImages, introCopy, brandPresentation, brandingMode, branding,
        heroHeadline, heroSupportingCopy, ctaText, aboutContent, customDomain,
-       domainStatus, selectedPackages, sections, contentBlocks, publishStatus]);
+       domainStatus, selectedPackages, sections, contentBlocks, publishStatus,
+       showProfile, showVerifiedBadge, showPoweredByFooter, showCareverseInHeader, showCareverseInFooter]);
 
   const handleSave = () => {
     saveStorefrontConfig(buildConfig());
@@ -346,6 +405,30 @@ export default function PartnerStorePage() {
     };
     reader.readAsDataURL(file);
   };
+
+  const updateBranding = (key: keyof StoreBranding, value: string) => {
+    setBranding(prev => ({ ...prev, [key]: value }));
+    markDirty();
+  };
+
+  const brandingCssVars: React.CSSProperties = {
+    ['--ink' as string]: branding.primaryColor,
+    ['--body' as string]: branding.mutedTextColor,
+    ['--muted' as string]: branding.mutedTextColor,
+    ['--cream' as string]: branding.backgroundColor,
+    ['--soft' as string]: branding.backgroundColor,
+    ['--white' as string]: branding.surfaceColor,
+    ['--line' as string]: branding.borderColor,
+    ['--red' as string]: branding.secondaryColor,
+    ['--red-deep' as string]: branding.secondaryColor,
+    ['--night' as string]: branding.primaryColor,
+    ['--night-text' as string]: branding.mutedTextColor,
+    ['--good' as string]: branding.accentColor,
+  };
+
+  const isWhiteLabel = brandingMode === 'white-label';
+  const isCareverseBranded = brandingMode === 'careverse-branded';
+  const isCoBranded = brandingMode === 'co-branded';
 
   // ─── Save keyboard shortcut ──────────────────────────────────────────────
 
@@ -609,7 +692,82 @@ export default function PartnerStorePage() {
 
       {/* ─── Branding tab ─── */}
       {activeTab === 'branding' && (
-        <div className="max-w-lg space-y-4">
+        <div className="max-w-2xl space-y-4">
+          {/* Brand Mode */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Store Brand Mode</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-cv-muted">Control how your storefront presents branding alongside Careverse.</p>
+              {([
+                { value: 'white-label' as BrandMode, label: 'White-Label', desc: 'Only your brand is visible. No Careverse branding anywhere in the customer-facing presentation.' },
+                { value: 'co-branded' as BrandMode, label: 'Co-Branded', desc: 'Your brand is primary. Careverse appears in small controlled places you choose below.' },
+                { value: 'careverse-branded' as BrandMode, label: 'Careverse-Branded', desc: 'Full Careverse-forward presentation with your partner identity.' },
+              ]).map((mode) => (
+                <button
+                  key={mode.value}
+                  onClick={() => { setBrandingMode(mode.value); markDirty(); }}
+                  className={cn(
+                    'w-full text-left rounded-xl border p-3 transition-all',
+                    brandingMode === mode.value ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink' : 'border-cv-line hover:bg-cv-soft/50'
+                  )}
+                >
+                  <p className="text-sm font-bold text-cv-ink">{mode.label}</p>
+                  <p className="text-xs text-cv-muted">{mode.desc}</p>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Careverse Branding Controls — only for co-branded and careverse-branded */}
+          {!isWhiteLabel && (
+            <Card className="cv-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-bold text-cv-ink">Careverse Branding Options</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-cv-muted">Choose where Careverse branding appears. These are separate from required product and legal information.</p>
+
+                <ToggleRow
+                  label="Show Careverse in header"
+                  desc="Display a small Careverse mark next to your brand in the store header."
+                  value={showCareverseInHeader}
+                  onChange={(v) => { setShowCareverseInHeader(v); markDirty(); }}
+                />
+                <ToggleRow
+                  label="Show Careverse in footer"
+                  desc="Display Careverse branding in the footer area."
+                  value={showCareverseInFooter}
+                  onChange={(v) => { setShowCareverseInFooter(v); markDirty(); }}
+                />
+                <ToggleRow
+                  label="Show Careverse Verified profile"
+                  desc="Show a partner profile card with optional Careverse Verified treatment."
+                  value={showProfile}
+                  onChange={(v) => { setShowProfile(v); markDirty(); }}
+                />
+                {showProfile && (
+                  <div className="ml-4 mt-2">
+                    <ToggleRow
+                      label="Show Careverse Verified badge"
+                      desc="Display the verified badge on your profile card."
+                      value={showVerifiedBadge}
+                      onChange={(v) => { setShowVerifiedBadge(v); markDirty(); }}
+                    />
+                  </div>
+                )}
+                <ToggleRow
+                  label="Show Powered by Careverse in footer"
+                  desc="Independent from the verified profile — controls only the footer attribution."
+                  value={showPoweredByFooter}
+                  onChange={(v) => { setShowPoweredByFooter(v); markDirty(); }}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Brand Identity */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-bold text-cv-ink">Brand Identity</CardTitle>
@@ -621,38 +779,72 @@ export default function PartnerStorePage() {
                 <Input value={storefrontName} onChange={(e) => { setStorefrontName(e.target.value); markDirty(); }} className="cv-input" />
               </div>
 
-              {/* Logo upload */}
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Logo</Label>
-                <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-xl border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
-                    {logo ? <img src={logo} alt="Logo" className="h-full w-full object-contain" /> : <span className="text-xl font-extrabold text-cv-ink">{partnerInitial}</span>}
+              {/* Logo + Favicon */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Logo</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
+                      {logo ? <img src={logo} alt="Logo" className="h-full w-full object-contain" /> : <span className="text-lg font-extrabold text-cv-ink">{partnerInitial}</span>}
+                    </div>
+                    <div className="flex-1">
+                      <input ref={logoInputRef} type="file" accept="image/png,image/svg+xml,image/jpeg" className="hidden" onChange={(e) => handleImageUpload(e, setLogo)} />
+                      <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => logoInputRef.current?.click()}>
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
+                      </Button>
+                      {logo && <button onClick={() => { setLogo(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <input ref={logoInputRef} type="file" accept="image/png,image/svg+xml,image/jpeg" className="hidden" onChange={(e) => handleImageUpload(e, setLogo)} />
-                    <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => logoInputRef.current?.click()}>
-                      <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload Logo
-                    </Button>
-                    <p className="text-[10px] text-cv-muted mt-1">PNG or SVG, 256×256 recommended</p>
-                    {logo && <button onClick={() => { setLogo(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Favicon</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
+                      {favicon ? <img src={favicon} alt="Favicon" className="h-full w-full object-contain" /> : <ImageIcon className="h-5 w-5 text-cv-muted" />}
+                    </div>
+                    <div className="flex-1">
+                      <input ref={faviconInputRef} type="file" accept="image/png,image/svg+xml,image/x-icon,image/jpeg" className="hidden" onChange={(e) => handleImageUpload(e, setFavicon)} />
+                      <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => faviconInputRef.current?.click()}>
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
+                      </Button>
+                      {favicon && <button onClick={() => { setFavicon(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Partner photo upload */}
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Partner Photo (optional)</Label>
-                <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
-                    {partnerPhoto ? <img src={partnerPhoto} alt="Partner" className="h-full w-full object-cover" /> : <ImageIcon className="h-6 w-6 text-cv-muted" />}
+              {/* Partner photo + Hero image */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Partner / Profile Image</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
+                      {partnerPhoto ? <img src={partnerPhoto} alt="Partner" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-cv-muted" />}
+                    </div>
+                    <div className="flex-1">
+                      <input ref={photoInputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => handleImageUpload(e, setPartnerPhoto)} />
+                      <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => photoInputRef.current?.click()}>
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
+                      </Button>
+                      {partnerPhoto && <button onClick={() => { setPartnerPhoto(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <input ref={photoInputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => handleImageUpload(e, setPartnerPhoto)} />
-                    <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => photoInputRef.current?.click()}>
-                      <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload Photo
-                    </Button>
-                    <p className="text-[10px] text-cv-muted mt-1">JPG or PNG, square recommended</p>
-                    {partnerPhoto && <button onClick={() => { setPartnerPhoto(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Hero Image</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
+                      {heroImage ? <img src={heroImage} alt="Hero" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-cv-muted" />}
+                    </div>
+                    <div className="flex-1">
+                      <input ref={heroImageInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => handleImageUpload(e, setHeroImage)} />
+                      <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => heroImageInputRef.current?.click()}>
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
+                      </Button>
+                      {heroImage && <button onClick={() => { setHeroImage(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -673,30 +865,110 @@ export default function PartnerStorePage() {
             </CardContent>
           </Card>
 
-          {/* Branding mode */}
+          {/* Colors */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Presentation Mode</CardTitle>
+              <CardTitle className="text-base font-bold text-cv-ink">Colors</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-xs text-cv-muted">Control how your storefront presents its branding alongside the Careverse brand.</p>
-              {([
-                { value: 'partner-first', label: 'Partner-First', desc: 'Your brand is prominent, Careverse is secondary' },
-                { value: 'careverse-first', label: 'Careverse-First', desc: 'Careverse is prominent, your brand is secondary' },
-                { value: 'co-branded', label: 'Co-Branded', desc: 'Equal presentation of both brands' },
-              ] as const).map((mode) => (
-                <button
-                  key={mode.value}
-                  onClick={() => { setBrandingMode(mode.value); markDirty(); }}
-                  className={cn(
-                    'w-full text-left rounded-xl border p-3 transition-all',
-                    brandingMode === mode.value ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink' : 'border-cv-line hover:bg-cv-soft/50'
-                  )}
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {colorFields.map((field) => (
+                  <div key={field.key} className="flex items-center gap-2 rounded-xl border border-cv-line p-2.5">
+                    <input
+                      type="color"
+                      value={branding[field.key] as string}
+                      onChange={(e) => updateBranding(field.key, e.target.value)}
+                      className="h-9 w-9 rounded-lg border border-cv-line cursor-pointer shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-cv-ink">{field.label}</p>
+                      <p className="text-[10px] text-cv-muted font-mono">{branding[field.key] as string}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button variant="outline" className="mt-3 rounded-full border-cv-line font-bold text-xs" onClick={() => { setBranding({ ...DEFAULT_BRANDING }); markDirty(); }}>
+                Reset to Defaults
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Fonts */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Typography</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Heading font */}
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Heading Font</Label>
+                <select
+                  value={branding.headingFont}
+                  onChange={(e) => updateBranding('headingFont', e.target.value)}
+                  className="cv-input rounded-xl"
                 >
-                  <p className="text-sm font-bold text-cv-ink">{mode.label}</p>
-                  <p className="text-xs text-cv-muted">{mode.desc}</p>
-                </button>
-              ))}
+                  {FONT_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                </select>
+                <p className="text-2xl text-cv-ink" style={{ fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>Quality Care</p>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Heading Weight</Label>
+                <select value={branding.headingWeight} onChange={(e) => updateBranding('headingWeight', e.target.value)} className="cv-input rounded-xl">
+                  {FONT_WEIGHTS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
+                </select>
+              </div>
+
+              {/* Body font */}
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Body Font</Label>
+                <select
+                  value={branding.bodyFont}
+                  onChange={(e) => updateBranding('bodyFont', e.target.value)}
+                  className="cv-input rounded-xl"
+                >
+                  {FONT_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                </select>
+                <p className="text-sm text-cv-body" style={{ fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>Helping families access better, more affordable care.</p>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Body Weight</Label>
+                <select value={branding.bodyWeight} onChange={(e) => updateBranding('bodyWeight', e.target.value)} className="cv-input rounded-xl">
+                  {FONT_WEIGHTS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
+                </select>
+              </div>
+
+              {/* Button weight */}
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Button / Text Weight</Label>
+                <select value={branding.buttonWeight} onChange={(e) => updateBranding('buttonWeight', e.target.value)} className="cv-input rounded-xl">
+                  {FONT_WEIGHTS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
+                </select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Live branding preview */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Live Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-2xl border border-cv-line overflow-hidden" style={brandingCssVars}>
+                <div className="p-6" style={{ backgroundColor: 'var(--cream)' }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    {logo ? <img src={logo} alt="Logo" className="h-10 w-10 object-contain rounded-lg" /> : <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white text-sm font-extrabold" style={{ backgroundColor: 'var(--ink)' }}>{partnerInitial}</div>}
+                    <div>
+                      <p className="text-sm font-extrabold" style={{ color: 'var(--ink)', fontFamily: branding.headingFont }}>{storefrontName || 'Your Store'}</p>
+                      {brandPresentation && <p className="text-[10px]" style={{ color: 'var(--muted)' }}>{brandPresentation}</p>}
+                    </div>
+                  </div>
+                  <h2 className="mb-2" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight, fontSize: 28 }}>Quality care for your family</h2>
+                  <p className="text-sm mb-4" style={{ color: 'var(--body)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{heroSupportingCopy || introCopy || 'Helping families access better, more affordable care.'}</p>
+                  <span className="inline-flex items-center rounded-full px-6 py-2.5 text-sm" style={{ backgroundColor: 'var(--ink)', color: branding.buttonTextColor, fontWeight: branding.buttonWeight }}>
+                    {ctaText || 'Request Care'}
+                  </span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -981,13 +1253,18 @@ export default function PartnerStorePage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className={cn('mx-auto bg-cv-cream rounded-xl overflow-hidden border border-cv-line transition-all', previewMode === 'mobile' ? 'w-[375px]' : 'w-full')}>
+              <div className={cn('mx-auto rounded-xl overflow-hidden border border-cv-line transition-all', previewMode === 'mobile' ? 'w-[375px]' : 'w-full')} style={{ ...brandingCssVars, backgroundColor: 'var(--cream)' }}>
                 {/* Header bar */}
-                <div className="flex items-center gap-2 px-4 py-3 bg-white border-b border-cv-line">
-                  {logo ? <img src={logo} alt="Logo" className="h-7 w-7 object-contain" /> : <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cv-ink text-white text-xs font-extrabold">{partnerInitial}</div>}
-                  <span className="text-sm font-extrabold text-cv-ink">{storefrontName}</span>
-                  {brandPresentation && <span className="text-[10px] text-cv-muted hidden sm:inline">— {brandPresentation}</span>}
-                  <span className="ml-auto text-[10px] font-bold text-cv-muted">Preview</span>
+                <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ backgroundColor: 'var(--white)', borderColor: 'var(--line)' }}>
+                  {logo ? <img src={logo} alt="Logo" className="h-7 w-7 object-contain" /> : <div className="flex h-7 w-7 items-center justify-center rounded-lg text-white text-xs font-extrabold" style={{ backgroundColor: 'var(--ink)' }}>{partnerInitial}</div>}
+                  <span className="text-sm font-extrabold" style={{ color: 'var(--ink)', fontFamily: branding.headingFont }}>{storefrontName}</span>
+                  {brandPresentation && <span className="text-[10px] hidden sm:inline" style={{ color: 'var(--muted)' }}>— {brandPresentation}</span>}
+                  {!isWhiteLabel && showCareverseInHeader && (
+                    <span className="flex items-center gap-1 ml-1">
+                      <CareverseMark size={14} />
+                    </span>
+                  )}
+                  <span className="ml-auto text-[10px] font-bold" style={{ color: 'var(--muted)' }}>Preview</span>
                 </div>
 
                 {/* Dynamic sections based on section order */}
@@ -995,12 +1272,13 @@ export default function PartnerStorePage() {
                   {sections.filter(s => s.visible).map((section) => {
                     if (section.type === 'hero') {
                       return (
-                        <div key={section.id} className="px-6 py-8 bg-white">
-                          <div className="cv-red-rule mb-2" />
-                          <span className="cv-eyebrow uppercase">Care Benefits</span>
-                          <h2 className="text-xl font-bold text-cv-ink mt-2 mb-3">{heroHeadline || 'Quality care for your family'}</h2>
-                          <p className="text-sm text-cv-muted mb-4">{heroSupportingCopy || introCopy}</p>
-                          <span className="inline-flex items-center rounded-full bg-cv-ink px-4 py-2 text-xs font-bold text-white">{ctaText || 'Request Care'}</span>
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
+                          <div className="mb-2" style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
+                          <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Care Benefits</span>
+                          {heroImage && <img src={heroImage} alt="Hero" className="w-full rounded-xl mb-4 mt-2 max-h-48 object-cover" />}
+                          <h2 className="text-xl font-bold mt-2 mb-3" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>{heroHeadline || 'Quality care for your family'}</h2>
+                          <p className="text-sm mb-4" style={{ color: 'var(--muted)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{heroSupportingCopy || introCopy}</p>
+                          <span className="inline-flex items-center rounded-full px-4 py-2 text-xs" style={{ backgroundColor: 'var(--ink)', color: branding.buttonTextColor, fontWeight: branding.buttonWeight }}>{ctaText || 'Request Care'}</span>
                         </div>
                       );
                     }
@@ -1009,25 +1287,25 @@ export default function PartnerStorePage() {
                       if (sectionBlocks.length === 0) return null;
                       const cols = section.columns || 1;
                       return (
-                        <div key={section.id} className="px-6 py-6 bg-cv-cream">
-                          {sectionBlocks[0].title && <p className="text-sm font-bold text-cv-ink mb-2">{sectionBlocks[0].title}</p>}
+                        <div key={section.id} className="px-6 py-6" style={{ backgroundColor: 'var(--cream)' }}>
+                          {sectionBlocks[0].title && <p className="text-sm font-bold mb-2" style={{ color: 'var(--ink)', fontFamily: branding.headingFont }}>{sectionBlocks[0].title}</p>}
                           <div className={cn('grid gap-3', gridColsFor(cols))}>
                             {sectionBlocks.map((block) => (
                               <div key={block.id}>
                                 {block.source === 'EMBED' && block.url ? (
-                                  <div className="rounded-lg overflow-hidden border border-cv-line">
+                                  <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--line)' }}>
                                     <iframe src={block.url} className="w-full aspect-video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
                                   </div>
                                 ) : block.source === 'UPLOAD' && videoPreviews[block.id] ? (
-                                  <div className="rounded-lg overflow-hidden border border-cv-line">
+                                  <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--line)' }}>
                                     <video src={videoPreviews[block.id]} controls className="w-full aspect-video" />
                                   </div>
                                 ) : (
-                                  <div className="rounded-lg border-2 border-dashed border-cv-line aspect-video flex items-center justify-center">
-                                    <Play className="h-8 w-8 text-cv-muted" />
+                                  <div className="rounded-lg border-2 border-dashed aspect-video flex items-center justify-center" style={{ borderColor: 'var(--line)' }}>
+                                    <Play className="h-8 w-8" style={{ color: 'var(--muted)' }} />
                                   </div>
                                 )}
-                                {block.caption && <p className="text-xs text-cv-muted mt-1">{block.caption}</p>}
+                                {block.caption && <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{block.caption}</p>}
                               </div>
                             ))}
                           </div>
@@ -1036,20 +1314,20 @@ export default function PartnerStorePage() {
                     }
                     if (section.type === 'packages') {
                       return (
-                        <div key={section.id} className="px-6 py-8 bg-white">
-                          <div className="cv-red-rule mb-2" />
-                          <span className="cv-eyebrow uppercase">Packages</span>
-                          <h3 className="text-lg font-bold text-cv-ink mt-1 mb-4">Choose your plan</h3>
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
+                          <div className="mb-2" style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
+                          <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Packages</span>
+                          <h3 className="text-lg font-bold mt-1 mb-4" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>Choose your plan</h3>
                           <div className="grid gap-3 sm:grid-cols-3">
                             {selectedPackages.map((pkgName) => {
                               const product = mockProducts.find(p => p.name === pkgName);
                               if (!product) return null;
                               return (
-                                <div key={product.id} className={cn('rounded-xl border p-4', product.popular ? 'border-cv-ink ring-1 ring-cv-ink' : 'border-cv-line')}>
-                                  {product.popular && <span className="text-[9px] font-extrabold text-cv-red">MOST POPULAR</span>}
-                                  <p className="text-sm font-bold text-cv-ink mt-1">{product.name}</p>
-                                  <p className="text-lg font-extrabold text-cv-ink mt-1">{fmtMoney(product.price)}</p>
-                                  <p className="text-[10px] text-cv-muted mt-1 line-clamp-2">{product.description}</p>
+                                <div key={product.id} className={cn('rounded-xl border p-4', product.popular ? 'ring-1' : '')} style={{ borderColor: product.popular ? 'var(--ink)' : 'var(--line)' }}>
+                                  {product.popular && <span className="text-[9px] font-extrabold" style={{ color: 'var(--red)' }}>MOST POPULAR</span>}
+                                  <p className="text-sm font-bold mt-1" style={{ color: 'var(--ink)' }}>{product.name}</p>
+                                  <p className="text-lg font-extrabold mt-1" style={{ color: 'var(--ink)' }}>{fmtMoney(product.price)}</p>
+                                  <p className="text-[10px] mt-1 line-clamp-2" style={{ color: 'var(--muted)' }}>{product.description}</p>
                                 </div>
                               );
                             })}
@@ -1059,15 +1337,15 @@ export default function PartnerStorePage() {
                     }
                     if (section.type === 'benefits') {
                       return (
-                        <div key={section.id} className="px-6 py-8 bg-cv-cream">
-                          <div className="cv-red-rule mb-2" />
-                          <span className="cv-eyebrow uppercase">Benefits</span>
-                          <h3 className="text-lg font-bold text-cv-ink mt-1 mb-4">What&apos;s included</h3>
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--cream)' }}>
+                          <div className="mb-2" style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
+                          <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Benefits</span>
+                          <h3 className="text-lg font-bold mt-1 mb-4" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>What&apos;s included</h3>
                           <div className="grid gap-2 sm:grid-cols-2">
                             {['Included Services', 'Lower Prices', 'Product Specials', 'Free Samples', 'Care Allowance', 'Health Advocacy'].map((b) => (
-                              <div key={b} className="flex items-center gap-2 rounded-lg bg-white p-2.5 border border-cv-line">
-                                <Check className="h-3.5 w-3.5 text-cv-good shrink-0" />
-                                <span className="text-xs font-bold text-cv-ink">{b}</span>
+                              <div key={b} className="flex items-center gap-2 rounded-lg p-2.5 border" style={{ backgroundColor: 'var(--white)', borderColor: 'var(--line)' }}>
+                                <Check className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--good)' }} />
+                                <span className="text-xs font-bold" style={{ color: 'var(--ink)' }}>{b}</span>
                               </div>
                             ))}
                           </div>
@@ -1076,17 +1354,31 @@ export default function PartnerStorePage() {
                     }
                     if (section.type === 'about' && aboutContent) {
                       return (
-                        <div key={section.id} className="px-6 py-8 bg-white">
-                          <div className="cv-red-rule mb-2" />
-                          <span className="cv-eyebrow uppercase">About</span>
-                          <h3 className="text-lg font-bold text-cv-ink mt-1 mb-3">About {storefrontName}</h3>
-                          <p className="text-sm text-cv-muted leading-relaxed">{aboutContent}</p>
-                          <div className="flex items-center gap-3 mt-4">
-                            {partnerPhoto ? <img src={partnerPhoto} alt="Partner" className="h-10 w-10 rounded-full object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cv-ink text-white text-sm font-extrabold">{partnerInitial}</div>}
-                            <div>
-                              <p className="text-xs font-bold text-cv-ink">{storefrontName}</p>
-                              <p className="text-[10px] text-cv-muted">Verified Careverse Partner</p>
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
+                          <div className="mb-2" style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
+                          <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>About</span>
+                          <h3 className="text-lg font-bold mt-1 mb-3" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>About {storefrontName}</h3>
+                          <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{aboutContent}</p>
+                          {showProfile && !isWhiteLabel && (
+                            <div className="flex items-center gap-3 mt-4">
+                              {partnerPhoto ? <img src={partnerPhoto} alt="Partner" className="h-10 w-10 rounded-full object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-full text-white text-sm font-extrabold" style={{ backgroundColor: 'var(--ink)' }}>{partnerInitial}</div>}
+                              <div>
+                                <p className="text-xs font-bold" style={{ color: 'var(--ink)' }}>{storefrontName}</p>
+                                {showVerifiedBadge && <p className="text-[10px]" style={{ color: 'var(--good)' }}>Careverse Verified</p>}
+                              </div>
                             </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    if (section.type === 'footer') {
+                      return (
+                        <div key={section.id} className="px-6 py-6" style={{ backgroundColor: 'var(--ink)' }}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs" style={{ color: 'var(--night-text)' }}>© 2026 {storefrontName}</span>
+                            {!isWhiteLabel && showPoweredByFooter && (
+                              <span className="text-[10px]" style={{ color: 'var(--night-text)' }}>Powered by Careverse</span>
+                            )}
                           </div>
                         </div>
                       );
@@ -1095,7 +1387,7 @@ export default function PartnerStorePage() {
                   })}
                 </div>
 
-                <div className="px-6 py-4 bg-white border-t border-cv-line">
+                <div className="px-6 py-4 border-t" style={{ backgroundColor: 'var(--white)', borderColor: 'var(--line)' }}>
                   <Button variant="outline" className="w-full rounded-full border-cv-line font-bold text-xs" onClick={() => router.push('/storefront')}>
                     <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Open Full Storefront
                   </Button>
