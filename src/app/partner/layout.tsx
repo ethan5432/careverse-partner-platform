@@ -16,6 +16,7 @@ import {
   Settings,
   LogOut,
   ChevronsUpDown,
+  Lock,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -45,14 +46,21 @@ const bottomNavItems = [
 function PartnerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, switchPartnerType, switchStatus } = useMockAuth();
+  const { user, logout, switchPartnerType, switchStatus, hasStorefrontAccess } = useMockAuth();
 
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';
     return pathname.startsWith(url);
   };
 
-  const navItems = baseNavItems;
+  const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
+
+  const navItems = baseNavItems.map((item) => {
+    if (item.title === 'Store' && storeLocked) {
+      return { ...item, locked: true as const };
+    }
+    return item;
+  });
 
   return (
     <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-cv-line h-screen sticky top-0">
@@ -67,21 +75,32 @@ function PartnerSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {navItems.map((item) => (
-          <button
-            key={item.title}
-            onClick={() => router.push(item.url)}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all',
-              isActive(item.url)
-                ? 'bg-cv-ink text-white'
-                : 'text-cv-body hover:bg-cv-soft hover:text-cv-ink'
-            )}
-          >
-            <item.icon className="h-4 w-4 shrink-0" />
-            {item.title}
-          </button>
-        ))}
+        {navItems.map((item) => {
+          const locked = 'locked' in item && item.locked;
+          return (
+            <button
+              key={item.title}
+              onClick={() => {
+                if (locked) {
+                  router.push('/partner/storefront-application');
+                  return;
+                }
+                router.push(item.url);
+              }}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all',
+                isActive(item.url)
+                  ? 'bg-cv-ink text-white'
+                  : 'text-cv-body hover:bg-cv-soft hover:text-cv-ink',
+                locked && 'opacity-50 text-cv-muted hover:opacity-70'
+              )}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              {item.title}
+              {locked && <Lock className="h-3 w-3 ml-auto text-cv-muted" />}
+            </button>
+          );
+        })}
 
         <div className="pt-3 mt-3 border-t border-cv-line space-y-1">
           {bottomNavItems.map((item) => (
@@ -148,8 +167,14 @@ function PartnerSidebar() {
 function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useMockAuth();
-  const navItems = [...baseNavItems, ...bottomNavItems];
+  const { user, hasStorefrontAccess } = useMockAuth();
+  const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
+  const navItems = [...baseNavItems, ...bottomNavItems].map((item) => {
+    if (item.title === 'Store' && storeLocked) {
+      return { ...item, locked: true as const };
+    }
+    return item;
+  });
 
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';
@@ -159,19 +184,30 @@ function MobileNav() {
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-cv-line z-50">
       <div className="flex overflow-x-auto px-2 py-2 gap-1 no-scrollbar">
-        {navItems.map((item) => (
-          <button
-            key={item.title}
-            onClick={() => router.push(item.url)}
-            className={cn(
-              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-[10px] font-bold shrink-0 transition-colors',
-              isActive(item.url) ? 'text-cv-ink' : 'text-cv-muted'
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.title}
-          </button>
-        ))}
+        {navItems.map((item) => {
+          const locked = 'locked' in item && item.locked;
+          return (
+            <button
+              key={item.title}
+              onClick={() => {
+                if (locked) {
+                  router.push('/partner/storefront-application');
+                  return;
+                }
+                router.push(item.url);
+              }}
+              className={cn(
+                'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-[10px] font-bold shrink-0 transition-colors relative',
+                isActive(item.url) ? 'text-cv-ink' : 'text-cv-muted',
+                locked && 'opacity-40'
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {locked && <Lock className="h-2 w-2 absolute top-0 right-1 text-cv-muted" />}
+              {item.title}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

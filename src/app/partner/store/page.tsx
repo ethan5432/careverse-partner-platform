@@ -121,13 +121,33 @@ function ToggleRow({ label, desc, value, onChange }: { label: string; desc: stri
 
 export default function PartnerStorePage() {
   const router = useRouter();
-  const { onboarding, updateOnboarding } = useMockAuth();
+  const { onboarding, updateOnboarding, user, hasStorefrontAccess } = useMockAuth();
   const [activeTab, setActiveTab] = useState<BuilderTab>('overview');
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [publishSuccessOpen, setPublishSuccessOpen] = useState(false);
+
+  // Storefront access guard for creators
+  const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
+
+  useEffect(() => {
+    if (storeLocked) {
+      router.replace('/partner/storefront-application');
+    }
+  }, [storeLocked, router]);
+
+  if (storeLocked) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center space-y-3">
+          <Lock className="h-8 w-8 text-cv-muted mx-auto" />
+          <p className="text-sm text-cv-muted">Storefront access is locked. Redirecting to application...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Config state
   const [storefrontName, setStorefrontName] = useState('');

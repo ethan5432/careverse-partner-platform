@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
@@ -18,13 +18,19 @@ import {
   Users, Search, UserPlus, ArrowLeftRight, DollarSign,
   Store, MessageSquare, StickyNote, Settings as SettingsIcon, Activity as ActivityIcon,
   Send, ExternalLink, Pencil, Check, Mail, Clock, AlertCircle, CheckCircle2, XCircle,
+  FileText, ChevronRight,
 } from 'lucide-react';
 import {
   mockPartners, mockConversions, mockCommissions, mockStorefronts,
   mockConversations, mockPartnerNotes, getPartnerActivity, adminDashboardStats,
   mockEmailTemplates, mockEmailAutomations,
 } from '@/data/mock';
-import type { MockPartner, PartnerType, PartnerStatus, MockPartnerNote, MockMessage, ApprovalEmailStatus } from '@/data/mock/types';
+import type { MockPartner, PartnerType, PartnerStatus, MockPartnerNote, MockMessage, ApprovalEmailStatus, StorefrontApplication, StorefrontApplicationStatus } from '@/data/mock/types';
+import {
+  loadStorefrontApplications,
+  updateStorefrontApplicationStatus,
+  grantStorefrontAccess,
+} from '@/lib/creator-persistence';
 
 const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -79,6 +85,15 @@ export default function AdminPartnersPage() {
   const [partners, setPartners] = useState<MockPartner[]>(mockPartners);
   const [approvalEmailStatuses, setApprovalEmailStatuses] = useState<Record<string, ApprovalEmailStatus>>({});
   const [approvalActivity, setApprovalActivity] = useState<Record<string, { description: string; date: string }[]>>({});
+  const [adminTab, setAdminTab] = useState<'partners' | 'applications'>('partners');
+  const [storefrontApps, setStorefrontApps] = useState<StorefrontApplication[]>([]);
+  const [reviewApp, setReviewApp] = useState<StorefrontApplication | null>(null);
+  const [denyFeedback, setDenyFeedback] = useState('');
+  const [denyDialogOpen, setDenyDialogOpen] = useState(false);
+
+  useEffect(() => {
+    setStorefrontApps(loadStorefrontApplications());
+  }, [adminTab]);
 
   const handleApprove = (partner: MockPartner) => {
     const approvalTemplate = mockEmailTemplates.find((t) => t.trigger.toLowerCase().includes('approved'));
@@ -138,6 +153,24 @@ export default function AdminPartnersPage() {
           </Button>
         }
       />
+
+      {/* Top-level tabs: Partners vs Storefront Applications */}
+      <Tabs value={adminTab} onValueChange={(v) => setAdminTab(v as 'partners' | 'applications')}>
+        <TabsList className="bg-cv-soft rounded-xl p-1 h-auto">
+          <TabsTrigger value="partners" className="rounded-lg px-4 py-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:text-cv-ink data-[state=active]:shadow-sm">
+            <Users className="h-3.5 w-3.5 mr-1.5" /> All Partners
+          </TabsTrigger>
+          <TabsTrigger value="applications" className="rounded-lg px-4 py-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:text-cv-ink data-[state=active]:shadow-sm relative">
+            <Store className="h-3.5 w-3.5 mr-1.5" /> Storefront Applications
+            {storefrontApps.filter(a => a.status === 'SUBMITTED' || a.status === 'IN_REVIEW').length > 0 && (
+              <span className="ml-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cv-red px-1 text-[10px] font-bold text-white">
+                {storefrontApps.filter(a => a.status === 'SUBMITTED' || a.status === 'IN_REVIEW').length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="partners" className="mt-6 space-y-6">
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -259,6 +292,34 @@ export default function AdminPartnersPage() {
         approvalEmailStatus={selectedPartner ? approvalEmailStatuses[selectedPartner.id] : undefined}
         onApprove={handleApprove}
         extraActivity={selectedPartner ? approvalActivity[selectedPartner.id] || [] : []}
+      />
+        </TabsContent>
+
+        {/* Storefront Applications tab */}
+        <TabsContent value="applications" className="mt-6 space-y-6">
+          <StorefrontApplicationsSection
+            applications={storefrontApps}
+            onReview={(app) => setReviewApp(app)}
+            onRefresh={() => setStorefrontApps(loadStorefrontApplications())}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Application review dialog */}
+      <ApplicationReviewDialog
+        app={reviewApp}
+        onClose={() => setReviewApp(null)}
+        onApprove={(app) => {
+          updateStorefrontApplicationStatus(app.id, 'APPROVED', 'admin');
+          grantStorefrontAccess(app.partnerId);
+          setStorefrontApps(loadStorefrontApplications());
+          setReviewApp(null);
+        }}
+        onDeny={(app, feedback) => {
+          updateStorefrontApplicationStatus(app.id, 'REJECTED', 'admin', feedback || undefined);
+          setStorefrontApps(loadStorefrontApplications());
+          setReviewApp(null);
+        }}
       />
     </div>
   );
@@ -807,7 +868,7 @@ function CommissionTable({ commissions }: { commissions: typeof mockCommissions 
                 <DialogTitle className="text-base font-bold text-cv-ink">Commission Calculation</DialogTitle>
               </DialogHeader>
               <DetailField label="Plan" value={selected.plan} />
-              <DetailField label="Sale Amount" value={`$${selected.saleAmount}`} />
+              <DetailField label="Sale Amount" value={`${selected.saleAmount}`} />
               <DetailField label="Commission Rule" value={selected.commissionRule} />
               <DetailField label="Rate" value={`${(selected.rate * 100).toFixed(0)}%`} />
               <div className="rounded-xl bg-cv-soft p-3">
@@ -818,6 +879,223 @@ function CommissionTable({ commissions }: { commissions: typeof mockCommissions 
               <DetailField label="Date" value={fmtDate(selected.date)} />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+const appStatusConfig: Record<StorefrontApplicationStatus, { label: string; color: string; bg: string }> = {
+  SUBMITTED: { label: 'Submitted', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+  IN_REVIEW: { label: 'In Review', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+  APPROVED: { label: 'Approved', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
+  REJECTED: { label: 'Not Approved', color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+};
+
+function StorefrontApplicationsSection({
+  applications,
+  onReview,
+  onRefresh,
+}: {
+  applications: StorefrontApplication[];
+  onReview: (app: StorefrontApplication) => void;
+  onRefresh: () => void;
+}) {
+  const pending = applications.filter(a => a.status === 'SUBMITTED' || a.status === 'IN_REVIEW');
+  const reviewed = applications.filter(a => a.status === 'APPROVED' || a.status === 'REJECTED');
+
+  if (applications.length === 0) {
+    return (
+      <Card className="cv-card">
+        <CardContent className="pt-6">
+          <EmptyState
+            icon={Store}
+            title="No storefront applications"
+            description="Creator storefront applications will appear here for review."
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {pending.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Pending Review ({pending.length})</p>
+          {pending.map(app => (
+            <ApplicationRow key={app.id} app={app} onReview={onReview} />
+          ))}
+        </div>
+      )}
+      {reviewed.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Reviewed ({reviewed.length})</p>
+          {reviewed.map(app => (
+            <ApplicationRow key={app.id} app={app} onReview={onReview} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ApplicationRow({ app, onReview }: { app: StorefrontApplication; onReview: (app: StorefrontApplication) => void }) {
+  const cfg = appStatusConfig[app.status];
+  return (
+    <Card className={cn('cv-card border', cfg.bg)}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar name={app.partnerName} color="#0B9B6B" size={36} />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-cv-ink truncate">{app.partnerName}</p>
+              <p className="text-xs text-cv-muted truncate">{app.profiles.length} profiles · {app.contentSubmissions.length} content pieces · {fmtDate(app.submittedAt)}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className={cn('text-xs font-bold rounded-full px-3 py-1', cfg.bg, cfg.color)}>{cfg.label}</span>
+            <Button variant="outline" size="sm" className="rounded-full border-cv-line font-bold text-cv-ink hover:bg-cv-soft text-xs" onClick={() => onReview(app)}>
+              Review <ChevronRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ApplicationReviewDialog({
+  app,
+  onClose,
+  onApprove,
+  onDeny,
+}: {
+  app: StorefrontApplication | null;
+  onClose: () => void;
+  onApprove: (app: StorefrontApplication) => void;
+  onDeny: (app: StorefrontApplication, feedback?: string) => void;
+}) {
+  const [denyOpen, setDenyOpen] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const open = !!app;
+
+  return (
+    <>
+      <Dialog open={open && !denyOpen} onOpenChange={(o) => { if (!o) { onClose(); } }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto cv-card border-cv-line rounded-2xl bg-white p-0">
+          {app && (
+            <>
+              <DialogHeader className="p-6 pb-4 border-b border-cv-line">
+                <div className="flex items-center gap-3">
+                  <Avatar name={app.partnerName} color="#0B9B6B" size={44} />
+                  <div>
+                    <DialogTitle className="text-lg font-bold text-cv-ink">{app.partnerName}</DialogTitle>
+                    <DialogDescription className="text-sm text-cv-muted">{app.partnerEmail}</DialogDescription>
+                  </div>
+                  <div className="ml-auto">
+                    <span className={cn('text-xs font-bold rounded-full px-3 py-1', appStatusConfig[app.status].bg, appStatusConfig[app.status].color)}>
+                      {appStatusConfig[app.status].label}
+                    </span>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="p-6 space-y-5">
+                {/* Creator profiles */}
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Creator Profiles ({app.profiles.length})</p>
+                  <div className="space-y-2">
+                    {app.profiles.map(p => (
+                      <div key={p.id} className="flex items-center justify-between rounded-lg border border-cv-line px-3 py-2">
+                        <div>
+                          <p className="text-sm font-bold text-cv-ink">{p.platform} {p.handle && <span className="text-cv-muted">{p.handle}</span>}</p>
+                          {p.followerCount && <p className="text-xs text-cv-muted">{p.followerCount.toLocaleString()} followers</p>}
+                        </div>
+                        {p.profileUrl && (
+                          <a href={p.profileUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-cv-ink hover:text-cv-red flex items-center gap-1">
+                            Visit <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Content submissions */}
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Content Submissions (5)</p>
+                  <div className="space-y-2">
+                    {app.contentSubmissions.map((c, i) => (
+                      <div key={c.id} className="flex items-center gap-3 rounded-lg border border-cv-line px-3 py-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-xs font-bold shrink-0">{i + 1}</span>
+                        <span className="text-sm font-bold text-cv-ink shrink-0">{c.platform}</span>
+                        <a href={c.contentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-cv-body hover:text-cv-red flex items-center gap-1 truncate">
+                          <span className="truncate">{c.contentUrl}</span>
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Submitted date */}
+                <div className="text-xs text-cv-muted">
+                  Submitted on {fmtDate(app.submittedAt)}
+                  {app.reviewedAt && <span className="ml-3">Reviewed on {fmtDate(app.reviewedAt)}</span>}
+                </div>
+
+                {/* Previous feedback if rejected */}
+                {app.status === 'REJECTED' && app.feedback && (
+                  <div className="rounded-xl bg-red-50 border border-red-200 p-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-red-700 mb-1">Feedback</p>
+                    <p className="text-sm text-red-700">{app.feedback}</p>
+                  </div>
+                )}
+
+                {/* Admin actions */}
+                {(app.status === 'SUBMITTED' || app.status === 'IN_REVIEW') && (
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      className="flex-1 bg-cv-good text-white hover:bg-cv-good/90 rounded-full font-bold"
+                      onClick={() => onApprove(app)}
+                    >
+                      <CheckCircle2 className="h-4 w-4" /> Approve storefront
+                    </Button>
+                    <Button
+                      className="flex-1 bg-cv-red text-white hover:bg-cv-red/90 rounded-full font-bold"
+                      onClick={() => setDenyOpen(true)}
+                    >
+                      <XCircle className="h-4 w-4" /> Deny application
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Deny feedback dialog */}
+      <Dialog open={denyOpen} onOpenChange={setDenyOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-cv-ink">Deny Application</DialogTitle>
+            <DialogDescription className="text-sm text-cv-muted">Provide optional feedback for the creator.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            <Textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="cv-input resize-none"
+              rows={4}
+              placeholder="Optional feedback to help the creator improve..."
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" className="rounded-full border-cv-line font-bold" onClick={() => { setDenyOpen(false); setFeedback(''); }}>Cancel</Button>
+            <Button className="bg-cv-red text-white hover:bg-cv-red/90 rounded-full font-bold" onClick={() => { if (app) { onDeny(app, feedback); setDenyOpen(false); setFeedback(''); } }}>Deny Application</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
