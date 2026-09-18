@@ -14,9 +14,10 @@ import {
 } from '@/components/ui/dialog';
 import { Wallet, Clock, CircleCheck as CheckCircle2, Banknote, CreditCard, Building2, Plus, Search, Eye } from 'lucide-react';
 import { SupportLink } from '@/components/shared/SupportLink';
-import { mockPayouts, mockCommissions } from '@/data/mock';
+import { mockPayouts, mockCommissions, getPartnerIdByEmail } from '@/data/mock';
 import type { PayoutStatus, MockPayout } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
+import { useMockAuth } from '@/hooks/useMockAuth';
 
 type FilterTab = 'ALL' | PayoutStatus;
 
@@ -37,6 +38,7 @@ const METHOD_META: Record<string, { label: string; icon: React.ElementType }> = 
 
 export default function PartnerPayoutsPage() {
   const router = useRouter();
+  const { user } = useMockAuth();
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<MockPayout | null>(null);
@@ -45,8 +47,9 @@ export default function PartnerPayoutsPage() {
   const fmtMoney2 = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  const partnerPayouts = useMemo(() => mockPayouts.filter((p) => p.partnerId === 'p-1'), []);
-  const partnerCommissions = useMemo(() => mockCommissions.filter((c) => c.partnerId === 'p-1'), []);
+  const partnerId = user ? getPartnerIdByEmail(user.email) : null;
+  const partnerPayouts = useMemo(() => mockPayouts.filter((p) => p.partnerId === partnerId), [partnerId]);
+  const partnerCommissions = useMemo(() => mockCommissions.filter((c) => c.partnerId === partnerId), [partnerId]);
 
   const stats = useMemo(() => {
     const available = partnerCommissions.filter(c => c.status === 'APPROVED').reduce((s, c) => s + c.commission, 0);

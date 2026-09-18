@@ -22,6 +22,7 @@ import {
 import {
   partnerDashboardStats, partnerPerformanceData,
   mockConversions, mockCommissions, currentPartnerStorefront,
+  getPartnerIdByEmail,
 } from '@/data/mock';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { cn } from '@/lib/utils';
@@ -68,8 +69,9 @@ export default function PartnerDashboardPage() {
   const onboardingDone = isOnboardingComplete();
   const completedCount = Object.values(onboarding).filter(Boolean).length;
 
-  const recentConversions = mockConversions.filter((c) => c.partnerId === 'p-1').slice(0, 5);
-  const partnerCommissions = mockCommissions.filter((c) => c.partnerId === 'p-1');
+  const partnerId = user ? getPartnerIdByEmail(user.email) : null;
+  const recentConversions = mockConversions.filter((c) => c.partnerId === partnerId).slice(0, 5);
+  const partnerCommissions = mockCommissions.filter((c) => c.partnerId === partnerId);
   const pendingCommissions = partnerCommissions.filter((c) => c.status === 'PENDING');
   const performanceData = partnerPerformanceData[timeRange];
   const maxValue = Math.max(...performanceData.map((d) => d[metric]));

@@ -8,9 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MessageSquare, Send, Search, Plus, ArrowLeft } from 'lucide-react';
-import { mockConversations } from '@/data/mock';
+import { mockConversations, getPartnerIdByEmail } from '@/data/mock';
 import type { MockConversation, MockMessage } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
+import { useMockAuth } from '@/hooks/useMockAuth';
 
 const fmtDate = (d: string) => {
   const date = new Date(d);
@@ -22,14 +23,14 @@ const fmtDate = (d: string) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-const PARTNER_ID = 'p-1';
-
 export default function PartnerMessagesPage() {
+  const { user } = useMockAuth();
+  const partnerId = user ? getPartnerIdByEmail(user.email) : null;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [localConvs, setLocalConvs] = useState<MockConversation[]>(
-    mockConversations.filter((c) => c.partnerId === PARTNER_ID),
+    mockConversations.filter((c) => c.partnerId === partnerId),
   );
   const [showListOnMobile, setShowListOnMobile] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -100,7 +101,7 @@ export default function PartnerMessagesPage() {
     const newId = `conv-new-${Date.now()}`;
     const newConv: MockConversation = {
       id: newId,
-      partnerId: PARTNER_ID,
+      partnerId: partnerId || 'p-1',
       partnerName: 'Careverse Team',
       partnerAvatarColor: '#18191D',
       lastMessage: 'Start a new conversation with the Careverse team.',

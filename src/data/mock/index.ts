@@ -256,6 +256,11 @@ export const mockResources: MockResource[] = [
 export const currentPartner = mockPartners[0];
 export const currentPartnerStorefront = mockStorefronts[0];
 
+export function getPartnerIdByEmail(email: string): string | null {
+  const partner = mockPartners.find(p => p.email === email);
+  return partner?.id ?? null;
+}
+
 export const partnerDashboardStats = {
   available: 5696,
   pending: 1240,
