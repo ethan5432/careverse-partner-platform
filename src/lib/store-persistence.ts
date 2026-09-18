@@ -32,7 +32,7 @@ export interface StoreBranding {
 
 export interface SocialLink {
   id: string;
-  platform: 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin' | 'x';
+  platform: 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin' | 'x' | 'other';
   url: string;
   visible: boolean;
   order: number;
@@ -78,6 +78,8 @@ export interface StorefrontConfig {
   showCareverseInHeader: boolean;
   showCareverseInFooter: boolean;
   socialLinks: SocialLink[];
+  contactEmail: string;
+  contactPhone: string;
   savedAt: string;
 }
 
@@ -166,6 +168,8 @@ function defaultConfig(): StorefrontConfig {
     showCareverseInHeader: true,
     showCareverseInFooter: true,
     socialLinks: [],
+    contactEmail: '',
+    contactPhone: '',
     savedAt: new Date().toISOString(),
   };
 }
@@ -183,6 +187,8 @@ export function loadStorefrontConfig(): StorefrontConfig {
       branding: { ...defaults.branding, ...(parsed.branding || {}) },
       sectionImages: { ...(parsed.sectionImages || {}) },
       socialLinks: parsed.socialLinks || [],
+      contactEmail: parsed.contactEmail || '',
+      contactPhone: parsed.contactPhone || '',
     };
   } catch {
     return defaultConfig();
