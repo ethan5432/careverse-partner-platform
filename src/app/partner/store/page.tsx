@@ -13,7 +13,7 @@ import {
   LayoutDashboard, Package, Palette, Target, Video, Globe, Eye, Rocket,
   Save, Check, ChevronUp, ChevronDown, Trash2, Plus, Upload, ExternalLink,
   ArrowUp, ArrowDown, X, Play, ImageIcon, Lock, Settings, Star,
-  Share2, Trash, Plus as PlusIcon,
+  Share2, Plus as PlusIcon, ArrowRight, ArrowLeft,
 } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront, partnerDashboardStats } from '@/data/mock';
 import type { StoreSection, StoreSectionType } from '@/data/mock/types';
@@ -40,18 +40,14 @@ const socialPlatforms: { value: SocialLink['platform']; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
-type BuilderTab = 'overview' | 'packages' | 'branding' | 'positioning' | 'content' | 'sections' | 'domain' | 'preview' | 'publish';
+type BuilderStep = 'brand' | 'packages' | 'content' | 'domain' | 'publish';
 
-const tabs: { value: BuilderTab; label: string; icon: typeof Package }[] = [
-  { value: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { value: 'sections', label: 'Sections', icon: Settings },
-  { value: 'packages', label: 'Packages', icon: Package },
-  { value: 'branding', label: 'Branding', icon: Palette },
-  { value: 'positioning', label: 'Positioning', icon: Target },
-  { value: 'content', label: 'Creator Content', icon: Video },
-  { value: 'domain', label: 'Domain', icon: Globe },
-  { value: 'preview', label: 'Preview', icon: Eye },
-  { value: 'publish', label: 'Publish', icon: Rocket },
+const steps: { value: BuilderStep; label: string; icon: typeof Package; description: string }[] = [
+  { value: 'brand', label: 'Brand', icon: Palette, description: 'Name, logo, colors, fonts, and contact info' },
+  { value: 'packages', label: 'Packages', icon: Package, description: 'Select which care plans to offer' },
+  { value: 'content', label: 'Content', icon: Video, description: 'Hero text, about, videos, and section order' },
+  { value: 'domain', label: 'Domain', icon: Globe, description: 'Your storefront URL and custom domain' },
+  { value: 'publish', label: 'Review & Publish', icon: Rocket, description: 'Preview, publish, and share your store' },
 ];
 
 const colorFields: { key: keyof StoreBranding; label: string }[] = [
@@ -120,10 +116,18 @@ function ToggleRow({ label, desc, value, onChange }: { label: string; desc: stri
   );
 }
 
+function StepHint({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-bold text-cv-muted flex items-center gap-1 mt-1">
+      <Eye className="h-3 w-3" /> {children}
+    </p>
+  );
+}
+
 export default function PartnerStorePage() {
   const router = useRouter();
   const { onboarding, updateOnboarding, user, hasStorefrontAccess } = useMockAuth();
-  const [activeTab, setActiveTab] = useState<BuilderTab>('overview');
+  const [activeStep, setActiveStep] = useState<BuilderStep>('brand');
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -527,6 +531,25 @@ export default function PartnerStorePage() {
   const isCareverseBranded = brandingMode === 'careverse-branded';
   const isCoBranded = brandingMode === 'co-branded';
 
+  const currentStepIndex = steps.findIndex(s => s.value === activeStep);
+
+  const goToStep = (step: BuilderStep) => {
+    setActiveStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goNext = () => {
+    if (currentStepIndex < steps.length - 1) {
+      goToStep(steps[currentStepIndex + 1].value);
+    }
+  };
+
+  const goPrev = () => {
+    if (currentStepIndex > 0) {
+      goToStep(steps[currentStepIndex - 1].value);
+    }
+  };
+
   // ─── Save keyboard shortcut ──────────────────────────────────────────────
 
   useEffect(() => {
@@ -557,8 +580,8 @@ export default function PartnerStorePage() {
       <div className="mb-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-cv-ink">Edit Store</h1>
-            <p className="text-sm text-cv-muted mt-1">Customize your storefront, manage packages, and publish to your audience.</p>
+            <h1 className="text-2xl font-bold text-cv-ink">Build Your Storefront</h1>
+            <p className="text-sm text-cv-muted mt-1">Set up your storefront step by step. Your changes save automatically as you go.</p>
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={publishStatus === 'LIVE' ? 'live' : 'draft'} />
@@ -589,216 +612,43 @@ export default function PartnerStorePage() {
         </div>
       </div>
 
-      {/* Tab navigation */}
-      <div className="flex gap-1 overflow-x-auto pb-2 mb-6 border-b border-cv-line">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-2 text-xs font-bold whitespace-nowrap border-b-2 transition-colors -mb-[1px]',
-              activeTab === tab.value
-                ? 'border-cv-ink text-cv-ink'
-                : 'border-transparent text-cv-muted hover:text-cv-body'
-            )}
-          >
-            <tab.icon className="h-3.5 w-3.5" />
-            {tab.label}
-          </button>
-        ))}
+      {/* Step navigation */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-6 border-b border-cv-line">
+        {steps.map((step, idx) => {
+          const isCompleted = idx < currentStepIndex;
+          const isActive = idx === currentStepIndex;
+          return (
+            <button
+              key={step.value}
+              onClick={() => goToStep(step.value)}
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 text-xs font-bold whitespace-nowrap border-b-2 transition-colors -mb-[1px]',
+                isActive
+                  ? 'border-cv-ink text-cv-ink'
+                  : isCompleted
+                    ? 'border-transparent text-cv-good'
+                    : 'border-transparent text-cv-muted hover:text-cv-body'
+              )}
+            >
+              <span className={cn(
+                'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold shrink-0',
+                isActive ? 'bg-cv-ink text-white' : isCompleted ? 'bg-emerald-50 text-cv-good' : 'bg-cv-soft text-cv-muted'
+              )}>
+                {isCompleted ? <Check className="h-3 w-3" /> : idx + 1}
+              </span>
+              {step.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* ─── Overview tab ─── */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Card className="cv-card"><CardContent className="p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Status</p>
-              <p className="text-lg font-bold text-cv-ink">{publishStatus}</p>
-            </CardContent></Card>
-            <Card className="cv-card"><CardContent className="p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Store URL</p>
-              <p className="text-lg font-bold text-cv-ink truncate">{currentPartnerStorefront.url}</p>
-            </CardContent></Card>
-            <Card className="cv-card"><CardContent className="p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Visitors</p>
-              <p className="text-lg font-bold text-cv-ink">{partnerDashboardStats.visitors.toLocaleString()}</p>
-            </CardContent></Card>
-            <Card className="cv-card"><CardContent className="p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Conversions</p>
-              <p className="text-lg font-bold text-cv-ink">{partnerDashboardStats.conversions}</p>
-            </CardContent></Card>
-            <Card className="cv-card"><CardContent className="p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Revenue</p>
-              <p className="text-lg font-bold text-cv-ink">${partnerDashboardStats.available.toLocaleString()}</p>
-            </CardContent></Card>
-            <Card className="cv-card"><CardContent className="p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Selected Packages</p>
-              <p className="text-lg font-bold text-cv-ink">{selectedPackages.length}</p>
-            </CardContent></Card>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { label: 'Sections', tab: 'sections' as BuilderTab, icon: Settings, desc: 'Reorder store sections' },
-              { label: 'Packages', tab: 'packages' as BuilderTab, icon: Package, desc: 'Select and reorder plans' },
-              { label: 'Branding', tab: 'branding' as BuilderTab, icon: Palette, desc: 'Logo, photo, colors' },
-              { label: 'Creator Content', tab: 'content' as BuilderTab, icon: Video, desc: 'Videos and embeds' },
-            ].map((item) => (
-              <Card key={item.label} className="cv-card hover:border-cv-ink transition-colors cursor-pointer" onClick={() => setActiveTab(item.tab)}>
-                <CardContent className="p-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-soft mb-3">
-                    <item.icon className="h-5 w-5 text-cv-ink" />
-                  </div>
-                  <p className="text-sm font-bold text-cv-ink mb-1">{item.label}</p>
-                  <p className="text-xs text-cv-muted mb-3">{item.desc}</p>
-                  <span className="text-xs font-bold text-cv-ink flex items-center gap-1">Manage <ChevronUp className="h-3 w-3 rotate-90" /></span>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ─── Sections tab ─── */}
-      {activeTab === 'sections' && (
-        <div className="max-w-2xl space-y-4">
-          <Card className="cv-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Store Section Order</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-xs text-cv-muted mb-4">Drag sections up and down to control the order they appear on your storefront. The preview and public store will reflect this exact order.</p>
-              {sections.map((section, idx) => {
-                const Icon = sectionTypeIcons[section.type];
-                return (
-                  <div key={section.id} className="flex items-center gap-3 rounded-xl border border-cv-line p-3 bg-white">
-                    <div className="flex flex-col">
-                      <button onClick={() => moveSection(idx, 'up')} disabled={idx === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30 transition-colors">
-                        <ArrowUp className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => moveSection(idx, 'down')} disabled={idx === sections.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30 transition-colors">
-                        <ArrowDown className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cv-soft shrink-0">
-                      <Icon className="h-4 w-4 text-cv-ink" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-cv-ink">{sectionTypeLabels[section.type]}</p>
-                      <p className="text-[10px] text-cv-muted">Position {idx + 1}{!section.visible && ' — hidden'}</p>
-                    </div>
-                    <button
-                      onClick={() => toggleSectionVisible(section.id)}
-                      className={cn(
-                        'rounded-full px-2.5 py-1 text-[10px] font-extrabold transition-colors',
-                        section.visible ? 'bg-emerald-50 text-cv-good' : 'bg-cv-soft text-cv-muted'
-                      )}
-                    >
-                      {section.visible ? 'Visible' : 'Hidden'}
-                    </button>
-                    {!['sec-hero', 'sec-packages', 'sec-benefits'].includes(section.id) && (
-                      <button onClick={() => removeSection(section.id)} className="text-cv-muted hover:text-cv-red transition-colors">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              <Button variant="outline" className="w-full rounded-xl border-cv-line font-bold mt-3" onClick={addCreatorVideoSection}>
-                <Plus className="h-4 w-4 mr-1.5" />
-                Add Creator Video Section
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* ─── Packages tab ─── */}
-      {activeTab === 'packages' && (
-        <div className="max-w-2xl space-y-4">
-          <Card className="cv-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-xs text-cv-muted">
-                <Lock className="h-3.5 w-3.5" />
-                Careverse manages all package content — pricing, benefits, and descriptions. You can select and reorder packages on your storefront.
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cv-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Your Storefront Packages</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {selectedPackages.length === 0 && (
-                <p className="text-sm text-cv-muted text-center py-6">No packages selected yet. Add packages from the list below.</p>
-              )}
-              {selectedPackages.map((pkgName, idx) => {
-                const product = mockProducts.find(p => p.name === pkgName);
-                if (!product) return null;
-                return (
-                  <div key={pkgName} className="flex items-center gap-3 rounded-xl border border-cv-line p-3">
-                    <div className="flex flex-col">
-                      <button onClick={() => movePackage(idx, 'up')} disabled={idx === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => movePackage(idx, 'down')} disabled={idx === selectedPackages.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
-                    </div>
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-[10px] font-extrabold">{idx + 1}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-cv-ink">{product.name} {product.popular && <span className="ml-1 inline-flex items-center rounded-full bg-cv-red/10 px-1.5 py-0.5 text-[9px] font-extrabold text-cv-red">POPULAR</span>}</p>
-                      <p className="text-xs text-cv-muted">{fmtMoney(product.price)} — {product.billingType.toLowerCase()}</p>
-                    </div>
-                    <button onClick={() => togglePackage(pkgName)} className="text-xs font-bold text-cv-muted hover:text-cv-red transition-colors">Remove</button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Card className="cv-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Available Careverse Packages</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {availableProducts.map((product) => {
-                const isSelected = selectedPackages.includes(product.name);
-                return (
-                  <div key={product.id} className="rounded-xl border border-cv-line p-3">
-                    <button onClick={() => togglePackage(product.name)} className="w-full flex items-center gap-3 text-left">
-                      <div className={cn('flex h-5 w-5 items-center justify-center rounded-md border-2 shrink-0', isSelected ? 'border-cv-ink bg-cv-ink' : 'border-cv-line')}>
-                        {isSelected && <Check className="h-3 w-3 text-white" />}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-cv-ink">{product.name} {product.popular && <span className="ml-1 inline-flex items-center rounded-full bg-cv-red/10 px-1.5 py-0.5 text-[9px] font-extrabold text-cv-red">POPULAR</span>}</p>
-                        <p className="text-xs text-cv-muted">{fmtMoney(product.price)} — {product.description.slice(0, 80)}...</p>
-                      </div>
-                      <Lock className="h-3.5 w-3.5 text-cv-muted shrink-0" />
-                    </button>
-                    {isSelected && (
-                      <div className="mt-3 pt-3 border-t border-cv-line space-y-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted">Package features (managed by Careverse)</p>
-                        <div className="flex flex-wrap gap-1">
-                          {product.features.map((f, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-cv-soft px-2 py-0.5 text-[10px] font-bold text-cv-body"><Lock className="h-2 w-2" />{f}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* ─── Branding tab ─── */}
-      {activeTab === 'branding' && (
+      {/* ─── Step 1: Brand ─── */}
+      {activeStep === 'brand' && (
         <div className="max-w-2xl space-y-4">
           {/* Brand Mode */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Store Brand Mode</CardTitle>
+              <CardTitle className="text-base font-bold text-cv-ink">Brand Mode</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-cv-muted">Control how your storefront presents branding alongside Careverse.</p>
@@ -869,16 +719,17 @@ export default function PartnerStorePage() {
             </Card>
           )}
 
-          {/* Brand Identity */}
+          {/* Store Name & Logo */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Brand Identity</CardTitle>
+              <CardTitle className="text-base font-bold text-cv-ink">Store Name &amp; Logo</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Storefront name */}
               <div className="grid gap-2">
                 <Label className="text-sm font-bold text-cv-ink">Storefront Name</Label>
-                <Input value={storefrontName} onChange={(e) => { setStorefrontName(e.target.value); markDirty(); }} className="cv-input" />
+                <Input value={storefrontName} onChange={(e) => { setStorefrontName(e.target.value); markDirty(); }} className="cv-input" placeholder="Your store name" />
+                <StepHint>Shown in the header and footer of your storefront</StepHint>
               </div>
 
               {/* Logo + Favicon */}
@@ -897,6 +748,7 @@ export default function PartnerStorePage() {
                       {logo && <button onClick={() => { setLogo(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
                     </div>
                   </div>
+                  <StepHint>Shown in the header of your storefront</StepHint>
                 </div>
 
                 <div className="grid gap-2">
@@ -913,13 +765,14 @@ export default function PartnerStorePage() {
                       {favicon && <button onClick={() => { setFavicon(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
                     </div>
                   </div>
+                  <StepHint>Shown in the browser tab when visitors view your store</StepHint>
                 </div>
               </div>
 
               {/* Partner photo + Hero image */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label className="text-sm font-bold text-cv-ink">Partner / Profile Image</Label>
+                  <Label className="text-sm font-bold text-cv-ink">Profile Image</Label>
                   <div className="flex items-center gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
                       {partnerPhoto ? <img src={partnerPhoto} alt="Partner" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-cv-muted" />}
@@ -932,6 +785,7 @@ export default function PartnerStorePage() {
                       {partnerPhoto && <button onClick={() => { setPartnerPhoto(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
                     </div>
                   </div>
+                  <StepHint>Shown in the About section of your storefront</StepHint>
                 </div>
 
                 <div className="grid gap-2">
@@ -948,21 +802,56 @@ export default function PartnerStorePage() {
                       {heroImage && <button onClick={() => { setHeroImage(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
                     </div>
                   </div>
+                  <StepHint>Shown at the top of your storefront, above the headline</StepHint>
                 </div>
               </div>
 
               {/* Brand presentation */}
               <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Brand Presentation / Tagline</Label>
+                <Label className="text-sm font-bold text-cv-ink">Tagline</Label>
                 <Input value={brandPresentation} onChange={(e) => { setBrandPresentation(e.target.value); markDirty(); }} className="cv-input" maxLength={80} placeholder="Trusted, family-focused care guidance" />
-                <p className="text-[10px] text-cv-muted">{brandPresentation.length}/80 — appears under your storefront name</p>
+                <StepHint>Shown under your storefront name in the header</StepHint>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Intro copy */}
+          {/* Hero & Messaging */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Hero &amp; Messaging</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Short Intro Copy</Label>
-                <Textarea value={introCopy} onChange={(e) => { setIntroCopy(e.target.value); markDirty(); }} className="cv-input min-h-[70px]" maxLength={200} placeholder="Helping families access better, more affordable care." />
-                <p className="text-[10px] text-cv-muted">{introCopy.length}/200</p>
+                <Label className="text-sm font-bold text-cv-ink">Hero Headline</Label>
+                <Input value={heroHeadline} onChange={(e) => { setHeroHeadline(e.target.value); markDirty(); }} className="cv-input" maxLength={60} placeholder="Quality care for your family" />
+                <div className="flex items-center justify-between">
+                  <StepHint>The large title at the top of your storefront</StepHint>
+                  <p className="text-[10px] text-cv-muted">{heroHeadline.length}/60</p>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Supporting Copy</Label>
+                <Textarea value={heroSupportingCopy} onChange={(e) => { setHeroSupportingCopy(e.target.value); markDirty(); }} className="cv-input min-h-[70px]" maxLength={160} placeholder="I help families like yours discover affordable, comprehensive care benefits through Careverse." />
+                <div className="flex items-center justify-between">
+                  <StepHint>The text below the headline on your storefront</StepHint>
+                  <p className="text-[10px] text-cv-muted">{heroSupportingCopy.length}/160</p>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Button Text</Label>
+                <Input value={ctaText} onChange={(e) => { setCtaText(e.target.value); markDirty(); }} className="cv-input" maxLength={20} placeholder="Request Care" />
+                <div className="flex items-center justify-between">
+                  <StepHint>The action button in the hero section</StepHint>
+                  <p className="text-[10px] text-cv-muted">{ctaText.length}/20</p>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">About Content</Label>
+                <Textarea value={aboutContent} onChange={(e) => { setAboutContent(e.target.value); markDirty(); }} className="cv-input min-h-[120px]" maxLength={500} placeholder="Tell families about your care philosophy and experience..." />
+                <div className="flex items-center justify-between">
+                  <StepHint>Shown in the About section of your storefront</StepHint>
+                  <p className="text-[10px] text-cv-muted">{aboutContent.length}/500</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -973,6 +862,7 @@ export default function PartnerStorePage() {
               <CardTitle className="text-base font-bold text-cv-ink">Colors</CardTitle>
             </CardHeader>
             <CardContent>
+              <p className="text-xs text-cv-muted mb-3">These colors control the look and feel of your entire storefront.</p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {colorFields.map((field) => (
                   <div key={field.key} className="flex items-center gap-2 rounded-xl border border-cv-line p-2.5">
@@ -998,10 +888,9 @@ export default function PartnerStorePage() {
           {/* Fonts */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Typography</CardTitle>
+              <CardTitle className="text-base font-bold text-cv-ink">Fonts</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Heading font */}
               <div className="grid gap-2">
                 <Label className="text-sm font-bold text-cv-ink">Heading Font</Label>
                 <select
@@ -1020,7 +909,6 @@ export default function PartnerStorePage() {
                 </select>
               </div>
 
-              {/* Body font */}
               <div className="grid gap-2">
                 <Label className="text-sm font-bold text-cv-ink">Body Font</Label>
                 <select
@@ -1039,7 +927,6 @@ export default function PartnerStorePage() {
                 </select>
               </div>
 
-              {/* Button weight */}
               <div className="grid gap-2">
                 <Label className="text-sm font-bold text-cv-ink">Button / Text Weight</Label>
                 <select value={branding.buttonWeight} onChange={(e) => updateBranding('buttonWeight', e.target.value)} className="cv-input rounded-xl">
@@ -1052,17 +939,19 @@ export default function PartnerStorePage() {
           {/* Contact Info */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Contact Info</CardTitle>
+              <CardTitle className="text-base font-bold text-cv-ink">Contact Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-xs text-cv-muted">These appear in your storefront footer. Only filled-in fields will be shown.</p>
+              <p className="text-xs text-cv-muted">These appear in your storefront footer. Only filled-in fields will be shown to visitors.</p>
               <div className="grid gap-2">
                 <Label className="text-xs font-bold text-cv-ink">Email address</Label>
                 <Input value={contactEmail} onChange={(e) => { setContactEmail(e.target.value); markDirty(); }} className="cv-input text-xs" placeholder="you@example.com" type="email" />
+                <StepHint>Visitors can click to email you</StepHint>
               </div>
               <div className="grid gap-2">
                 <Label className="text-xs font-bold text-cv-ink">Phone number</Label>
                 <Input value={contactPhone} onChange={(e) => { setContactPhone(e.target.value); markDirty(); }} className="cv-input text-xs" placeholder="+1 (555) 123-4567" type="tel" />
+                <StepHint>Visitors can tap to call you on mobile devices</StepHint>
               </div>
             </CardContent>
           </Card>
@@ -1136,8 +1025,8 @@ export default function PartnerStorePage() {
                       {brandPresentation && <p className="text-[10px]" style={{ color: 'var(--muted)' }}>{brandPresentation}</p>}
                     </div>
                   </div>
-                  <h2 className="mb-2" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight, fontSize: 28 }}>Quality care for your family</h2>
-                  <p className="text-sm mb-4" style={{ color: 'var(--body)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{heroSupportingCopy || introCopy || 'Helping families access better, more affordable care.'}</p>
+                  <h2 className="mb-2" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight, fontSize: 28 }}>{heroHeadline || 'Quality care for your family'}</h2>
+                  <p className="text-sm mb-4" style={{ color: 'var(--body)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{heroSupportingCopy || 'Helping families access better, more affordable care.'}</p>
                   <span className="inline-flex items-center rounded-full px-6 py-2.5 text-sm" style={{ backgroundColor: 'var(--ink)', color: branding.buttonTextColor, fontWeight: branding.buttonWeight }}>
                     {ctaText || 'Request Care'}
                   </span>
@@ -1148,47 +1037,94 @@ export default function PartnerStorePage() {
         </div>
       )}
 
-      {/* ─── Positioning tab ─── */}
-      {activeTab === 'positioning' && (
-        <div className="max-w-lg space-y-4">
+      {/* ─── Step 2: Packages ─── */}
+      {activeStep === 'packages' && (
+        <div className="max-w-2xl space-y-4">
+          <Card className="cv-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-xs text-cv-muted">
+                <Lock className="h-3.5 w-3.5" />
+                Careverse manages all package content — pricing, benefits, and descriptions. You select which packages appear on your storefront and in what order.
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="cv-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Hero & Positioning</CardTitle>
+              <CardTitle className="text-base font-bold text-cv-ink">Your Storefront Packages</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Hero Headline</Label>
-                <Input value={heroHeadline} onChange={(e) => { setHeroHeadline(e.target.value); markDirty(); }} className="cv-input" maxLength={60} placeholder="Quality care for your family" />
-                <p className="text-[10px] text-cv-muted">{heroHeadline.length}/60</p>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Hero Supporting Copy</Label>
-                <Textarea value={heroSupportingCopy} onChange={(e) => { setHeroSupportingCopy(e.target.value); markDirty(); }} className="cv-input min-h-[70px]" maxLength={160} placeholder="I help families like yours discover affordable, comprehensive care benefits through Careverse." />
-                <p className="text-[10px] text-cv-muted">{heroSupportingCopy.length}/160</p>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">CTA Button Text</Label>
-                <Input value={ctaText} onChange={(e) => { setCtaText(e.target.value); markDirty(); }} className="cv-input" maxLength={20} placeholder="Request Care" />
-                <p className="text-[10px] text-cv-muted">{ctaText.length}/20</p>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">About / Positioning Content</Label>
-                <Textarea value={aboutContent} onChange={(e) => { setAboutContent(e.target.value); markDirty(); }} className="cv-input min-h-[120px]" maxLength={500} placeholder="Tell families about your care philosophy and experience..." />
-                <p className="text-[10px] text-cv-muted">{aboutContent.length}/500</p>
-              </div>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-cv-muted mb-2">These are the packages visitors will see on your storefront. Reorder them to control how they appear.</p>
+              {selectedPackages.length === 0 && (
+                <p className="text-sm text-cv-muted text-center py-6">No packages selected yet. Add packages from the list below.</p>
+              )}
+              {selectedPackages.map((pkgName, idx) => {
+                const product = mockProducts.find(p => p.name === pkgName);
+                if (!product) return null;
+                return (
+                  <div key={pkgName} className="flex items-center gap-3 rounded-xl border border-cv-line p-3">
+                    <div className="flex flex-col">
+                      <button onClick={() => movePackage(idx, 'up')} disabled={idx === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => movePackage(idx, 'down')} disabled={idx === selectedPackages.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+                    </div>
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-[10px] font-extrabold">{idx + 1}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-cv-ink">{product.name} {product.popular && <span className="ml-1 inline-flex items-center rounded-full bg-cv-red/10 px-1.5 py-0.5 text-[9px] font-extrabold text-cv-red">POPULAR</span>}</p>
+                      <p className="text-xs text-cv-muted">{fmtMoney(product.price)} — {product.billingType.toLowerCase()}</p>
+                    </div>
+                    <button onClick={() => togglePackage(pkgName)} className="text-xs font-bold text-cv-muted hover:text-cv-red transition-colors">Remove</button>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Available Careverse Packages</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-cv-muted mb-2">Select the packages you want to offer. Package names, prices, benefits, and product information are controlled by Careverse.</p>
+              {availableProducts.map((product) => {
+                const isSelected = selectedPackages.includes(product.name);
+                return (
+                  <div key={product.id} className="rounded-xl border border-cv-line p-3">
+                    <button onClick={() => togglePackage(product.name)} className="w-full flex items-center gap-3 text-left">
+                      <div className={cn('flex h-5 w-5 items-center justify-center rounded-md border-2 shrink-0', isSelected ? 'border-cv-ink bg-cv-ink' : 'border-cv-line')}>
+                        {isSelected && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-cv-ink">{product.name} {product.popular && <span className="ml-1 inline-flex items-center rounded-full bg-cv-red/10 px-1.5 py-0.5 text-[9px] font-extrabold text-cv-red">POPULAR</span>}</p>
+                        <p className="text-xs text-cv-muted">{fmtMoney(product.price)} — {product.description.slice(0, 80)}...</p>
+                      </div>
+                      <Lock className="h-3.5 w-3.5 text-cv-muted shrink-0" />
+                    </button>
+                    {isSelected && (
+                      <div className="mt-3 pt-3 border-t border-cv-line space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted">Package features (managed by Careverse)</p>
+                        <div className="flex flex-wrap gap-1">
+                          {product.features.map((f, i) => (
+                            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-cv-soft px-2 py-0.5 text-[10px] font-bold text-cv-body"><Lock className="h-2 w-2" />{f}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* ─── Creator Content tab ─── */}
-      {activeTab === 'content' && (
+      {/* ─── Step 3: Content ─── */}
+      {activeStep === 'content' && (
         <div className="max-w-2xl space-y-4">
           <Card className="cv-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-xs text-cv-muted">
                 <Video className="h-3.5 w-3.5" />
-                Create video sections, add multiple videos to each section, and choose how many columns they display in. Videos can be reordered within a section or moved between sections.
+                Add videos to showcase your services. Create video sections, add multiple videos to each section, and choose how many columns they display in.
               </div>
             </CardContent>
           </Card>
@@ -1365,11 +1301,61 @@ export default function PartnerStorePage() {
           <Button variant="outline" className="w-full rounded-xl border-cv-line font-bold" onClick={() => addContentBlock()}>
             <Plus className="h-4 w-4 mr-1.5" /> Add Video Section
           </Button>
+
+          {/* Section ordering — secondary */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Section Order</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-cv-muted mb-3">Control the order sections appear on your storefront. You can also hide sections you don&apos;t want to show.</p>
+              {sections.map((section, idx) => {
+                const Icon = sectionTypeIcons[section.type];
+                return (
+                  <div key={section.id} className="flex items-center gap-3 rounded-xl border border-cv-line p-3 bg-white">
+                    <div className="flex flex-col">
+                      <button onClick={() => moveSection(idx, 'up')} disabled={idx === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30 transition-colors">
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => moveSection(idx, 'down')} disabled={idx === sections.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30 transition-colors">
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cv-soft shrink-0">
+                      <Icon className="h-4 w-4 text-cv-ink" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-cv-ink">{sectionTypeLabels[section.type]}</p>
+                      <p className="text-[10px] text-cv-muted">Position {idx + 1}{!section.visible && ' — hidden'}</p>
+                    </div>
+                    <button
+                      onClick={() => toggleSectionVisible(section.id)}
+                      className={cn(
+                        'rounded-full px-2.5 py-1 text-[10px] font-extrabold transition-colors',
+                        section.visible ? 'bg-emerald-50 text-cv-good' : 'bg-cv-soft text-cv-muted'
+                      )}
+                    >
+                      {section.visible ? 'Visible' : 'Hidden'}
+                    </button>
+                    {!['sec-hero', 'sec-packages', 'sec-benefits'].includes(section.id) && (
+                      <button onClick={() => removeSection(section.id)} className="text-cv-muted hover:text-cv-red transition-colors">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              <Button variant="outline" className="w-full rounded-xl border-cv-line font-bold mt-3" onClick={addCreatorVideoSection}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                Add Video Section
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* ─── Domain tab ─── */}
-      {activeTab === 'domain' && (
+      {/* ─── Step 4: Domain ─── */}
+      {activeStep === 'domain' && (
         <div className="max-w-lg space-y-4">
           <Card className="cv-card">
             <CardHeader className="pb-3">
@@ -1383,6 +1369,7 @@ export default function PartnerStorePage() {
                   <span className="text-sm font-bold text-cv-ink flex-1">{currentPartnerStorefront.url}</span>
                   <StatusBadge status={publishStatus === 'LIVE' ? 'live' : 'draft'} />
                 </div>
+                <StepHint>This is where your storefront is live right now</StepHint>
               </div>
               <div className="grid gap-2">
                 <Label className="text-sm font-bold text-cv-ink">Custom Domain</Label>
@@ -1403,9 +1390,10 @@ export default function PartnerStorePage() {
         </div>
       )}
 
-      {/* ─── Preview tab ─── */}
-      {activeTab === 'preview' && (
+      {/* ─── Step 5: Review & Publish ─── */}
+      {activeStep === 'publish' && (
         <div className="space-y-4">
+          {/* Preview */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1561,13 +1549,9 @@ export default function PartnerStorePage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
 
-      {/* ─── Publish tab ─── */}
-      {activeTab === 'publish' && (
-        <div className="max-w-lg space-y-4">
-          <Card className="cv-card">
+          {/* Publish Status */}
+          <Card className="cv-card max-w-lg">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-bold text-cv-ink">Publish Status</CardTitle>
             </CardHeader>
@@ -1606,7 +1590,8 @@ export default function PartnerStorePage() {
             </CardContent>
           </Card>
 
-          <Card className="cv-card">
+          {/* Storefront Checklist */}
+          <Card className="cv-card max-w-lg">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-bold text-cv-ink">Storefront Checklist</CardTitle>
             </CardHeader>
@@ -1614,8 +1599,8 @@ export default function PartnerStorePage() {
               {[
                 { label: 'At least one package selected', done: selectedPackages.length > 0 },
                 { label: 'Storefront name set', done: storefrontName.length > 0 },
-                { label: 'Intro copy written', done: introCopy.length > 0 },
                 { label: 'Hero headline set', done: heroHeadline.length > 0 },
+                { label: 'About content written', done: aboutContent.length > 0 },
                 { label: 'Content blocks added (optional)', done: contentBlocks.length > 0 },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2">
@@ -1629,6 +1614,43 @@ export default function PartnerStorePage() {
           </Card>
         </div>
       )}
+
+      {/* Step navigation buttons */}
+      <div className="flex items-center justify-between mt-8 pt-4 border-t border-cv-line">
+        <Button
+          variant="outline"
+          className="rounded-full border-cv-line font-bold"
+          onClick={goPrev}
+          disabled={currentStepIndex === 0}
+        >
+          <ArrowLeft className="h-4 w-4 mr-1.5" />
+          Back
+        </Button>
+        <p className="text-xs text-cv-muted hidden sm:block">
+          Step {currentStepIndex + 1} of {steps.length}: {steps[currentStepIndex]?.description}
+        </p>
+        {currentStepIndex < steps.length - 1 ? (
+          <Button
+            className="cv-btn-primary rounded-full"
+            onClick={goNext}
+          >
+            Next: {steps[currentStepIndex + 1]?.label}
+            <ArrowRight className="h-4 w-4 ml-1.5" />
+          </Button>
+        ) : (
+          <Button
+            className="cv-btn-primary rounded-full"
+            onClick={handleSave}
+          >
+            <Save className="h-4 w-4 mr-1.5" />
+            Save Changes
+          </Button>
+        )}
+      </div>
+
+      <div className="mt-6">
+        <SupportLink variant="card" context="Need help setting up your storefront, branding, or domain? Our team is here to help." />
+      </div>
 
       <ShareStoreDialog
         open={shareDialogOpen}
@@ -1644,10 +1666,6 @@ export default function PartnerStorePage() {
         storeUrl={currentPartnerStorefront.url}
         storeName={storefrontName || currentPartnerStorefront.name}
       />
-
-      <div className="mt-6">
-        <SupportLink variant="card" context="Need help setting up your storefront, branding, or domain? Our team can guide you through it." />
-      </div>
     </div>
   );
 }
