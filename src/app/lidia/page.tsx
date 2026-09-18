@@ -6,7 +6,8 @@ import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send, Heart, Shield, Sparkles, ArrowRight, Check, MessageCircle, User, Phone, Mail, ChevronDown, ChevronUp, Stethoscope, Wallet, Package, Calendar, Clock, ArrowLeft, Bot, Star } from 'lucide-react';
-import { mockMemberships, mockProducts, currentPartnerStorefront, currentPartner } from '@/data/mock';
+import { mockMemberships, currentPartnerStorefront, currentPartner } from '@/data/mock';
+import { getPackageById, type CareversePackage } from '@/lib/package-catalog';
 import type { MockMembership, CustomerAttribution } from '@/data/mock/types';
 import { loadCustomerAttribution } from '@/lib/attribution-persistence';
 import { cn } from '@/lib/utils';
@@ -75,7 +76,7 @@ function LidiaContent() {
     }
   }, [membershipParam]);
 
-  const product = membership ? mockProducts.find((p) => p.id === membership.productId) : null;
+  const product: CareversePackage | null = membership ? (getPackageById(membership.productId) ?? null) : null;
   const fmtMoney = (n: number) => `$${n}/mo`;
 
   const sendMessage = (text: string) => {
@@ -91,7 +92,7 @@ function LidiaContent() {
     }, 1200);
   };
 
-  const generateLidiaResponse = (userText: string, mem: MockMembership | null, prod: typeof mockProducts[0] | null | undefined): LidiaMessage => {
+  const generateLidiaResponse = (userText: string, mem: MockMembership | null, prod: CareversePackage | null | undefined): LidiaMessage => {
     if (!mem) return { id: `l-${Date.now()}`, sender: 'lidia', text: 'I need your membership information to help you. Please complete a purchase first.' };
 
     const lower = userText.toLowerCase();

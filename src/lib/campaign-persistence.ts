@@ -3,6 +3,10 @@ export interface Campaign {
   name: string;
   source: string;
   ref: string;
+  destination?: string;
+  storefrontId?: string;
+  storefrontName?: string;
+  campaignUrl?: string;
   createdAt: string;
   clicks: number;
   conversions: number;
@@ -32,13 +36,24 @@ export function saveCampaigns(campaigns: Campaign[]): void {
   localStorage.setItem(CAMPAIGN_KEY, JSON.stringify(campaigns));
 }
 
-export function createCampaign(name: string, source: string): Campaign {
+export function createCampaign(
+  name: string,
+  source: string,
+  destination?: string,
+  storefrontId?: string,
+  storefrontName?: string,
+  campaignUrl?: string,
+): Campaign {
   const ref = `camp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
   const campaign: Campaign = {
     id: `camp-${Date.now()}`,
     name,
     source: source || 'direct',
     ref,
+    destination,
+    storefrontId,
+    storefrontName,
+    campaignUrl,
     createdAt: new Date().toISOString(),
     clicks: 0,
     conversions: 0,

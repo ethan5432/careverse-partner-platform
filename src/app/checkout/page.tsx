@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, ArrowLeft, CreditCard, Wallet, Building, Shield, Loader2, AlertCircle, Lock, Heart, ArrowRight } from 'lucide-react';
-import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders, mockMemberships } from '@/data/mock';
+import { currentPartnerStorefront, currentPartner, mockOrders, mockMemberships } from '@/data/mock';
+import { getPackageById, getPackageCatalog } from '@/lib/package-catalog';
 import type { MockOrder, MockMembership, CustomerAttribution } from '@/data/mock/types';
 import { loadCustomerAttribution, mergeAttribution, buildDefaultAttribution } from '@/lib/attribution-persistence';
 import { cn } from '@/lib/utils';
@@ -27,8 +28,8 @@ export default function CheckoutPage() {
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const productId = searchParams.get('product') || 'prod-family-plus';
-  const product = mockProducts.find((p) => p.id === productId) || mockProducts[0];
+  const productId = searchParams.get('product') || 'cv-family-plus-monthly';
+  const product = getPackageById(productId) || getPackageCatalog()[0];
   const storefront = currentPartnerStorefront;
   const partner = currentPartner;
 
@@ -430,7 +431,7 @@ function CheckoutContent() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-cv-ink">{product.name}</p>
-                    <p className="text-xs text-cv-muted mt-0.5">{product.billingType.charAt(0) + product.billingType.slice(1).toLowerCase()} billing</p>
+                    <p className="text-xs text-cv-muted mt-0.5">{product.billingOption.charAt(0) + product.billingOption.slice(1).toLowerCase()} billing</p>
                   </div>
                   <p className="text-sm font-bold text-cv-ink">{fmtMoney(product.price)}</p>
                 </div>

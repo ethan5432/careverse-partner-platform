@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Avatar } from '@/components/shared/StatusBadge';
-import { LayoutDashboard, Users, Store, ArrowLeftRight, Percent, Wallet, Package, MessageSquare, Mail, ChartBar as BarChart3, Settings, LogOut, ChevronsUpDown, Bell, Layers } from 'lucide-react';
+import { LayoutDashboard, Users, Store, ArrowLeftRight, Percent, Wallet, Package, MessageSquare, Mail, ChartBar as BarChart3, Settings, LogOut, ChevronsUpDown, Bell, Layers, FileText, LayoutTemplate } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -20,6 +20,8 @@ const adminNavItems = [
   { title: 'Commissions', url: '/admin/commissions', icon: Percent },
   { title: 'Payouts', url: '/admin/payouts', icon: Wallet },
   { title: 'Products', url: '/admin/products', icon: Package },
+  { title: 'Content', url: '/admin/content', icon: FileText },
+  { title: 'Templates', url: '/admin/templates', icon: LayoutTemplate },
   { title: 'Resources', url: '/admin/resources', icon: Layers },
   { title: 'Messages', url: '/admin/messages', icon: MessageSquare },
   { title: 'Emails', url: '/admin/emails', icon: Mail },

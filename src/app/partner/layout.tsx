@@ -41,7 +41,7 @@ const baseNavItems = [
 ];
 
 const bottomNavItems = [
-  { title: 'Resources', url: '/partner/resources', icon: BookOpen },
+  { title: 'Marketing', url: '/partner/resources', icon: BookOpen },
   { title: 'Messages', url: '/partner/messages', icon: MessageSquare },
   { title: 'Settings', url: '/partner/settings', icon: Settings },
 ];
