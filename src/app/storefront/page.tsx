@@ -121,10 +121,6 @@ export default function StorefrontPage() {
         <div className="max-w-6xl mx-auto px-5 lg:px-8 py-12 lg:py-16">
           {sectionBlocks[0].title && (
             <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <div style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-                <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Video</span>
-              </div>
               <h2 className="cv-h2" style={headingStyle}>{sectionBlocks[0].title}</h2>
             </div>
           )}
@@ -164,10 +160,6 @@ export default function StorefrontPage() {
       <div className="max-w-6xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
         <div className="grid gap-12 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-2 mb-4">
-              <div style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-              <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Care Benefits</span>
-            </div>
             <h1 className="cv-h1 mb-6" style={headingStyle}>
               {heroHeadline.split(' ').slice(0, -1).join(' ')} <span style={{ color: 'var(--red)' }}>{heroHeadline.split(' ').slice(-1)}</span>
             </h1>
@@ -242,10 +234,6 @@ export default function StorefrontPage() {
     <section id="packages" style={{ backgroundColor: 'var(--soft)' }}>
       <div className="max-w-6xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-            <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Plans</span>
-          </div>
           <h2 className="cv-h2" style={headingStyle}>Choose your package</h2>
           <p className="mt-3 text-lg" style={{ color: 'var(--body)', ...bodyStyle }}>Every plan includes Lidia, free for everyone.</p>
         </div>
@@ -324,10 +312,6 @@ export default function StorefrontPage() {
     <section id="benefits" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-6xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-            <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>What&apos;s Included</span>
-          </div>
           <h2 className="cv-h2" style={headingStyle}>Everything your family needs</h2>
         </div>
 
@@ -357,10 +341,6 @@ export default function StorefrontPage() {
     <section id="about" style={{ backgroundColor: 'var(--soft)' }}>
       <div className="max-w-4xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-            <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>About</span>
-          </div>
           <h2 className="cv-h2" style={headingStyle}>About {sf.name}</h2>
         </div>
         <div className="cv-card p-8">
@@ -538,10 +518,6 @@ export default function StorefrontPage() {
       {/* Lidia — always rendered after dynamic sections */}
       <section id="lidia" style={{ backgroundColor: 'var(--soft)' }}>
         <div className="max-w-4xl mx-auto px-5 lg:px-8 py-16 lg:py-24 text-center">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-            <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Free for everyone</span>
-          </div>
           <h2 className="cv-h2 mb-4" style={headingStyle}>Meet Lidia</h2>
           <p className="text-lg leading-relaxed mb-8" style={{ color: 'var(--body)', fontSize: 20, lineHeight: 1.62, ...bodyStyle }}>
             Lidia is free for everyone. Building the world&apos;s largest AI-powered care network. Ask questions, get guidance, and find the care your family needs — no membership required.
