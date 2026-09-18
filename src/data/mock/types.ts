@@ -189,6 +189,9 @@ export interface MockConversion {
   clickId: string;
   customerName: string;
   customerEmail: string;
+  campaignId?: string;
+  campaignSource?: string;
+  attributedVia?: 'STOREFRONT' | 'AFFILIATE_LINK' | 'LIDIA';
 }
 
 export type CommissionStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'REVERSED';
@@ -424,6 +427,7 @@ export interface MockOrder {
   storefrontName: string;
   amount: number;
   membershipId?: string;
+  attribution?: CustomerAttribution;
 }
 
 export interface CreatorProfile {
@@ -467,6 +471,18 @@ export interface AffiliateLink {
   conversions: number;
 }
 
+export interface CustomerAttribution {
+  partnerId: string;
+  partnerName: string;
+  storefrontId: string;
+  storefrontName: string;
+  campaignId?: string;
+  campaignSource?: string;
+  clickId?: string;
+  attributionSource: string;
+  firstTouchAt: string;
+}
+
 export interface MockMembership {
   id: string;
   customerId: string;
@@ -487,4 +503,5 @@ export interface MockMembership {
   benefits: string[];
   benefitDetails: { title: string; description: string }[];
   humanHelpEligible: boolean;
+  attribution?: CustomerAttribution;
 }

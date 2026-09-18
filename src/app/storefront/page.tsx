@@ -1,22 +1,48 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Button } from '@/components/ui/button';
 import { Check, Heart, Shield, Sparkles, ArrowRight, X, Wallet, Star, Clock, Users, Phone, Mail, ChevronDown, ChevronUp, Play, Target, Package as PackageIcon, Instagram, Youtube, Facebook, Linkedin, Twitter, ExternalLink } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront } from '@/data/mock';
 import { loadStorefrontConfig, getVideoObjectURL, StorefrontConfig, StoreBranding, SocialLink } from '@/lib/store-persistence';
+import { captureAttributionFromParams, saveCustomerAttribution, loadCustomerAttribution } from '@/lib/attribution-persistence';
 import { cn } from '@/lib/utils';
 
 export default function StorefrontPage() {
+  return (
+    <Suspense fallback={<div className="cv-page min-h-screen flex items-center justify-center"><div className="text-sm text-cv-muted">Loading storefront...</div></div>}>
+      <StorefrontContent />
+    </Suspense>
+  );
+}
+
+function StorefrontContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [purchasedPlan, setPurchasedPlan] = useState<string | null>(null);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [config, setConfig] = useState<StorefrontConfig | null>(null);
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    // Capture and persist attribution from URL params (ref, campaign, etc.)
+    const captured = captureAttributionFromParams(searchParams);
+    if (captured) {
+      saveCustomerAttribution(captured);
+    } else if (!loadCustomerAttribution()) {
+      // Store the default storefront attribution so it persists for the customer journey
+      saveCustomerAttribution({
+        partnerId: currentPartnerStorefront.partnerId,
+        partnerName: currentPartnerStorefront.name,
+        storefrontId: currentPartnerStorefront.id,
+        storefrontName: currentPartnerStorefront.name,
+        attributionSource: 'Storefront Link',
+        firstTouchAt: new Date().toISOString(),
+      });
+    }
+
     const loaded = loadStorefrontConfig();
     setConfig(loaded);
 
@@ -31,7 +57,7 @@ export default function StorefrontPage() {
       setVideoUrls(urls);
     };
     loadVideos();
-  }, []);
+  }, [searchParams]);
 
   const handlePurchase = (product: typeof mockProducts[0]) => {
     router.push(`/checkout?product=${product.id}`);
