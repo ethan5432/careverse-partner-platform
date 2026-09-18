@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Button } from '@/components/ui/button';
-import { Check, Heart, Shield, Sparkles, ArrowRight, X, Wallet, Star, Clock, Users, Phone, Mail, ChevronDown, ChevronUp, Play, Target, Package as PackageIcon, Instagram, Youtube, Facebook, Linkedin, Twitter } from 'lucide-react';
+import { Check, Heart, Shield, Sparkles, ArrowRight, X, Wallet, Star, Clock, Users, Phone, Mail, ChevronDown, ChevronUp, Play, Target, Package as PackageIcon, Instagram, Youtube, Facebook, Linkedin, Twitter, ExternalLink } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront } from '@/data/mock';
 import { loadStorefrontConfig, getVideoObjectURL, StorefrontConfig, StoreBranding, SocialLink } from '@/lib/store-persistence';
 import { cn } from '@/lib/utils';
@@ -60,6 +60,8 @@ export default function StorefrontPage() {
   const showCareverseInHeader = config?.showCareverseInHeader ?? true;
   const showCareverseInFooter = config?.showCareverseInFooter ?? true;
   const socialLinks = (config?.socialLinks || []).filter(s => s.visible && s.url).sort((a, b) => a.order - b.order);
+  const contactEmail = config?.contactEmail || '';
+  const contactPhone = config?.contactPhone || '';
 
   const socialIconMap: Record<string, typeof Instagram> = {
     instagram: Instagram,
@@ -68,6 +70,7 @@ export default function StorefrontPage() {
     facebook: Facebook,
     linkedin: Linkedin,
     x: Twitter,
+    other: ExternalLink,
   };
 
   const isWhiteLabel = brandMode === 'white-label';
@@ -175,16 +178,6 @@ export default function StorefrontPage() {
               <button className="cv-btn-secondary px-8" style={buttonStyle} onClick={() => document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' })}>
                 See how it works
               </button>
-            </div>
-            <div className="flex flex-wrap gap-3 mt-8">
-              {['No waiting periods', 'Cancel anytime', 'Lidia included free'].map((chip) => (
-                <div key={chip} className="flex items-center gap-1.5 rounded-full border px-3 py-1.5" style={{ backgroundColor: 'var(--white)', borderColor: 'var(--line)' }}>
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(11,155,107,0.1)' }}>
-                    <Check className="h-3 w-3" style={{ color: 'var(--good)' }} />
-                  </div>
-                  <span className="text-xs font-extrabold" style={{ color: 'var(--ink)' }}>{chip}</span>
-                </div>
-              ))}
             </div>
           </div>
 
@@ -394,30 +387,36 @@ export default function StorefrontPage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-white mb-3">Contact</p>
             <ul className="space-y-2">
-              <li className="flex items-center gap-2 text-sm" style={{ color: 'var(--night-text)' }}><Mail className="h-3.5 w-3.5" /> hello@careverse.ai</li>
-              <li className="flex items-center gap-2 text-sm" style={{ color: 'var(--night-text)' }}><Phone className="h-3.5 w-3.5" /> 1-800-CAREVERSE</li>
+              {contactEmail && (
+                <li><a href={`mailto:${contactEmail}`} className="flex items-center gap-2 text-sm hover:text-white transition-colors" style={{ color: 'var(--night-text)' }}><Mail className="h-3.5 w-3.5" /> {contactEmail}</a></li>
+              )}
+              {contactPhone && (
+                <li><a href={`tel:${contactPhone}`} className="flex items-center gap-2 text-sm hover:text-white transition-colors" style={{ color: 'var(--night-text)' }}><Phone className="h-3.5 w-3.5" /> {contactPhone}</a></li>
+              )}
+              {socialLinks.length > 0 && (
+                <li className="pt-2">
+                  <div className="flex items-center gap-2">
+                    {socialLinks.map((link) => {
+                      const Icon = socialIconMap[link.platform];
+                      if (!Icon) return null;
+                      return (
+                        <a
+                          key={link.id}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10"
+                          style={{ color: 'var(--night-text)' }}
+                          title={link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </li>
+              )}
             </ul>
-            {socialLinks.length > 0 && (
-              <div className="flex items-center gap-2 mt-4">
-                {socialLinks.map((link) => {
-                  const Icon = socialIconMap[link.platform];
-                  if (!Icon) return null;
-                  return (
-                    <a
-                      key={link.id}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10"
-                      style={{ color: 'var(--night-text)' }}
-                      title={link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </a>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
         <div className="mt-8 pt-6 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
@@ -507,7 +506,6 @@ export default function StorefrontPage() {
             <a href="#packages" className="hidden sm:block text-sm font-bold hover:text-cv-ink transition-colors" style={{ color: 'var(--body)' }}>Packages</a>
             <a href="#benefits" className="hidden sm:block text-sm font-bold hover:text-cv-ink transition-colors" style={{ color: 'var(--body)' }}>Benefits</a>
             <a href="#lidia" className="hidden sm:block text-sm font-bold hover:text-cv-ink transition-colors" style={{ color: 'var(--body)' }}>Lidia</a>
-            <button className="cv-btn-primary cv-btn-sm px-5" style={{ ...buttonStyle, color: branding?.buttonTextColor }}>{ctaText}</button>
           </div>
         </div>
       </header>

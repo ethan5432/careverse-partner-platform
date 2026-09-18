@@ -37,6 +37,7 @@ const socialPlatforms: { value: SocialLink['platform']; label: string }[] = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'linkedin', label: 'LinkedIn' },
   { value: 'x', label: 'X' },
+  { value: 'other', label: 'Other' },
 ];
 
 type BuilderTab = 'overview' | 'packages' | 'branding' | 'positioning' | 'content' | 'sections' | 'domain' | 'preview' | 'publish';
@@ -177,6 +178,8 @@ export default function PartnerStorePage() {
   const [publishStatus, setPublishStatus] = useState<'LIVE' | 'DRAFT'>('DRAFT');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // Video preview URLs for uploaded videos
@@ -217,6 +220,8 @@ export default function PartnerStorePage() {
     setContentBlocks(config.creatorContent);
     setPublishStatus(config.status);
     setSocialLinks(config.socialLinks || []);
+    setContactEmail(config.contactEmail || '');
+    setContactPhone(config.contactPhone || '');
     setLoaded(true);
 
     // Load video previews for uploaded content
@@ -264,12 +269,14 @@ export default function PartnerStorePage() {
     showCareverseInHeader,
     showCareverseInFooter,
     socialLinks,
+    contactEmail,
+    contactPhone,
     savedAt: new Date().toISOString(),
   }), [storefrontName, logo, favicon, partnerPhoto, heroImage, sectionImages, introCopy, brandPresentation, brandingMode, branding,
        heroHeadline, heroSupportingCopy, ctaText, aboutContent, customDomain,
        domainStatus, selectedPackages, sections, contentBlocks, publishStatus,
        showProfile, showVerifiedBadge, showPoweredByFooter, showCareverseInHeader, showCareverseInFooter,
-       socialLinks]);
+       socialLinks, contactEmail, contactPhone]);
 
   const handleSave = () => {
     setSaveStatus('saving');
@@ -1042,6 +1049,24 @@ export default function PartnerStorePage() {
             </CardContent>
           </Card>
 
+          {/* Contact Info */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Contact Info</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-cv-muted">These appear in your storefront footer. Only filled-in fields will be shown.</p>
+              <div className="grid gap-2">
+                <Label className="text-xs font-bold text-cv-ink">Email address</Label>
+                <Input value={contactEmail} onChange={(e) => { setContactEmail(e.target.value); markDirty(); }} className="cv-input text-xs" placeholder="you@example.com" type="email" />
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-xs font-bold text-cv-ink">Phone number</Label>
+                <Input value={contactPhone} onChange={(e) => { setContactPhone(e.target.value); markDirty(); }} className="cv-input text-xs" placeholder="+1 (555) 123-4567" type="tel" />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Social Links */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
@@ -1087,7 +1112,7 @@ export default function PartnerStorePage() {
                   </div>
                 );
               })}
-              {socialLinks.length < 6 && (
+              {socialLinks.length < 8 && (
                 <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={addSocialLink}>
                   <PlusIcon className="h-3.5 w-3.5 mr-1.5" />
                   Add social link
