@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, ArrowLeft, CreditCard, Wallet, Building, Shield, Loader2, AlertCircle, Lock } from 'lucide-react';
+import { Check, ArrowLeft, CreditCard, Wallet, Building, Shield, Loader2, AlertCircle, Lock, Heart, ArrowRight } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders, mockMemberships } from '@/data/mock';
 import type { MockOrder, MockMembership } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
@@ -145,7 +145,22 @@ function CheckoutContent() {
               <div className="flex justify-between"><span className="text-xs text-cv-muted">Amount</span><span className="text-sm font-bold text-cv-ink">{fmtMoney(completedOrder.amount)}/mo</span></div>
               <div className="flex justify-between"><span className="text-xs text-cv-muted">Email</span><span className="text-sm font-bold text-cv-ink truncate ml-2">{completedOrder.customerEmail}</span></div>
             </div>
-            <Button className="cv-btn-primary w-full rounded-full mb-2" onClick={() => router.push(`/checkout/confirmation?order=${completedOrder.id}&ref=${completedOrder.reference}&membership=${completedMembership?.id || ''}`)}>
+            {/* Primary handoff to Lidia */}
+            <div className="rounded-xl border-2 border-cv-ink p-4 mb-3 text-left">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cv-ink shrink-0"><Heart className="h-5 w-5 text-cv-red" /></div>
+                <div>
+                  <p className="text-sm font-bold text-cv-ink">Manage your benefits with Lidia</p>
+                  <p className="text-xs text-cv-muted">Lidia is your AI care assistant — she'll help you understand, use, and manage your Careverse benefits.</p>
+                </div>
+              </div>
+            </div>
+            <Button className="cv-btn-primary w-full rounded-full mb-2" onClick={() => router.push(`/lidia?membership=${completedMembership?.id || ''}`)}>
+              <Heart className="h-4 w-4 mr-1.5" />
+              Go to Lidia
+              <ArrowRight className="h-4 w-4 ml-1.5" />
+            </Button>
+            <Button variant="outline" className="w-full rounded-full border-cv-line font-bold mb-2" onClick={() => router.push(`/checkout/confirmation?order=${completedOrder.id}&ref=${completedOrder.reference}&membership=${completedMembership?.id || ''}`)}>
               View Confirmation
             </Button>
             <Button variant="outline" className="w-full rounded-full border-cv-line font-bold" onClick={() => router.push('/storefront')}>
