@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Avatar } from '@/components/shared/StatusBadge';
-import { LayoutDashboard, Users, Store, ArrowLeftRight, Percent, Wallet, Package, MessageSquare, Mail, ChartBar as BarChart3, Settings, LogOut, ChevronsUpDown, Bell, Layers, FileText, LayoutTemplate } from 'lucide-react';
+import { LayoutDashboard, Users, Store, ArrowLeftRight, Percent, Wallet, Package, MessageSquare, Mail, ChartBar as BarChart3, Settings, LogOut, ChevronsUpDown, Bell, Layers, FileText, LayoutTemplate, Eye, User as UserIcon, Building } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -129,6 +129,48 @@ function MobileAdminNav() {
   );
 }
 
+function ViewAsDropdown() {
+  const router = useRouter();
+  const { setViewAs } = useMockAuth();
+
+  const handleViewAs = (type: 'CREATOR' | 'BUSINESS') => {
+    setViewAs(type);
+    router.push('/partner');
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-cv-body hover:bg-cv-soft transition-colors border border-cv-line">
+          <Eye className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">View as</span>
+          <ChevronsUpDown className="h-3 w-3" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48" align="end" sideOffset={8}>
+        <div className="px-2 py-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted">Test partner experience</p>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleViewAs('CREATOR')}>
+          <UserIcon className="mr-2 h-4 w-4" />
+          <div className="flex flex-col">
+            <span className="text-sm font-bold">Creator</span>
+            <span className="text-[10px] text-cv-muted">Content creator experience</span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleViewAs('BUSINESS')}>
+          <Building className="mr-2 h-4 w-4" />
+          <div className="flex flex-col">
+            <span className="text-sm font-bold">Business / Agency</span>
+            <span className="text-[10px] text-cv-muted">Business partner experience</span>
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function AuthedAdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useMockAuth();
   const router = useRouter();
@@ -170,6 +212,7 @@ export default function AuthedAdminLayout({ children }: { children: React.ReactN
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <ViewAsDropdown />
             <a href="/admin/messages" className="relative rounded-full p-2 hover:bg-cv-soft transition-colors" title="Notifications">
               <Bell className="h-4 w-4 text-cv-body" />
               <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-cv-red text-[10px] text-white font-bold">

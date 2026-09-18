@@ -74,6 +74,8 @@ interface MockAuthContextValue {
   creatorProfiles: CreatorProfile[];
   storefrontAccess: StorefrontAccessState;
   affiliateLink: AffiliateLink | null;
+  viewAs: PartnerType | null;
+  adminUser: MockUser | null;
   login: (email: string, password: string, role: MockRole) => { success: boolean; error?: string };
   logout: () => void;
   switchPartnerType: (type: PartnerType) => void;
@@ -92,6 +94,8 @@ interface MockAuthContextValue {
   hasStorefrontAccess: () => boolean;
   grantStorefrontAccess: () => void;
   refreshStorefrontAccess: () => void;
+  setViewAs: (type: PartnerType) => void;
+  clearViewAs: () => void;
 }
 
 const defaultOnboarding: OnboardingProgress = {
@@ -110,6 +114,8 @@ const STORAGE_KEY = 'careverse_mock_auth';
 const APPLICATION_KEY = 'careverse_mock_application';
 const ONBOARDING_KEY = 'careverse_mock_onboarding';
 const EMAIL_VERIFIED_KEY = 'careverse_mock_email_verified';
+const VIEW_AS_KEY = 'careverse_view_as';
+const ADMIN_USER_KEY = 'careverse_admin_user';
 
 export function MockAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<MockUser | null>(null);
@@ -120,6 +126,8 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
   const [creatorProfiles, setCreatorProfiles] = useState<CreatorProfile[]>([]);
   const [storefrontAccess, setStorefrontAccess] = useState<StorefrontAccessState>('NONE');
   const [affiliateLink, setAffiliateLink] = useState<AffiliateLink | null>(null);
+  const [viewAs, setViewAsState] = useState<PartnerType | null>(null);
+  const [adminUser, setAdminUser] = useState<MockUser | null>(null);
 
   useEffect(() => {
     try {
@@ -147,6 +155,14 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
         setStorefrontAccess(access);
         const affLink = loadAffiliateLink(parsedUser.id);
         setAffiliateLink(affLink);
+      }
+      const storedViewAs = localStorage.getItem(VIEW_AS_KEY);
+      if (storedViewAs === 'CREATOR' || storedViewAs === 'BUSINESS') {
+        setViewAsState(storedViewAs as PartnerType);
+      }
+      const storedAdmin = localStorage.getItem(ADMIN_USER_KEY);
+      if (storedAdmin) {
+        setAdminUser(JSON.parse(storedAdmin) as MockUser);
       }
     } catch {
       // ignore
@@ -210,6 +226,14 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     persistUser(null);
+    setViewAsState(null);
+    setAdminUser(null);
+    try {
+      localStorage.removeItem(VIEW_AS_KEY);
+      localStorage.removeItem(ADMIN_USER_KEY);
+    } catch {
+      // ignore
+    }
   }, []);
 
   const switchPartnerType = useCallback((type: PartnerType) => {
@@ -437,6 +461,53 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
+  const setViewAs = useCallback((type: PartnerType) => {
+    if (user) {
+      setAdminUser(user);
+      try {
+        localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
+      } catch {
+        // ignore
+      }
+    }
+    const mockPartner = mockUsers.find(u => u.role === 'PARTNER' && u.partnerType === type && u.status === 'ACTIVE');
+    if (mockPartner) {
+      persistUser(mockPartner);
+      const access = loadStorefrontAccess(mockPartner.id);
+      setStorefrontAccess(access);
+      const profiles = loadCreatorProfiles(mockPartner.id);
+      setCreatorProfiles(profiles);
+      const affLink = loadAffiliateLink(mockPartner.id);
+      setAffiliateLink(affLink);
+    }
+    setViewAsState(type);
+    try {
+      localStorage.setItem(VIEW_AS_KEY, type);
+    } catch {
+      // ignore
+    }
+  }, [user]);
+
+  const clearViewAs = useCallback(() => {
+    if (adminUser) {
+      persistUser(adminUser);
+      const access = loadStorefrontAccess(adminUser.id);
+      setStorefrontAccess(access);
+      const profiles = loadCreatorProfiles(adminUser.id);
+      setCreatorProfiles(profiles);
+      const affLink = loadAffiliateLink(adminUser.id);
+      setAffiliateLink(affLink);
+    }
+    setAdminUser(null);
+    setViewAsState(null);
+    try {
+      localStorage.removeItem(VIEW_AS_KEY);
+      localStorage.removeItem(ADMIN_USER_KEY);
+    } catch {
+      // ignore
+    }
+  }, [adminUser]);
+
   useEffect(() => {
     if (user) {
       const profiles = loadCreatorProfiles(user.id);
@@ -463,6 +534,8 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
         creatorProfiles,
         storefrontAccess,
         affiliateLink,
+        viewAs,
+        adminUser,
         login,
         logout,
         switchPartnerType,
@@ -481,6 +554,8 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
         hasStorefrontAccess: hasStorefrontAccessFn,
         grantStorefrontAccess: grantStorefrontAccessFn,
         refreshStorefrontAccess,
+        setViewAs,
+        clearViewAs,
       }}
     >
       {children}

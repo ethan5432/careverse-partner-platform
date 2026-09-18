@@ -19,6 +19,7 @@ import {
   Lock,
   Users,
   Plug,
+  Eye,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -257,11 +258,11 @@ function MobileNav() {
 }
 
 export default function PartnerLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useMockAuth();
+  const { user, loading, viewAs, clearViewAs } = useMockAuth();
   const router = useRouter();
   const wlConfig = useWhiteLabel();
 
-  const shouldRedirect = !loading && (!user || user.role !== 'PARTNER');
+  const shouldRedirect = !loading && (!user || (user.role !== 'PARTNER' && !viewAs));
 
   useEffect(() => {
     if (shouldRedirect) {
@@ -315,6 +316,29 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
             <PartnerNotifications />
           </div>
         </header>
+
+        {/* View-as banner */}
+        {viewAs && (
+          <div className="bg-cv-ink text-white px-5 lg:px-8 py-2.5 flex items-center justify-between sticky top-[72px] z-30">
+            <div className="flex items-center gap-2">
+              <Eye className="h-3.5 w-3.5" />
+              <span className="text-xs font-bold">
+                Viewing as {viewAs === 'CREATOR' ? 'Creator' : 'Business / Agency'}
+              </span>
+              <span className="text-[10px] text-white/60 ml-2 hidden sm:inline">Admin testing mode — no changes are permanent</span>
+            </div>
+            <button
+              onClick={() => {
+                clearViewAs();
+                router.push('/admin');
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 px-3 py-1 text-xs font-bold transition-colors"
+            >
+              <ArrowLeftRight className="h-3 w-3" />
+              Return to Admin
+            </button>
+          </div>
+        )}
 
         {/* Status notices */}
         {showPendingNotice && (

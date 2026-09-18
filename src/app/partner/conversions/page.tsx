@@ -16,7 +16,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { ArrowLeftRight, Search, Eye, Calendar, Store, ChevronDown, Share2, Link as LinkIcon } from 'lucide-react';
-import { mockConversions, mockStorefronts } from '@/data/mock';
+import { mockConversions, mockStorefronts, getPartnerIdByEmail } from '@/data/mock';
 import type { MockConversion, ConversionStatus, AttributionState } from '@/data/mock/types';
 import { SupportLink } from '@/components/shared/SupportLink';
 import { cn } from '@/lib/utils';
@@ -70,11 +70,11 @@ export default function PartnerConversionsPage() {
   const fmtDate = (d: string) =>
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  const partnerId = 'p-1';
+  const partnerId = user ? getPartnerIdByEmail(user.email) : null;
 
   const partnerConversions = useMemo(
     () => mockConversions.filter((c) => c.partnerId === partnerId),
-    [],
+    [partnerId],
   );
 
   const partnerStorefronts = useMemo(() => {
@@ -83,7 +83,7 @@ export default function PartnerConversionsPage() {
   }, [partnerConversions]);
 
   const filtered = useMemo(() => {
-    const now = new Date('2026-09-16');
+    const now = new Date();
     return partnerConversions.filter((c) => {
       const matchesStatus = activeTab === 'ALL' || c.status === activeTab;
       const matchesStorefront = storefrontFilter === 'ALL' || c.storefrontId === storefrontFilter;
