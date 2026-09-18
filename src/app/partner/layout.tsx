@@ -18,6 +18,7 @@ import {
   ChevronsUpDown,
   Lock,
   Users,
+  Plug,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -38,6 +39,7 @@ const baseNavItems = [
   { title: 'Conversions', url: '/partner/conversions', icon: ArrowLeftRight },
   { title: 'Commissions', url: '/partner/commissions', icon: Percent },
   { title: 'Payouts', url: '/partner/payouts', icon: Wallet },
+  { title: 'Integrations', url: '/partner/integrations', icon: Plug },
 ];
 
 const bottomNavItems = [

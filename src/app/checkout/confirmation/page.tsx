@@ -86,17 +86,17 @@ function ConfirmationContent() {
       </header>
 
       <div className="max-w-4xl mx-auto px-5 lg:px-8 py-8 lg:py-12">
-        {/* Success banner */}
+        {/* Success banner — Step 1: You're covered */}
         <div className="text-center mb-8">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 mx-auto mb-4">
             <Check className="h-8 w-8 text-cv-good" />
           </div>
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="cv-red-rule" />
-            <span className="cv-eyebrow uppercase">Purchase Complete</span>
+            <span className="cv-eyebrow uppercase">You're Covered</span>
           </div>
-          <h1 className="text-3xl font-bold text-cv-ink mb-2">Welcome to the Careverse family!</h1>
-          <p className="text-cv-body text-lg">Your <span className="font-bold text-cv-ink">{order.productName}</span> membership is now active.</p>
+          <h1 className="text-3xl font-bold text-cv-ink mb-2">Your <span className="font-bold text-cv-ink">{order.productName}</span> membership is active</h1>
+          <p className="text-cv-body text-lg">Your benefits are available right now — no waiting period.</p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -164,21 +164,48 @@ function ConfirmationContent() {
               </CardContent>
             </Card>
 
-            {/* Lidia handoff — primary next step */}
+            {/* Step 2: Meet Lidia + Step 3: Manage your benefits — primary next step */}
             <Card className="cv-card border-cv-ink">
               <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-xs font-extrabold">2</span>
+                  <span className="cv-eyebrow uppercase">Meet Lidia</span>
+                </div>
                 <div className="flex items-start gap-4 mb-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cv-ink shrink-0"><Bot className="h-6 w-6 text-cv-red" /></div>
                   <div>
-                    <h2 className="text-base font-bold text-cv-ink">Manage your benefits with Lidia</h2>
-                    <p className="text-xs text-cv-muted mt-1 leading-relaxed">Lidia is your AI care assistant — the place to understand, use, and manage everything in your Careverse membership. Ask questions about your benefits, find care services, and get guidance anytime, 24/7.</p>
+                    <h2 className="text-base font-bold text-cv-ink">Lidia is your AI care assistant</h2>
+                    <p className="text-xs text-cv-muted mt-1 leading-relaxed">Lidia is the place to understand your benefits, find and use care services, get help navigating care, and manage your Careverse membership — all in one spot, anytime.</p>
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="flex items-start gap-2 rounded-lg bg-cv-soft p-2.5">
+                    <Shield className="h-3.5 w-3.5 text-cv-ink shrink-0 mt-0.5" />
+                    <p className="text-xs text-cv-body leading-relaxed">Understand what your plan covers</p>
+                  </div>
+                  <div className="flex items-start gap-2 rounded-lg bg-cv-soft p-2.5">
+                    <Heart className="h-3.5 w-3.5 text-cv-ink shrink-0 mt-0.5" />
+                    <p className="text-xs text-cv-body leading-relaxed">Find and use your benefits</p>
+                  </div>
+                  <div className="flex items-start gap-2 rounded-lg bg-cv-soft p-2.5">
+                    <MessageCircle className="h-3.5 w-3.5 text-cv-ink shrink-0 mt-0.5" />
+                    <p className="text-xs text-cv-body leading-relaxed">Get help navigating care</p>
+                  </div>
+                  <div className="flex items-start gap-2 rounded-lg bg-cv-soft p-2.5">
+                    <Calendar className="h-3.5 w-3.5 text-cv-ink shrink-0 mt-0.5" />
+                    <p className="text-xs text-cv-body leading-relaxed">Manage your membership</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mb-3 pt-3 border-t border-cv-line">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-xs font-extrabold">3</span>
+                  <span className="cv-eyebrow uppercase">Manage Your Benefits</span>
                 </div>
                 <Button className="cv-btn-primary w-full rounded-full" onClick={() => router.push(`/lidia?membership=${mockMembership?.id || ''}`)}>
                   <Heart className="h-4 w-4 mr-1.5" />
                   Go to Lidia
                   <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Button>
+                <p className="text-center text-[10px] text-cv-muted mt-2">No separate account needed — Lidia knows your membership.</p>
               </CardContent>
             </Card>
 

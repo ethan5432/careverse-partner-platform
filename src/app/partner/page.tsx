@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import {
   Wallet, TrendingUp, Users, MousePointerClick, ExternalLink, Pencil, Store,
   Rocket, Sparkles, Share2, FlaskConical, ArrowRight, Clock,
-  Link as LinkIcon, Copy, Check, Lock, ArrowUpRight, FileText,
+  Link as LinkIcon, Copy, Check, Lock, ArrowUpRight, FileText, Heart,
 } from 'lucide-react';
 import {
   partnerDashboardStats, partnerPerformanceData,
@@ -522,6 +522,25 @@ export default function PartnerDashboardPage() {
           description="Last 30 days"
         />
       </div>
+
+      {/* Lidia engagement — future metrics placeholder */}
+      <Card className="cv-card border-dashed border-cv-line bg-cv-soft/30">
+        <CardContent className="p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cv-soft">
+              <Heart className="h-4 w-4 text-cv-ink" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-cv-ink">Lidia Engagement</p>
+              <p className="text-xs text-cv-muted">Member activity through Lidia — coming soon</p>
+            </div>
+          </div>
+          <p className="text-xs text-cv-muted leading-relaxed">
+            After purchase, your customers manage their benefits through Lidia, Careverse's AI care assistant.
+            Future reporting will show how your referred members engage with their benefits — without exposing any clinical or care details.
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Performance chart - spans 2 cols */}
