@@ -11,7 +11,7 @@ import { MessageSquare, Send, Search, Plus, ArrowLeft } from 'lucide-react';
 import { mockConversations, getPartnerIdByEmail } from '@/data/mock';
 import type { MockConversation, MockMessage } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useMockAuth, useEffectivePartner } from '@/hooks/useMockAuth';
 
 const fmtDate = (d: string) => {
   const date = new Date(d);
@@ -25,7 +25,8 @@ const fmtDate = (d: string) => {
 
 export default function PartnerMessagesPage() {
   const { user } = useMockAuth();
-  const partnerId = user ? getPartnerIdByEmail(user.email) : null;
+  const partner = useEffectivePartner();
+  const partnerId = partner ? getPartnerIdByEmail(partner.email) : null;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');

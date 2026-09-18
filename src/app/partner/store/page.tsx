@@ -31,7 +31,7 @@ import {
   loadStorefrontConfigById, saveStorefrontConfigById,
 } from '@/lib/store-persistence';
 import { cn } from '@/lib/utils';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useMockAuth, useEffectivePartner } from '@/hooks/useMockAuth';
 import { ShareStoreDialog } from '@/components/shared/ShareStoreDialog';
 import { PublishSuccessDialog } from '@/components/shared/PublishSuccessDialog';
 import { SaveStateBadge, type SaveStatus } from '@/components/shared/SaveState';
@@ -185,6 +185,7 @@ function PartnerStoreContent() {
   const searchParams = useSearchParams();
   const storeId = searchParams.get('store');
   const { onboarding, updateOnboarding, user, hasStorefrontAccess } = useMockAuth();
+  const partner = useEffectivePartner();
   const [activeStep, setActiveStep] = useState<BuilderStep>('brand');
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -193,7 +194,7 @@ function PartnerStoreContent() {
   const [publishSuccessOpen, setPublishSuccessOpen] = useState(false);
 
   // Storefront access guard for creators
-  const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
+  const storeLocked = partner?.partnerType === 'CREATOR' && !hasStorefrontAccess();
 
   useEffect(() => {
     if (storeLocked) {

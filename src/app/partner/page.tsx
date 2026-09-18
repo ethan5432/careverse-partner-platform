@@ -24,7 +24,7 @@ import {
   mockConversions, mockCommissions, currentPartnerStorefront,
   getPartnerIdByEmail,
 } from '@/data/mock';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useMockAuth, useEffectivePartner } from '@/hooks/useMockAuth';
 import { cn } from '@/lib/utils';
 import { PartnerCampaignOffers } from '@/components/shared/PartnerCampaignOffers';
 import {
@@ -38,6 +38,7 @@ type Metric = 'revenue' | 'conversions' | 'commission';
 export default function PartnerDashboardPage() {
   const router = useRouter();
   const { user, onboarding, isOnboardingComplete, hasStorefrontAccess, affiliateLink, creatorProfiles } = useMockAuth();
+  const partner = useEffectivePartner();
   const [timeRange, setTimeRange] = useState<TimeRange>('30D');
   const [metric, setMetric] = useState<Metric>('revenue');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -45,16 +46,16 @@ export default function PartnerDashboardPage() {
   const [copied, setCopied] = useState(false);
   const [storefrontApps, setStorefrontApps] = useState<StorefrontApplication[]>([]);
 
-  const isCreator = user?.partnerType === 'CREATOR';
+  const isCreator = partner?.partnerType === 'CREATOR';
   const storeUnlocked = isCreator ? hasStorefrontAccess() : true;
   const isAffiliateOnly = isCreator && !storeUnlocked;
 
   useEffect(() => {
-    if (user) {
-      const apps = loadStorefrontApplicationsByPartner(user.id);
+    if (partner) {
+      const apps = loadStorefrontApplicationsByPartner(partner.id);
       setStorefrontApps(apps);
     }
-  }, [user]);
+  }, [partner]);
 
   const pendingApp = storefrontApps.find(a => a.status === 'SUBMITTED' || a.status === 'IN_REVIEW');
   const rejectedApp = storefrontApps.find(a => a.status === 'REJECTED');
@@ -70,7 +71,7 @@ export default function PartnerDashboardPage() {
   const onboardingDone = isOnboardingComplete();
   const completedCount = Object.values(onboarding).filter(Boolean).length;
 
-  const partnerId = user ? getPartnerIdByEmail(user.email) : null;
+  const partnerId = partner ? getPartnerIdByEmail(partner.email) : null;
   const recentConversions = mockConversions.filter((c) => c.partnerId === partnerId).slice(0, 5);
   const partnerCommissions = mockCommissions.filter((c) => c.partnerId === partnerId);
   const pendingCommissions = partnerCommissions.filter((c) => c.status === 'PENDING');
@@ -101,7 +102,7 @@ export default function PartnerDashboardPage() {
       <div className="space-y-6">
         <PageHeader
           eyebrow="Creator Dashboard"
-          title={`Welcome, ${user?.name?.split(' ')[0] || 'Partner'}!`}
+          title={`Welcome, ${partner?.name?.split(' ')[0] || 'Partner'}!`}
           description="Share your affiliate link and earn commission on every Careverse membership."
         />
 
@@ -272,10 +273,10 @@ export default function PartnerDashboardPage() {
         )}
 
         {/* Campaign offers — only shown when unique offers exist */}
-        {partnerId && user?.partnerType && (
+        {partnerId && partner?.partnerType && (
           <PartnerCampaignOffers
             partnerId={partnerId}
-            partnerType={user.partnerType}
+            partnerType={partner.partnerType}
             qualifyingMemberships={recentConversions.filter(c => c.status === 'APPROVED' || c.status === 'PAID').length}
           />
         )}
@@ -348,7 +349,7 @@ export default function PartnerDashboardPage() {
       <div className="space-y-6">
         <PageHeader
           eyebrow="Get Started"
-          title={`Welcome, ${user?.name?.split(' ')[0] || 'Partner'}!`}
+          title={`Welcome, ${partner?.name?.split(' ')[0] || 'Partner'}!`}
           description="Let's get your store set up and ready to launch."
         />
 
@@ -480,7 +481,7 @@ export default function PartnerDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Overview"
-        title={`Welcome back, ${user?.name?.split(' ')[0] || 'Partner'}`}
+        title={`Welcome back, ${partner?.name?.split(' ')[0] || 'Partner'}`}
         description="Your earnings, storefront performance, and recent conversions at a glance."
         actions={
           <div className="flex gap-2">
@@ -536,10 +537,10 @@ export default function PartnerDashboardPage() {
       </div>
 
       {/* Campaign offers — only shown when unique offers exist */}
-      {partnerId && user?.partnerType && (
+      {partnerId && partner?.partnerType && (
         <PartnerCampaignOffers
           partnerId={partnerId}
-          partnerType={user.partnerType}
+          partnerType={partner.partnerType}
           qualifyingMemberships={recentConversions.filter(c => c.status === 'APPROVED' || c.status === 'PAID').length}
         />
       )}

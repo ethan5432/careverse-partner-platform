@@ -21,7 +21,7 @@ import {
   AlertCircle, type LucideIcon,
 } from 'lucide-react';
 import type { MockResource } from '@/data/mock/types';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useMockAuth, useEffectivePartner } from '@/hooks/useMockAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
@@ -457,6 +457,7 @@ function CampaignRow({ campaign, onDelete }: { campaign: Campaign; onDelete: (id
 
 export default function ResourcesPage() {
   const { user } = useMockAuth();
+  const partner = useEffectivePartner();
   const [resources, setResources] = useState<MockResource[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [storefronts, setStorefronts] = useState<StorefrontSummary[]>([]);
@@ -467,7 +468,7 @@ export default function ResourcesPage() {
   useEffect(() => {
     setResources(loadResourceCatalog());
     setCampaigns(loadCampaigns());
-    const isBusiness = user?.partnerType === 'BUSINESS';
+    const isBusiness = partner?.partnerType === 'BUSINESS';
     if (isBusiness) {
       setStorefronts(getStorefrontSummaries());
     } else {
@@ -485,7 +486,7 @@ export default function ResourcesPage() {
       }]);
     }
     setLoaded(true);
-  }, [user?.partnerType]);
+  }, [partner?.partnerType]);
 
   const refreshCampaigns = useCallback(() => {
     setCampaigns(loadCampaigns());
