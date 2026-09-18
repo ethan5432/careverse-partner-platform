@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, ArrowLeft, Shield, Mail, Calendar, Package, User, CreditCard, Sparkles, Heart, Phone, MessageCircle } from 'lucide-react';
+import { Check, ArrowLeft, Shield, Mail, Calendar, Package, User, CreditCard, Heart, Phone, MessageCircle, ArrowRight, Bot } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders, mockMemberships } from '@/data/mock';
 import type { MockOrder, MockMembership } from '@/data/mock/types';
 
@@ -163,16 +163,33 @@ function ConfirmationContent() {
               </CardContent>
             </Card>
 
-            {/* Next steps */}
+            {/* Lidia handoff — primary next step */}
+            <Card className="cv-card border-cv-ink">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cv-ink shrink-0"><Bot className="h-6 w-6 text-cv-red" /></div>
+                  <div>
+                    <h2 className="text-base font-bold text-cv-ink">Manage your benefits with Lidia</h2>
+                    <p className="text-xs text-cv-muted mt-1 leading-relaxed">Lidia is your AI care assistant — the place to understand, use, and manage everything in your Careverse membership. Ask questions about your benefits, find care services, and get guidance anytime, 24/7.</p>
+                  </div>
+                </div>
+                <Button className="cv-btn-primary w-full rounded-full" onClick={() => router.push(`/lidia?membership=${mockMembership?.id || ''}`)}>
+                  <Heart className="h-4 w-4 mr-1.5" />
+                  Go to Lidia
+                  <ArrowRight className="h-4 w-4 ml-1.5" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Additional info */}
             <Card className="cv-card">
               <CardContent className="p-6">
-                <h2 className="text-base font-bold text-cv-ink mb-4">What happens next?</h2>
+                <h2 className="text-base font-bold text-cv-ink mb-4">Good to know</h2>
                 <div className="space-y-4">
                   {[
-                    { icon: Mail, title: 'Check your email', desc: `We've sent a welcome email to ${order.customerEmail || 'your email'} with your membership details and login instructions.` },
-                    { icon: Heart, title: 'Meet Lidia, your AI care assistant', desc: 'Lidia is free for everyone. Ask questions, get guidance, and find the care your family needs — available 24/7.' },
-                    { icon: Shield, title: 'Start using your benefits', desc: 'Your included services, product specials, and care allowance are available immediately. No waiting period.' },
-                    { icon: Calendar, title: 'Manage your membership', desc: 'Log in anytime to view your benefits, update your payment method, or cancel. Cancel anytime, no fees.' },
+                    { icon: Mail, title: 'Check your email', desc: `We've sent a welcome email to ${order.customerEmail || 'your email'} with your membership details.` },
+                    { icon: Shield, title: 'Your benefits are active now', desc: 'Included services, product specials, and care allowance are available immediately — no waiting period.' },
+                    { icon: Calendar, title: 'Manage your membership', desc: 'You can update your payment method or cancel anytime through Lidia or Careverse support. No fees, no penalties.' },
                   ].map((step, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cv-soft shrink-0">
@@ -189,11 +206,8 @@ function ConfirmationContent() {
             </Card>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button className="cv-btn-primary flex-1 rounded-full" onClick={() => router.push(`/lidia?membership=${mockMembership?.id || ''}`)}>
-                <MessageCircle className="h-4 w-4 mr-1.5" />
-                Go to Lidia
-              </Button>
               <Button variant="outline" className="flex-1 rounded-full border-cv-line font-bold" onClick={() => router.push('/storefront')}>
+                <ArrowLeft className="h-4 w-4 mr-1.5" />
                 Back to Storefront
               </Button>
             </div>
