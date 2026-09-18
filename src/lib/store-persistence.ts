@@ -211,6 +211,274 @@ export function resetStorefrontConfig(): void {
   localStorage.removeItem(STORE_CONFIG_KEY);
 }
 
+// ─── Multi-storefront support (Business / Agency) ───────────────────────────
+
+const MULTI_STORE_KEY = 'careverse_multi_storefronts';
+
+export interface StorefrontSummary {
+  id: string;
+  name: string;
+  status: 'LIVE' | 'DRAFT';
+  customDomain: string;
+  domainStatus: 'NONE' | 'PENDING' | 'CONNECTED';
+  url: string;
+  selectedPackages: string[];
+  createdAt: string;
+  savedAt: string;
+}
+
+function defaultNewConfig(name: string): StorefrontConfig {
+  const base = defaultConfig();
+  const id = `sf-${Date.now()}`;
+  return {
+    ...base,
+    id,
+    name,
+    url: `careverse.ai/s/${name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 30)}`,
+    status: 'DRAFT',
+    domainStatus: 'NONE',
+    customDomain: '',
+    savedAt: new Date().toISOString(),
+  };
+}
+
+export function loadAllStorefrontConfigs(): StorefrontConfig[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(MULTI_STORE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as StorefrontConfig[];
+  } catch {
+    return [];
+  }
+}
+
+function saveAllStorefrontConfigs(configs: StorefrontConfig[]): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(MULTI_STORE_KEY, JSON.stringify(configs));
+}
+
+export function loadStorefrontConfigById(id: string): StorefrontConfig | null {
+  const all = loadAllStorefrontConfigs();
+  return all.find((c) => c.id === id) || null;
+}
+
+export function saveStorefrontConfigById(config: StorefrontConfig): void {
+  const all = loadAllStorefrontConfigs();
+  const idx = all.findIndex((c) => c.id === config.id);
+  const toSave = { ...config, savedAt: new Date().toISOString() };
+  if (idx >= 0) {
+    all[idx] = toSave;
+  } else {
+    all.push(toSave);
+  }
+  saveAllStorefrontConfigs(all);
+}
+
+export function createStorefront(name: string): StorefrontConfig {
+  const config = defaultNewConfig(name);
+  saveStorefrontConfigById(config);
+  return config;
+}
+
+// ─── Storefront templates ───────────────────────────────────────────────────
+
+export interface StorefrontTemplate {
+  id: string;
+  name: string;
+  description: string;
+  branding: StoreBranding;
+  brandMode: BrandMode;
+  heroHeadline: string;
+  heroSupportingCopy: string;
+  ctaText: string;
+  aboutContent: string;
+  sections: StoreSection[];
+  showProfile: boolean;
+  showVerifiedBadge: boolean;
+  showPoweredByFooter: boolean;
+  showCareverseInHeader: boolean;
+  showCareverseInFooter: boolean;
+  selectedPackages: string[];
+}
+
+export const STOREFRONT_TEMPLATES: StorefrontTemplate[] = [
+  {
+    id: 'tpl-warm-family',
+    name: 'Warm Family Care',
+    description: 'A friendly, approachable storefront with warm tones — ideal for family-focused care advisors.',
+    branding: {
+      ...DEFAULT_BRANDING,
+      primaryColor: '#2D5F3F',
+      secondaryColor: '#E08D3C',
+      accentColor: '#5BA85B',
+      backgroundColor: '#FAF6F0',
+      surfaceColor: '#FFFFFF',
+      primaryTextColor: '#2D5F3F',
+      mutedTextColor: '#6B8E72',
+      borderColor: '#E0D5C8',
+      buttonTextColor: '#FFFFFF',
+      headingFont: 'Lora, serif',
+      bodyFont: 'Inter, sans-serif',
+    },
+    brandMode: 'co-branded',
+    heroHeadline: 'Quality care for your family',
+    heroSupportingCopy: 'I help families like yours discover affordable, comprehensive care benefits through Careverse.',
+    ctaText: 'Request Care',
+    aboutContent: 'As a dedicated care advocate, I connect families with the best Careverse membership plans. My goal is simple: make quality healthcare accessible and affordable for everyone.',
+    sections: [
+      { id: 'sec-hero', type: 'hero', visible: true },
+      { id: 'sec-creator-0', type: 'creatorVideo', visible: true, columns: 1 },
+      { id: 'sec-packages', type: 'packages', visible: true },
+      { id: 'sec-benefits', type: 'benefits', visible: true },
+      { id: 'sec-about', type: 'about', visible: true },
+    ],
+    showProfile: true,
+    showVerifiedBadge: true,
+    showPoweredByFooter: true,
+    showCareverseInHeader: true,
+    showCareverseInFooter: true,
+    selectedPackages: ['Family', 'Family Plus'],
+  },
+  {
+    id: 'tpl-pro-agency',
+    name: 'Professional Agency',
+    description: 'A clean, corporate storefront with neutral tones — ideal for agencies managing client referrals.',
+    branding: {
+      ...DEFAULT_BRANDING,
+      primaryColor: '#1A3C5E',
+      secondaryColor: '#2563EB',
+      accentColor: '#0B9B6B',
+      backgroundColor: '#F8FAFC',
+      surfaceColor: '#FFFFFF',
+      primaryTextColor: '#1A3C5E',
+      mutedTextColor: '#64748B',
+      borderColor: '#E2E8F0',
+      buttonTextColor: '#FFFFFF',
+      headingFont: 'Montserrat, sans-serif',
+      bodyFont: 'Inter, sans-serif',
+    },
+    brandMode: 'co-branded',
+    heroHeadline: 'Expert guidance for your family\'s care',
+    heroSupportingCopy: 'We connect your family with comprehensive Careverse care benefits — trusted by professionals.',
+    ctaText: 'Get Started',
+    aboutContent: 'Our agency specializes in helping families navigate Careverse membership options. With years of experience in care advocacy, we ensure you get the right plan for your needs.',
+    sections: [
+      { id: 'sec-hero', type: 'hero', visible: true },
+      { id: 'sec-packages', type: 'packages', visible: true },
+      { id: 'sec-benefits', type: 'benefits', visible: true },
+      { id: 'sec-about', type: 'about', visible: true },
+    ],
+    showProfile: false,
+    showVerifiedBadge: false,
+    showPoweredByFooter: true,
+    showCareverseInHeader: true,
+    showCareverseInFooter: true,
+    selectedPackages: ['Family', 'Family Plus', 'Care Circle'],
+  },
+  {
+    id: 'tpl-wellness-creator',
+    name: 'Wellness Creator',
+    description: 'A vibrant, health-forward storefront — ideal for creators and influencers in the wellness space.',
+    branding: {
+      ...DEFAULT_BRANDING,
+      primaryColor: '#0B6E4F',
+      secondaryColor: '#E1062C',
+      accentColor: '#F59E0B',
+      backgroundColor: '#F0FDF4',
+      surfaceColor: '#FFFFFF',
+      primaryTextColor: '#0B6E4F',
+      mutedTextColor: '#6B8E72',
+      borderColor: '#DCFCE7',
+      buttonTextColor: '#FFFFFF',
+      headingFont: 'Poppins, sans-serif',
+      bodyFont: 'Inter, sans-serif',
+    },
+    brandMode: 'co-branded',
+    heroHeadline: 'Wellness made simple for families',
+    heroSupportingCopy: 'Discover the care benefits your family deserves — recommended by someone who uses them.',
+    ctaText: 'Explore Plans',
+    aboutContent: 'I share my family\'s wellness journey and help others discover the Careverse plans that make quality care accessible and affordable.',
+    sections: [
+      { id: 'sec-hero', type: 'hero', visible: true },
+      { id: 'sec-creator-0', type: 'creatorVideo', visible: true, columns: 1 },
+      { id: 'sec-creator-1', type: 'creatorVideo', visible: true, columns: 2 },
+      { id: 'sec-packages', type: 'packages', visible: true },
+      { id: 'sec-benefits', type: 'benefits', visible: true },
+      { id: 'sec-about', type: 'about', visible: true },
+    ],
+    showProfile: true,
+    showVerifiedBadge: true,
+    showPoweredByFooter: true,
+    showCareverseInHeader: true,
+    showCareverseInFooter: true,
+    selectedPackages: ['Family', 'Family Plus'],
+  },
+];
+
+export function createStorefrontFromTemplate(name: string, templateId: string): StorefrontConfig {
+  const tpl = STOREFRONT_TEMPLATES.find((t) => t.id === templateId);
+  const base = defaultNewConfig(name);
+  if (!tpl) return base;
+  const config: StorefrontConfig = {
+    ...base,
+    branding: { ...tpl.branding },
+    brandMode: tpl.brandMode,
+    heroHeadline: tpl.heroHeadline,
+    heroSupportingCopy: tpl.heroSupportingCopy,
+    ctaText: tpl.ctaText,
+    aboutContent: tpl.aboutContent,
+    sections: tpl.sections.map((s) => ({ ...s })),
+    showProfile: tpl.showProfile,
+    showVerifiedBadge: tpl.showVerifiedBadge,
+    showPoweredByFooter: tpl.showPoweredByFooter,
+    showCareverseInHeader: tpl.showCareverseInHeader,
+    showCareverseInFooter: tpl.showCareverseInFooter,
+    selectedPackages: [...tpl.selectedPackages],
+    socialLinks: [],
+  };
+  saveStorefrontConfigById(config);
+  return config;
+}
+
+export function duplicateStorefront(id: string): StorefrontConfig | null {
+  const original = loadStorefrontConfigById(id);
+  if (!original) return null;
+  const newId = `sf-${Date.now()}`;
+  const copy: StorefrontConfig = {
+    ...original,
+    id: newId,
+    name: `${original.name} (Copy)`,
+    url: `careverse.ai/s/${(original.name + '-copy').toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 30)}`,
+    status: 'DRAFT',
+    domainStatus: 'NONE',
+    customDomain: '',
+    socialLinks: [],
+    savedAt: new Date().toISOString(),
+  };
+  saveStorefrontConfigById(copy);
+  return copy;
+}
+
+export function deleteStorefront(id: string): void {
+  const all = loadAllStorefrontConfigs();
+  saveAllStorefrontConfigs(all.filter((c) => c.id !== id));
+}
+
+export function getStorefrontSummaries(): StorefrontSummary[] {
+  return loadAllStorefrontConfigs().map((c) => ({
+    id: c.id,
+    name: c.name,
+    status: c.status,
+    customDomain: c.customDomain,
+    domainStatus: c.domainStatus,
+    url: c.url,
+    selectedPackages: c.selectedPackages,
+    createdAt: c.savedAt,
+    savedAt: c.savedAt,
+  }));
+}
+
 // ─── IndexedDB for video files ─────────────────────────────────────────────
 
 function openVideoDB(): Promise<IDBDatabase> {
