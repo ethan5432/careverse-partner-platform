@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Settings as SettingsIcon, FileSliders as Sliders, Crosshair, Mail, Plug, Users, Shield, Save, Plus, Trash2, Check, Clock, Lock, Globe, Zap, Store, UserCheck, Building } from 'lucide-react';
+import { Settings as SettingsIcon, FileSliders as Sliders, Crosshair, Mail, Plug, Users, Shield, Save, Plus, Trash2, Check, Clock, Lock, Globe, Zap, Store, UserCheck, Building, Palette } from 'lucide-react';
+import { loadWhiteLabelAdminConfig, saveWhiteLabelAdminConfig, type WhiteLabelAdminConfig } from '@/lib/white-label-persistence';
 import { cn } from '@/lib/utils';
 
 // ── Local mock data for settings ──────────────────────────────────
@@ -57,6 +58,7 @@ const tabConfig = [
   { value: 'tracking', label: 'Tracking', icon: Crosshair },
   { value: 'email', label: 'Email', icon: Mail },
   { value: 'integrations', label: 'Integrations', icon: Plug },
+  { value: 'whitelabel', label: 'White Label', icon: Palette },
   { value: 'team', label: 'Team', icon: Users },
   { value: 'security', label: 'Security', icon: Shield },
   { value: 'general', label: 'General', icon: Building },
@@ -88,6 +90,34 @@ export default function AdminSettingsPage() {
   const [ruleDraft, setRuleDraft] = useState({ name: '', rate: '20', scope: 'All products' });
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
   const [savedTab, setSavedTab] = useState<string | null>(null);
+  const [wlAdmin, setWlAdmin] = useState<WhiteLabelAdminConfig>(loadWhiteLabelAdminConfig());
+  const [wlDomainInput, setWlDomainInput] = useState('');
+
+  const handleSaveWhiteLabelAdmin = () => {
+    const updated = { ...wlAdmin, savedAt: new Date().toISOString() };
+    setWlAdmin(updated);
+    saveWhiteLabelAdminConfig(updated);
+    handleSave('whitelabel');
+  };
+
+  const addApprovedDomain = () => {
+    if (!wlDomainInput.trim()) return;
+    setWlAdmin({ ...wlAdmin, approvedDomains: [...wlAdmin.approvedDomains, wlDomainInput.trim()] });
+    setWlDomainInput('');
+  };
+
+  const removeApprovedDomain = (domain: string) => {
+    setWlAdmin({ ...wlAdmin, approvedDomains: wlAdmin.approvedDomains.filter((d) => d !== domain) });
+  };
+
+  const toggleEligibleType = (type: string) => {
+    setWlAdmin((prev) => ({
+      ...prev,
+      eligiblePartnerTypes: prev.eligiblePartnerTypes.includes(type)
+        ? prev.eligiblePartnerTypes.filter((t) => t !== type)
+        : [...prev.eligiblePartnerTypes, type],
+    }));
+  };
 
   const handleSave = (tab: string) => {
     setSavedTab(tab);
@@ -630,6 +660,139 @@ export default function AdminSettingsPage() {
                   checked={generalSettings.maintenanceMode}
                   onCheckedChange={(v) => setGeneralSettings({ ...generalSettings, maintenanceMode: v })}
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── White Label ── */}
+        <TabsContent value="whitelabel" className="mt-0 space-y-6">
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">White Label Eligibility</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Control which partners can white-label the partner platform</p>
+              </div>
+              <SaveButton onClick={handleSaveWhiteLabelAdmin} saved={savedTab === 'whitelabel'} />
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <ToggleRow
+                icon={Palette}
+                title="Enable white-label for partners"
+                description="Allow eligible partners to brand the partner platform as their own."
+                checked={wlAdmin.whiteLabelEnabled}
+                onCheckedChange={(v) => setWlAdmin({ ...wlAdmin, whiteLabelEnabled: v })}
+              />
+              <div className="pt-4 border-t border-cv-line">
+                <p className="text-sm font-bold text-cv-ink mb-3">Eligible Partner Types</p>
+                <div className="flex flex-wrap gap-2">
+                  {['BUSINESS', 'CREATOR'].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => toggleEligibleType(type)}
+                      className={cn(
+                        'rounded-full px-4 py-2 text-xs font-bold border transition-colors',
+                        wlAdmin.eligiblePartnerTypes.includes(type)
+                          ? 'bg-cv-ink text-white border-cv-ink'
+                          : 'bg-white text-cv-muted border-cv-line hover:bg-cv-soft'
+                      )}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-cv-muted mt-2">Only partners with the selected types can access white-label settings.</p>
+              </div>
+              <div className="grid gap-2 max-w-xs pt-4 border-t border-cv-line">
+                <Label className="text-sm font-bold text-cv-ink">Max Custom Domains per Partner</Label>
+                <Input
+                  type="number"
+                  value={String(wlAdmin.maxCustomDomains)}
+                  onChange={(e) => setWlAdmin({ ...wlAdmin, maxCustomDomains: parseInt(e.target.value) || 1 })}
+                  className="cv-input"
+                />
+                <p className="text-xs text-cv-muted">Maximum number of custom domains a single partner can configure.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Approved Domains</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Domains that partners can use for their white-labeled platform</p>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-0">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={wlDomainInput}
+                  onChange={(e) => setWlDomainInput(e.target.value)}
+                  className="cv-input"
+                  placeholder="partners.yourbrand.com"
+                />
+                <Button className="cv-btn-primary cv-btn-sm rounded-full shrink-0" onClick={addApprovedDomain}>
+                  <Plus className="h-4 w-4" /> Add
+                </Button>
+              </div>
+              {wlAdmin.approvedDomains.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {wlAdmin.approvedDomains.map((domain) => (
+                    <span key={domain} className="inline-flex items-center gap-2 rounded-full border border-cv-line bg-cv-soft px-3 py-1.5 text-xs font-bold text-cv-ink">
+                      <Globe className="h-3 w-3 text-cv-muted" />
+                      {domain}
+                      <button onClick={() => removeApprovedDomain(domain)} className="ml-1 text-cv-muted hover:text-cv-red">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-cv-muted">No approved domains yet. Partners cannot use custom domains until approved.</p>
+              )}
+              <ToggleRow
+                icon={Shield}
+                title="Require domain verification"
+                description="Partners must verify domain ownership before their white-labeled platform goes live."
+                checked={wlAdmin.requireDomainVerification}
+                onCheckedChange={(v) => setWlAdmin({ ...wlAdmin, requireDomainVerification: v })}
+              />
+              <div className="flex justify-end pt-2">
+                <SaveButton onClick={handleSaveWhiteLabelAdmin} saved={savedTab === 'whitelabel'} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cv-card">
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-cv-ink">Required Disclosures</CardTitle>
+                <p className="text-xs text-cv-muted mt-0.5">Careverse-controlled content that partners cannot remove</p>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5 pt-0">
+              <ToggleRow
+                icon={Lock}
+                title="Require Careverse disclosure"
+                description={'Show "Powered by Careverse" attribution where required by the partner\'s plan.'}
+                checked={wlAdmin.requireCareverseDisclosure}
+                onCheckedChange={(v) => setWlAdmin({ ...wlAdmin, requireCareverseDisclosure: v })}
+              />
+              <ToggleRow
+                icon={Shield}
+                title="Require legal disclosures"
+                description={'Partners must display cancellation policies and "This is not insurance" disclaimers.'}
+                checked={wlAdmin.requireLegalText}
+                onCheckedChange={(v) => setWlAdmin({ ...wlAdmin, requireLegalText: v })}
+              />
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+                <p className="text-xs font-bold text-amber-800 mb-1">Always Protected</p>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  Regardless of these settings, Careverse product information, benefit details, and pricing remain controlled by Careverse and cannot be modified by partners.
+                </p>
+              </div>
+              <div className="flex justify-end pt-2">
+                <SaveButton onClick={handleSaveWhiteLabelAdmin} saved={savedTab === 'whitelabel'} />
               </div>
             </CardContent>
           </Card>
