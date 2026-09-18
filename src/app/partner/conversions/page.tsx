@@ -287,6 +287,16 @@ export default function PartnerConversionsPage() {
                 <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Attribution / Tracking</p>
                 <DetailRow label="Tracking Source" value={selected.attributionSource} />
                 <DetailRow label="Click ID" value={selected.clickId} mono />
+                {selected.attributedVia && (
+                  <DetailRow label="Attributed Via" value={
+                    selected.attributedVia === 'LIDIA' ? 'Lidia' :
+                    selected.attributedVia === 'AFFILIATE_LINK' ? 'Affiliate Link' :
+                    'Storefront'
+                  } />
+                )}
+                {selected.campaignSource && (
+                  <DetailRow label="Campaign Source" value={selected.campaignSource} />
+                )}
                 <div className="flex items-center justify-between py-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-cv-muted">Attribution State</span>
                   <span className={cn(

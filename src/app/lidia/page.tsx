@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send, Heart, Shield, Sparkles, ArrowRight, Check, MessageCircle, User, Phone, Mail, ChevronDown, ChevronUp, Stethoscope, Wallet, Package, Calendar, Clock, ArrowLeft, Bot, Star } from 'lucide-react';
 import { mockMemberships, mockProducts, currentPartnerStorefront, currentPartner } from '@/data/mock';
-import type { MockMembership } from '@/data/mock/types';
+import type { MockMembership, CustomerAttribution } from '@/data/mock/types';
+import { loadCustomerAttribution } from '@/lib/attribution-persistence';
 import { cn } from '@/lib/utils';
 
 export default function LidiaPage() {
@@ -31,6 +32,7 @@ function LidiaContent() {
   const membershipParam = searchParams.get('membership') || '';
 
   const [membership, setMembership] = useState<MockMembership | null>(null);
+  const [attribution, setAttribution] = useState<CustomerAttribution | null>(null);
   const [input, setInput] = useState('');
   const [expandedBenefit, setExpandedBenefit] = useState<string | null>(null);
   const [messages, setMessages] = useState<LidiaMessage[]>([]);
@@ -55,6 +57,11 @@ function LidiaContent() {
     }
 
     setMembership(found);
+
+    // Silently load persisted customer attribution — invisible to the customer,
+    // but available for future Careverse purchases through Lidia.
+    const persistedAttribution = loadCustomerAttribution();
+    setAttribution(persistedAttribution);
 
     if (found) {
       setMessages([

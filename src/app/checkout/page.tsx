@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, ArrowLeft, CreditCard, Wallet, Building, Shield, Loader2, AlertCircle, Lock, Heart, ArrowRight } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders, mockMemberships } from '@/data/mock';
-import type { MockOrder, MockMembership } from '@/data/mock/types';
+import type { MockOrder, MockMembership, CustomerAttribution } from '@/data/mock/types';
+import { loadCustomerAttribution, mergeAttribution, buildDefaultAttribution } from '@/lib/attribution-persistence';
 import { cn } from '@/lib/utils';
 
 type CheckoutState = 'form' | 'processing' | 'success' | 'failed' | 'cancelled';
@@ -67,6 +68,11 @@ function CheckoutContent() {
     setTimeout(() => {
       const reference = `CV-2026-0916-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       const membershipId = `m-${Date.now()}`;
+
+      // Read persisted attribution (survives across sessions, not just sessionStorage)
+      const persistedAttribution = loadCustomerAttribution();
+      const attribution: CustomerAttribution = mergeAttribution(persistedAttribution, null);
+
       const order: MockOrder = {
         id: `o-${Date.now()}`,
         reference,
@@ -82,12 +88,13 @@ function CheckoutContent() {
         paymentMethod,
         status: 'COMPLETED',
         date: new Date().toISOString().split('T')[0],
-        partnerId: partner.id,
-        partnerName: partner.name,
-        storefrontId: storefront.id,
-        storefrontName: storefront.name,
+        partnerId: attribution.partnerId,
+        partnerName: attribution.partnerName,
+        storefrontId: attribution.storefrontId,
+        storefrontName: attribution.storefrontName,
         amount: product.price,
         membershipId,
+        attribution,
       };
       const membership: MockMembership = {
         id: membershipId,
@@ -100,15 +107,16 @@ function CheckoutContent() {
         status: 'ACTIVE',
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        partnerId: partner.id,
-        partnerName: partner.name,
-        storefrontId: storefront.id,
-        storefrontName: storefront.name,
+        partnerId: attribution.partnerId,
+        partnerName: attribution.partnerName,
+        storefrontId: attribution.storefrontId,
+        storefrontName: attribution.storefrontName,
         orderId: order.id,
         orderReference: reference,
         benefits: product.features,
         benefitDetails: product.benefits,
         humanHelpEligible: true,
+        attribution,
       };
       setCompletedOrder(order);
       setCompletedMembership(membership);
