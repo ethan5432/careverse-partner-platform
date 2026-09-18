@@ -32,6 +32,11 @@ export default function AdminStorefrontsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [governanceStatus, setGovernanceStatus] = useState<Record<string, 'LIVE' | 'DRAFT' | 'SUSPENDED'>>({});
+
+  const getStorefrontStatus = (s: MockStorefront): 'LIVE' | 'DRAFT' | 'SUSPENDED' => {
+    return governanceStatus[s.id] || s.status;
+  };
 
   const partnerMap = useMemo(() => {
     const m = new Map<string, { name: string; avatarColor: string }>();
@@ -52,15 +57,9 @@ export default function AdminStorefrontsPage() {
         (s.customDomain || '').toLowerCase().includes(q)
       );
     });
-  }, [search, statusFilter]);
-
-  const [governanceStatus, setGovernanceStatus] = useState<Record<string, 'LIVE' | 'DRAFT' | 'SUSPENDED'>>({});
+  }, [search, statusFilter, governanceStatus]);
 
   const selectedStorefront = mockStorefronts.find((s) => s.id === selectedId) || null;
-
-  const getStorefrontStatus = (s: MockStorefront): 'LIVE' | 'DRAFT' | 'SUSPENDED' => {
-    return governanceStatus[s.id] || s.status;
-  };
 
   const suspendStorefront = (id: string) => {
     setGovernanceStatus(prev => ({ ...prev, [id]: 'SUSPENDED' }));
