@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check, ArrowLeft, Shield, Mail, Calendar, Package, User, CreditCard, Heart, Phone, MessageCircle, ArrowRight, Bot } from 'lucide-react';
 import { mockProducts, currentPartnerStorefront, currentPartner, mockOrders, mockMemberships } from '@/data/mock';
+import { getPackageById } from '@/lib/package-catalog';
 import type { MockOrder, MockMembership } from '@/data/mock/types';
 
 export default function ConfirmationPage() {
@@ -36,7 +37,7 @@ function ConfirmationContent() {
   const mockOrder = sessionOrder || mockOrders.find((o) => o.reference === ref);
   const membershipIdParam = searchParams.get('membership') || '';
   const mockMembership = sessionMembership || mockMemberships.find((m) => m.id === membershipIdParam) || mockMemberships.find((m) => m.orderReference === ref);
-  const product = mockProducts.find((p) => p.id === mockOrder?.productId) || mockProducts[1];
+  const product = mockProducts.find((p) => p.id === mockOrder?.productId) || getPackageById(mockOrder?.productId || '') || mockProducts[1];
   const storefront = currentPartnerStorefront;
   const partner = currentPartner;
 

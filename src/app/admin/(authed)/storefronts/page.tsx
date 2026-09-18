@@ -13,17 +13,18 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Store, Search, Globe, Eye, ExternalLink, Pencil, Palette, Package as PackageIcon, BarChart3, MousePointerClick } from 'lucide-react';
+import { Store, Search, Globe, Eye, ExternalLink, Pencil, Palette, Package as PackageIcon, BarChart3, MousePointerClick, Ban, RotateCcw, Power, PowerOff } from 'lucide-react';
 import { mockStorefronts, mockPartners, mockProducts } from '@/data/mock';
 import type { MockStorefront } from '@/data/mock/types';
 
 const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
-type StatusFilter = 'ALL' | 'LIVE' | 'DRAFT';
+type StatusFilter = 'ALL' | 'LIVE' | 'DRAFT' | 'SUSPENDED';
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: 'ALL', label: 'All' },
   { value: 'LIVE', label: 'Active' },
   { value: 'DRAFT', label: 'Draft' },
+  { value: 'SUSPENDED', label: 'Suspended' },
 ];
 
 export default function AdminStorefrontsPage() {
@@ -41,7 +42,8 @@ export default function AdminStorefrontsPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return mockStorefronts.filter((s) => {
-      const matchesStatus = statusFilter === 'ALL' || s.status === statusFilter;
+      const sStatus = getStorefrontStatus(s);
+      const matchesStatus = statusFilter === 'ALL' || sStatus === statusFilter;
       if (!matchesStatus) return false;
       if (!q) return true;
       return (
@@ -52,14 +54,45 @@ export default function AdminStorefrontsPage() {
     });
   }, [search, statusFilter]);
 
+  const [governanceStatus, setGovernanceStatus] = useState<Record<string, 'LIVE' | 'DRAFT' | 'SUSPENDED'>>({});
+
   const selectedStorefront = mockStorefronts.find((s) => s.id === selectedId) || null;
+
+  const getStorefrontStatus = (s: MockStorefront): 'LIVE' | 'DRAFT' | 'SUSPENDED' => {
+    return governanceStatus[s.id] || s.status;
+  };
+
+  const suspendStorefront = (id: string) => {
+    setGovernanceStatus(prev => ({ ...prev, [id]: 'SUSPENDED' }));
+  };
+
+  const restoreStorefront = (id: string) => {
+    setGovernanceStatus(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const unpublishStorefront = (id: string) => {
+    setGovernanceStatus(prev => ({ ...prev, [id]: 'DRAFT' }));
+  };
+
+  const publishStorefront = (id: string) => {
+    setGovernanceStatus(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return { ...next, [id]: 'LIVE' };
+    });
+  };
 
   const stats = useMemo(() => {
     const total = mockStorefronts.length;
-    const live = mockStorefronts.filter((s) => s.status === 'LIVE').length;
-    const draft = mockStorefronts.filter((s) => s.status === 'DRAFT').length;
-    return { total, live, draft };
-  }, []);
+    const live = mockStorefronts.filter((s) => getStorefrontStatus(s) === 'LIVE').length;
+    const draft = mockStorefronts.filter((s) => getStorefrontStatus(s) === 'DRAFT').length;
+    const suspended = mockStorefronts.filter((s) => getStorefrontStatus(s) === 'SUSPENDED').length;
+    return { total, live, draft, suspended };
+  }, [governanceStatus]);
 
   return (
     <div className="space-y-6">
@@ -80,6 +113,7 @@ export default function AdminStorefrontsPage() {
         <StatCard label="Total Storefronts" value={stats.total} icon={Store} description="Across all partners" />
         <StatCard label="Active" value={stats.live} icon={Globe} description="Published & live" />
         <StatCard label="Draft" value={stats.draft} icon={Eye} description="Not yet published" />
+        {stats.suspended > 0 && <StatCard label="Suspended" value={stats.suspended} icon={Ban} description="Temporarily disabled" />}
       </div>
 
       {/* Filters */}
@@ -170,7 +204,7 @@ export default function AdminStorefrontsPage() {
                             <StatusBadge status="none" />
                           )}
                         </TableCell>
-                        <TableCell><StatusBadge status={s.status.toLowerCase() as any} /></TableCell>
+                        <TableCell><StatusBadge status={getStorefrontStatus(s).toLowerCase() as any} /></TableCell>
                         <TableCell className="text-right text-sm text-cv-body">{s.visitors.toLocaleString()}</TableCell>
                         <TableCell className="text-right text-sm text-cv-body">{s.conversions}</TableCell>
                         <TableCell className="text-right text-sm font-bold text-cv-ink">{fmtMoney(s.revenue)}</TableCell>
@@ -185,12 +219,36 @@ export default function AdminStorefrontsPage() {
       </Card>
 
       {/* Storefront detail */}
-      <StorefrontDialog storefront={selectedStorefront} onClose={() => setSelectedId(null)} />
+      <StorefrontDialog
+        storefront={selectedStorefront}
+        onClose={() => setSelectedId(null)}
+        getStorefrontStatus={getStorefrontStatus}
+        onSuspend={suspendStorefront}
+        onRestore={restoreStorefront}
+        onPublish={publishStorefront}
+        onUnpublish={unpublishStorefront}
+      />
     </div>
   );
 }
 
-function StorefrontDialog({ storefront, onClose }: { storefront: MockStorefront | null; onClose: () => void }) {
+function StorefrontDialog({
+  storefront,
+  onClose,
+  getStorefrontStatus,
+  onSuspend,
+  onRestore,
+  onPublish,
+  onUnpublish,
+}: {
+  storefront: MockStorefront | null;
+  onClose: () => void;
+  getStorefrontStatus: (s: MockStorefront) => 'LIVE' | 'DRAFT' | 'SUSPENDED';
+  onSuspend: (id: string) => void;
+  onRestore: (id: string) => void;
+  onPublish: (id: string) => void;
+  onUnpublish: (id: string) => void;
+}) {
   const router = useRouter();
   const open = !!storefront;
 
@@ -232,7 +290,7 @@ function StorefrontDialog({ storefront, onClose }: { storefront: MockStorefront 
                   <DialogDescription className="text-sm text-cv-muted">{storefront.url}</DialogDescription>
                 </div>
                 <div className="ml-auto">
-                  <StatusBadge status={storefront.status.toLowerCase() as any} />
+                  <StatusBadge status={getStorefrontStatus(storefront).toLowerCase() as any} />
                 </div>
               </div>
             </DialogHeader>
@@ -252,7 +310,7 @@ function StorefrontDialog({ storefront, onClose }: { storefront: MockStorefront 
                   <div className="grid grid-cols-2 gap-3">
                     <DetailField label="Name" value={storefront.name} />
                     <DetailField label="URL" value={storefront.url} />
-                    <DetailField label="Status" value={<StatusBadge status={storefront.status.toLowerCase() as any} />} />
+                    <DetailField label="Status" value={<StatusBadge status={getStorefrontStatus(storefront).toLowerCase() as any} />} />
                     <DetailField label="Partner" value={partner?.name || '—'} />
                     <DetailField label="Visitors" value={String(storefront.visitors)} />
                     <DetailField label="Conversions" value={String(storefront.conversions)} />
@@ -272,6 +330,37 @@ function StorefrontDialog({ storefront, onClose }: { storefront: MockStorefront 
                     <Button variant="outline" className="flex-1 rounded-full border-cv-line text-cv-ink hover:bg-cv-soft text-xs" onClick={() => router.push('/partner/store')}>
                       <Pencil className="h-3.5 w-3.5" /> Open builder
                     </Button>
+                  </div>
+                  {/* Governance actions */}
+                  <div className="mt-4 pt-4 border-t border-cv-line">
+                    <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Storefront Governance</p>
+                    <div className="flex flex-wrap gap-2">
+                      {getStorefrontStatus(storefront) === 'LIVE' && (
+                        <Button variant="outline" className="rounded-full border-cv-line text-xs text-amber-600 hover:bg-amber-50" onClick={() => onUnpublish(storefront.id)}>
+                          <PowerOff className="h-3.5 w-3.5" /> Unpublish
+                        </Button>
+                      )}
+                      {getStorefrontStatus(storefront) === 'DRAFT' && (
+                        <Button variant="outline" className="rounded-full border-cv-line text-xs text-cv-good hover:bg-emerald-50" onClick={() => onPublish(storefront.id)}>
+                          <Power className="h-3.5 w-3.5" /> Publish
+                        </Button>
+                      )}
+                      {getStorefrontStatus(storefront) !== 'SUSPENDED' && (
+                        <Button variant="outline" className="rounded-full border-cv-line text-xs text-cv-red hover:bg-red-50" onClick={() => onSuspend(storefront.id)}>
+                          <Ban className="h-3.5 w-3.5" /> Suspend
+                        </Button>
+                      )}
+                      {getStorefrontStatus(storefront) === 'SUSPENDED' && (
+                        <Button variant="outline" className="rounded-full border-cv-line text-xs text-cv-good hover:bg-emerald-50" onClick={() => onRestore(storefront.id)}>
+                          <RotateCcw className="h-3.5 w-3.5" /> Restore
+                        </Button>
+                      )}
+                    </div>
+                    {getStorefrontStatus(storefront) === 'SUSPENDED' && (
+                      <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                        <p className="text-xs text-amber-800">This storefront is suspended. It shows a temporary unavailable message to visitors. Partner-owned content is preserved.</p>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 

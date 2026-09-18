@@ -1,5 +1,6 @@
 import type { MockStorefront, StoreSection } from '@/data/mock/types';
 import { currentPartnerStorefront } from '@/data/mock';
+import { migratePackageNamesToIds } from '@/lib/package-catalog';
 
 const STORE_CONFIG_KEY = 'careverse_store_config';
 const VIDEO_DB_NAME = 'careverse_videos';
@@ -43,7 +44,7 @@ export interface StorefrontConfig {
   partnerId: string;
   name: string;
   url: string;
-  status: 'LIVE' | 'DRAFT';
+  status: 'LIVE' | 'DRAFT' | 'SUSPENDED';
   logo: string;
   favicon: string;
   partnerPhoto: string;
@@ -141,7 +142,7 @@ function defaultConfig(): StorefrontConfig {
     aboutContent: sf.aboutContent || '',
     customDomain: sf.customDomain || '',
     domainStatus: sf.domainStatus,
-    selectedPackages: sf.packages,
+    selectedPackages: migratePackageNamesToIds(sf.packages),
     sections: [
       { id: 'sec-hero', type: 'hero', visible: true },
       { id: 'sec-creator-0', type: 'creatorVideo', visible: true, columns: 1 },
@@ -184,6 +185,7 @@ export function loadStorefrontConfig(): StorefrontConfig {
     return {
       ...defaults,
       ...parsed,
+      selectedPackages: migratePackageNamesToIds(parsed.selectedPackages || defaults.selectedPackages),
       branding: { ...defaults.branding, ...(parsed.branding || {}) },
       sectionImages: { ...(parsed.sectionImages || {}) },
       socialLinks: parsed.socialLinks || [],
@@ -218,7 +220,7 @@ const MULTI_STORE_KEY = 'careverse_multi_storefronts';
 export interface StorefrontSummary {
   id: string;
   name: string;
-  status: 'LIVE' | 'DRAFT';
+  status: 'LIVE' | 'DRAFT' | 'SUSPENDED';
   customDomain: string;
   domainStatus: 'NONE' | 'PENDING' | 'CONNECTED';
   url: string;
@@ -247,7 +249,11 @@ export function loadAllStorefrontConfigs(): StorefrontConfig[] {
   try {
     const raw = localStorage.getItem(MULTI_STORE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as StorefrontConfig[];
+    const parsed = JSON.parse(raw) as StorefrontConfig[];
+    return parsed.map((c) => ({
+      ...c,
+      selectedPackages: migratePackageNamesToIds(c.selectedPackages || []),
+    }));
   } catch {
     return [];
   }
@@ -338,7 +344,7 @@ export const STOREFRONT_TEMPLATES: StorefrontTemplate[] = [
     showPoweredByFooter: true,
     showCareverseInHeader: true,
     showCareverseInFooter: true,
-    selectedPackages: ['Family', 'Family Plus'],
+    selectedPackages: ['cv-family-monthly', 'cv-family-plus-monthly'],
   },
   {
     id: 'tpl-pro-agency',
@@ -374,7 +380,7 @@ export const STOREFRONT_TEMPLATES: StorefrontTemplate[] = [
     showPoweredByFooter: true,
     showCareverseInHeader: true,
     showCareverseInFooter: true,
-    selectedPackages: ['Family', 'Family Plus', 'Care Circle'],
+    selectedPackages: ['cv-family-monthly', 'cv-family-plus-monthly', 'cv-care-circle-monthly'],
   },
   {
     id: 'tpl-wellness-creator',
@@ -412,7 +418,7 @@ export const STOREFRONT_TEMPLATES: StorefrontTemplate[] = [
     showPoweredByFooter: true,
     showCareverseInHeader: true,
     showCareverseInFooter: true,
-    selectedPackages: ['Family', 'Family Plus'],
+    selectedPackages: ['cv-family-monthly', 'cv-family-plus-monthly'],
   },
 ];
 

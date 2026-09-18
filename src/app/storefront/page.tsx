@@ -5,8 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CareverseMark } from '@/components/shared/CareverseLogo';
 import { Button } from '@/components/ui/button';
 import { Check, Heart, Shield, Sparkles, ArrowRight, X, Wallet, Star, Clock, Users, Phone, Mail, ChevronDown, ChevronUp, Play, Target, Package as PackageIcon, Instagram, Youtube, Facebook, Linkedin, Twitter, ExternalLink } from 'lucide-react';
-import { mockProducts, currentPartnerStorefront } from '@/data/mock';
+import { currentPartnerStorefront } from '@/data/mock';
 import { loadStorefrontConfig, getVideoObjectURL, StorefrontConfig, StoreBranding, SocialLink } from '@/lib/store-persistence';
+import { resolvePackages, migratePackageNamesToIds, type CareversePackage } from '@/lib/package-catalog';
+import {
+  loadContentCatalog, getPublishedFAQs, getPublishedTestimonials,
+  getPublishedCareverseExplanations, getPublishedDisclosures,
+  getPublishedBenefitExplanations, type ContentCatalog,
+} from '@/lib/content-catalog';
 import { captureAttributionFromParams, saveCustomerAttribution, loadCustomerAttribution } from '@/lib/attribution-persistence';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +31,7 @@ function StorefrontContent() {
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [config, setConfig] = useState<StorefrontConfig | null>(null);
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
+  const [contentCatalog, setContentCatalog] = useState<ContentCatalog | null>(null);
 
   useEffect(() => {
     // Capture and persist attribution from URL params (ref, campaign, etc.)
@@ -45,6 +52,7 @@ function StorefrontContent() {
 
     const loaded = loadStorefrontConfig();
     setConfig(loaded);
+    setContentCatalog(loadContentCatalog());
 
     const loadVideos = async () => {
       const urls: Record<string, string> = {};
@@ -59,20 +67,21 @@ function StorefrontContent() {
     loadVideos();
   }, [searchParams]);
 
-  const handlePurchase = (product: typeof mockProducts[0]) => {
+  const handlePurchase = (product: CareversePackage) => {
     router.push(`/checkout?product=${product.id}`);
   };
 
   const fmtMoney = (n: number) => `$${n}/mo`;
 
   const sf = config || currentPartnerStorefront;
+  const isSuspended = config?.status === 'SUSPENDED';
   const partnerInitial = sf.name.charAt(0);
   const heroHeadline = config?.heroHeadline || 'Quality care for your family';
   const heroSupportingCopy = config?.heroSupportingCopy || sf.introCopy;
   const ctaText = config?.ctaText || 'Request Care';
   const aboutContent = config?.aboutContent || '';
   const brandPresentation = config?.brandPresentation || '';
-  const selectedPackages = config?.selectedPackages || currentPartnerStorefront.packages;
+  const selectedPackageIds = config?.selectedPackages || migratePackageNamesToIds(currentPartnerStorefront.packages);
   const sections = config?.sections || [];
   const contentBlocks = config?.creatorContent || [];
   const logo = config?.logo || '';
@@ -131,9 +140,7 @@ function StorefrontContent() {
     fontWeight: branding.buttonWeight,
   } : {};
 
-  const selectedProducts = selectedPackages
-    .map(name => mockProducts.find(p => p.name === name))
-    .filter((p): p is typeof mockProducts[0] => Boolean(p));
+  const selectedProducts = resolvePackages(selectedPackageIds);
 
   const visibleSections = sections.filter(s => s.visible);
 
@@ -298,7 +305,7 @@ function StorefrontContent() {
               </button>
               {expandedPlan === product.id && (
                 <div className="rounded-xl p-4 mb-4 space-y-2 text-xs" style={{ backgroundColor: 'var(--soft)', color: 'var(--body)' }}>
-                  <div className="flex justify-between"><span>Billing type</span><span className="font-bold" style={{ color: 'var(--ink)' }}>{product.billingType.charAt(0) + product.billingType.slice(1).toLowerCase()}</span></div>
+                  <div className="flex justify-between"><span>Billing type</span><span className="font-bold" style={{ color: 'var(--ink)' }}>{product.billingOption.charAt(0) + product.billingOption.slice(1).toLowerCase()}</span></div>
                   <div className="flex justify-between"><span>Waiting period</span><span className="font-bold" style={{ color: 'var(--ink)' }}>None</span></div>
                   <div className="flex justify-between"><span>Cancel anytime</span><span className="font-bold" style={{ color: 'var(--ink)' }}>Yes</span></div>
                   <div className="flex justify-between"><span>Lidia AI included</span><span className="font-bold" style={{ color: 'var(--ink)' }}>Yes</span></div>
@@ -327,34 +334,44 @@ function StorefrontContent() {
     </section>
   );
 
-  const renderBenefits = () => (
+  const renderBenefits = () => {
+    const benefitExplanations = contentCatalog ? getPublishedBenefitExplanations(contentCatalog) : [];
+    const benefits = benefitExplanations.length > 0 ? benefitExplanations.map((be) => {
+      const iconMap: Record<string, typeof Shield> = {
+        stethoscope: Shield, wallet: Wallet, gift: Sparkles, heart: Heart,
+      };
+      const Icon = iconMap[be.icon] || Check;
+      return { icon: Icon, title: be.title, desc: be.description };
+    }) : [
+      { icon: Shield, title: 'Included Services', desc: 'Access to essential care services at no extra cost with your membership.' },
+      { icon: Sparkles, title: 'Lower Prices on Other Care', desc: 'Members get exclusive reduced rates on care services beyond what\'s included.' },
+      { icon: Heart, title: 'Product Specials', desc: 'Special member-only pricing on health and wellness products.' },
+      { icon: Check, title: 'Free Samples & Coupons', desc: 'Receive free product samples and valuable coupons as a Careverse member.' },
+      { icon: Wallet, title: 'Care Allowance', desc: 'A monthly care allowance you can use toward the services your family needs most.' },
+      { icon: Shield, title: 'Health Advocacy', desc: 'Where applicable, get a dedicated health advocate to help navigate your care options.' },
+    ];
+    return (
     <section id="benefits" style={{ backgroundColor: 'var(--cream)' }}>
-      <div className="max-w-6xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
-        <div className="text-center mb-12">
-          <h2 className="cv-h2" style={headingStyle}>Everything your family needs</h2>
-        </div>
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
+          <div className="text-center mb-12">
+            <h2 className="cv-h2" style={headingStyle}>Everything your family needs</h2>
+          </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            { icon: Shield, title: 'Included Services', desc: 'Access to essential care services at no extra cost with your membership.' },
-            { icon: Sparkles, title: 'Lower Prices on Other Care', desc: 'Members get exclusive reduced rates on care services beyond what\'s included.' },
-            { icon: Heart, title: 'Product Specials', desc: 'Special member-only pricing on health and wellness products.' },
-            { icon: Check, title: 'Free Samples & Coupons', desc: 'Receive free product samples and valuable coupons as a Careverse member.' },
-            { icon: Wallet, title: 'Care Allowance', desc: 'A monthly care allowance you can use toward the services your family needs most.' },
-            { icon: Shield, title: 'Health Advocacy', desc: 'Where applicable, get a dedicated health advocate to help navigate your care options.' },
-          ].map((benefit) => (
-            <div key={benefit.title} className="cv-card p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl mb-4" style={{ backgroundColor: 'var(--soft)' }}>
-                <benefit.icon className="h-5 w-5" style={{ color: 'var(--ink)' }} />
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {benefits.map((benefit) => (
+              <div key={benefit.title} className="cv-card p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl mb-4" style={{ backgroundColor: 'var(--soft)' }}>
+                  <benefit.icon className="h-5 w-5" style={{ color: 'var(--ink)' }} />
+                </div>
+                <h3 className="text-lg font-bold mb-1.5" style={{ color: 'var(--ink)', ...headingStyle }}>{benefit.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)', ...bodyStyle }}>{benefit.desc}</p>
               </div>
-              <h3 className="text-lg font-bold mb-1.5" style={{ color: 'var(--ink)', ...headingStyle }}>{benefit.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)', ...bodyStyle }}>{benefit.desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
-  );
+      </section>
+    );
+  };
 
   const renderAbout = () => (
     <section id="about" style={{ backgroundColor: 'var(--soft)' }}>
@@ -383,6 +400,175 @@ function StorefrontContent() {
       </div>
     </section>
   );
+
+  const renderFAQ = () => {
+    if (!contentCatalog) return null;
+    const faqs = getPublishedFAQs(contentCatalog);
+    if (faqs.length === 0) return null;
+    return (
+      <section id="faq" style={{ backgroundColor: 'var(--soft)' }}>
+        <div className="max-w-3xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
+          <div className="text-center mb-8">
+            <h2 className="cv-h2" style={headingStyle}>Frequently Asked Questions</h2>
+          </div>
+          <div className="space-y-3">
+            {faqs.map((faq) => (
+              <div key={faq.id} className="cv-card p-5">
+                <p className="text-sm font-bold mb-2" style={{ color: 'var(--ink)', ...headingStyle }}>{faq.question}</p>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)', ...bodyStyle }}>{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  const renderPartnerStory = (section: { title?: string; body?: string }) => {
+    if (!section.body) return null;
+    return (
+      <section style={{ backgroundColor: 'var(--cream)' }}>
+        <div className="max-w-4xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
+          {section.title && <div className="text-center mb-8"><h2 className="cv-h2" style={headingStyle}>{section.title}</h2></div>}
+          <p className="text-lg leading-relaxed text-center" style={{ color: 'var(--body)', ...bodyStyle }}>{section.body}</p>
+        </div>
+      </section>
+    );
+  };
+
+  const renderTestimonials = () => {
+    if (!contentCatalog) return null;
+    const testimonials = getPublishedTestimonials(contentCatalog);
+    if (testimonials.length === 0) return null;
+    return (
+      <section style={{ backgroundColor: 'var(--cream)' }}>
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
+          <div className="text-center mb-12">
+            <h2 className="cv-h2" style={headingStyle}>What Our Members Say</h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {testimonials.map((t) => (
+              <div key={t.id} className="cv-card p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full text-white text-sm font-bold" style={{ backgroundColor: t.avatarColor }}>{t.authorName.charAt(0)}</div>
+                  <div>
+                    <p className="text-sm font-bold" style={{ color: 'var(--ink)', ...headingStyle }}>{t.authorName}</p>
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>{t.authorRole}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 mb-3">
+                  {Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="h-3.5 w-3.5" style={{ fill: 'var(--red)', color: 'var(--red)' }} />)}
+                </div>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--body)', ...bodyStyle }}>&ldquo;{t.quote}&rdquo;</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  const renderImageSection = (section: { title?: string; imageUrl?: string }) => {
+    if (!section.imageUrl) return null;
+    return (
+      <section style={{ backgroundColor: 'var(--soft)' }}>
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 py-12 lg:py-16">
+          <img src={section.imageUrl} alt={section.title || ''} className="w-full rounded-2xl" />
+          {section.title && <p className="text-sm text-center mt-3" style={{ color: 'var(--muted)', ...bodyStyle }}>{section.title}</p>}
+        </div>
+      </section>
+    );
+  };
+
+  const renderVideoSection = (section: { title?: string; videoUrl?: string }) => {
+    if (!section.videoUrl) return null;
+    return (
+      <section style={{ backgroundColor: 'var(--cream)' }}>
+        <div className="max-w-4xl mx-auto px-5 lg:px-8 py-12 lg:py-16">
+          {section.title && <div className="text-center mb-6"><h2 className="cv-h2" style={headingStyle}>{section.title}</h2></div>}
+          <div className="rounded-2xl overflow-hidden border shadow-sm" style={{ borderColor: 'var(--line)' }}>
+            <iframe src={section.videoUrl} className="w-full aspect-video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  const renderTextSection = (section: { title?: string; body?: string }) => {
+    if (!section.body) return null;
+    return (
+      <section style={{ backgroundColor: 'var(--white)' }}>
+        <div className="max-w-4xl mx-auto px-5 lg:px-8 py-12 lg:py-16">
+          {section.title && <div className="text-center mb-6"><h2 className="cv-h2" style={headingStyle}>{section.title}</h2></div>}
+          <p className="text-lg leading-relaxed text-center" style={{ color: 'var(--body)', ...bodyStyle }}>{section.body}</p>
+        </div>
+      </section>
+    );
+  };
+
+  const renderContactSection = (section: { title?: string; body?: string }) => {
+    return (
+      <section style={{ backgroundColor: 'var(--soft)' }}>
+        <div className="max-w-4xl mx-auto px-5 lg:px-8 py-16 lg:py-24 text-center">
+          {section.title && <h2 className="cv-h2 mb-4" style={headingStyle}>{section.title}</h2>}
+          {section.body && <p className="text-lg mb-8" style={{ color: 'var(--body)', ...bodyStyle }}>{section.body}</p>}
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            {contactEmail && (
+              <a href={`mailto:${contactEmail}`} className="flex items-center gap-2 text-sm font-bold hover:opacity-70 transition-opacity" style={{ color: 'var(--ink)' }}>
+                <Mail className="h-4 w-4" /> {contactEmail}
+              </a>
+            )}
+            {contactPhone && (
+              <a href={`tel:${contactPhone}`} className="flex items-center gap-2 text-sm font-bold hover:opacity-70 transition-opacity" style={{ color: 'var(--ink)' }}>
+                <Phone className="h-4 w-4" /> {contactPhone}
+              </a>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  const renderCareverseExplanation = () => {
+    if (!contentCatalog) return null;
+    const explanations = getPublishedCareverseExplanations(contentCatalog);
+    if (explanations.length === 0) return null;
+    return (
+      <section style={{ backgroundColor: 'var(--white)' }}>
+        <div className="max-w-4xl mx-auto px-5 lg:px-8 py-16 lg:py-24">
+          {explanations.map((exp) => (
+            <div key={exp.id}>
+              <div className="text-center mb-8">
+                <h2 className="cv-h2" style={headingStyle}>{exp.title}</h2>
+              </div>
+              <p className="text-lg leading-relaxed text-center" style={{ color: 'var(--body)', ...bodyStyle }}>{exp.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
+  const renderDisclosures = () => {
+    if (!contentCatalog) return null;
+    const disclosures = getPublishedDisclosures(contentCatalog);
+    if (disclosures.length === 0) return null;
+    return (
+      <section style={{ backgroundColor: 'var(--soft)' }}>
+        <div className="max-w-4xl mx-auto px-5 lg:px-8 py-12 lg:py-16">
+          <h2 className="text-sm font-bold uppercase tracking-wider mb-4" style={{ color: 'var(--ink)', ...headingStyle }}>Disclosures</h2>
+          <div className="space-y-3">
+            {disclosures.map((d) => (
+              <div key={d.id} className="rounded-xl p-4 border" style={{ borderColor: 'var(--line)', backgroundColor: 'var(--white)' }}>
+                <p className="text-xs font-bold mb-1" style={{ color: 'var(--ink)' }}>{d.title}</p>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>{d.legalText}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
 
   const renderFooter = () => (
     <footer style={{ backgroundColor: 'var(--night)' }}>
@@ -499,6 +685,33 @@ function StorefrontContent() {
         case 'about':
           if (aboutContent) renderedSections.push(renderAbout());
           break;
+        case 'faq':
+          renderedSections.push(renderFAQ());
+          break;
+        case 'partnerStory':
+          renderedSections.push(renderPartnerStory(section));
+          break;
+        case 'testimonials':
+          renderedSections.push(renderTestimonials());
+          break;
+        case 'image':
+          renderedSections.push(renderImageSection(section));
+          break;
+        case 'video':
+          renderedSections.push(renderVideoSection(section));
+          break;
+        case 'text':
+          renderedSections.push(renderTextSection(section));
+          break;
+        case 'contact':
+          renderedSections.push(renderContactSection(section));
+          break;
+        case 'careverseExplanation':
+          renderedSections.push(renderCareverseExplanation());
+          break;
+        case 'disclosures':
+          renderedSections.push(renderDisclosures());
+          break;
         case 'footer':
           // Footer is rendered at the end, after Lidia
           break;
@@ -508,6 +721,12 @@ function StorefrontContent() {
 
   return (
     <div className="cv-page min-h-screen" style={brandingCssVars}>
+      {/* Suspended banner */}
+      {isSuspended && (
+        <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 text-center">
+          <p className="text-sm font-bold text-amber-800">This storefront is temporarily unavailable. Please check back later.</p>
+        </div>
+      )}
       {/* Header */}
       <header className="sticky top-0 z-40 backdrop-blur-md border-b" style={{ backgroundColor: branding ? `${branding.backgroundColor}e0` : 'rgba(246,243,238,0.88)', borderColor: 'var(--line)' }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between px-5 lg:px-8 h-[72px]">

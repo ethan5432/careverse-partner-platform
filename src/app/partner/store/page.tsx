@@ -14,8 +14,15 @@ import {
   Save, Check, ChevronUp, ChevronDown, Trash2, Plus, Upload, ExternalLink,
   ArrowUp, ArrowDown, X, Play, ImageIcon, Lock, Settings, Star,
   Share2, Plus as PlusIcon, ArrowRight, ArrowLeft,
+  HelpCircle, MessageSquareQuote, Heart, FileText, Phone, Mail, Info, 
+  Image as ImageIconLucide, Type, Contact as ContactIcon, Sparkles,
 } from 'lucide-react';
-import { mockProducts, currentPartnerStorefront, partnerDashboardStats } from '@/data/mock';
+import { currentPartnerStorefront, partnerDashboardStats } from '@/data/mock';
+import {
+  getAvailablePackages,
+  getPackageById,
+  resolvePackages,
+} from '@/lib/package-catalog';
 import type { StoreSection, StoreSectionType } from '@/data/mock/types';
 import {
   loadStorefrontConfig, saveStorefrontConfig, StorefrontConfig, StoreBranding,
@@ -30,6 +37,11 @@ import { PublishSuccessDialog } from '@/components/shared/PublishSuccessDialog';
 import { SaveStateBadge, type SaveStatus } from '@/components/shared/SaveState';
 import { SupportLink } from '@/components/shared/SupportLink';
 import type { SocialLink } from '@/lib/store-persistence';
+import {
+  loadContentCatalog, getPublishedFAQs, getPublishedTestimonials,
+  getPublishedBenefitExplanations, getPublishedCareverseExplanations,
+  getPublishedDisclosures, type ContentCatalog,
+} from '@/lib/content-catalog';
 
 const socialPlatforms: { value: SocialLink['platform']; label: string }[] = [
   { value: 'instagram', label: 'Instagram' },
@@ -71,6 +83,15 @@ const sectionTypeLabels: Record<StoreSectionType, string> = {
   benefits: 'Benefits',
   about: 'About',
   footer: 'Footer',
+  faq: 'FAQ',
+  partnerStory: 'Partner Story',
+  testimonials: 'Testimonials',
+  image: 'Image',
+  video: 'Video',
+  text: 'Text',
+  contact: 'Contact',
+  careverseExplanation: 'Careverse Explanation',
+  disclosures: 'Required Disclosures',
 };
 
 const sectionTypeIcons: Record<StoreSectionType, typeof Package> = {
@@ -80,7 +101,32 @@ const sectionTypeIcons: Record<StoreSectionType, typeof Package> = {
   benefits: Star,
   about: LayoutDashboard,
   footer: Globe,
+  faq: HelpCircle,
+  partnerStory: MessageSquareQuote,
+  testimonials: Star,
+  image: ImageIconLucide,
+  video: Video,
+  text: Type,
+  contact: ContactIcon,
+  careverseExplanation: Sparkles,
+  disclosures: FileText,
 };
+
+const CAREVERSE_CONTROLLED_TYPES: StoreSectionType[] = [
+  'faq', 'benefits', 'testimonials', 'careverseExplanation', 'disclosures',
+];
+
+const OPTIONAL_SECTION_TYPES: { type: StoreSectionType; label: string; desc: string; careverseControlled: boolean }[] = [
+  { type: 'faq', label: 'FAQ', desc: 'Common questions — managed by Careverse', careverseControlled: true },
+  { type: 'partnerStory', label: 'Partner Story', desc: 'Your personal story and background', careverseControlled: false },
+  { type: 'testimonials', label: 'Testimonials', desc: 'Approved member testimonials — managed by Careverse', careverseControlled: true },
+  { type: 'image', label: 'Image', desc: 'A custom image section', careverseControlled: false },
+  { type: 'video', label: 'Video', desc: 'A standalone video section', careverseControlled: false },
+  { type: 'text', label: 'Text', desc: 'A custom text block', careverseControlled: false },
+  { type: 'contact', label: 'Contact', desc: 'Your contact information', careverseControlled: false },
+  { type: 'careverseExplanation', label: 'Careverse Explanation', desc: 'What Careverse is — managed by Careverse', careverseControlled: true },
+  { type: 'disclosures', label: 'Required Disclosures', desc: 'Legal disclosures — managed by Careverse', careverseControlled: true },
+];
 
 function fmtMoney(n: number) {
   return `${n}/mo`;
@@ -191,12 +237,13 @@ function PartnerStoreContent() {
   const [selectedPackages, setSelectedPackages] = useState<string[]>([]);
   const [sections, setSections] = useState<StoreSection[]>([]);
   const [contentBlocks, setContentBlocks] = useState<CreatorBlock[]>([]);
-  const [publishStatus, setPublishStatus] = useState<'LIVE' | 'DRAFT'>('DRAFT');
+  const [publishStatus, setPublishStatus] = useState<'LIVE' | 'DRAFT' | 'SUSPENDED'>('DRAFT');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [showAddSection, setShowAddSection] = useState(false);
 
   // Video preview URLs for uploaded videos
   const [videoPreviews, setVideoPreviews] = useState<Record<string, string>>({});
@@ -373,15 +420,46 @@ function PartnerStoreContent() {
     markDirty();
   };
 
+  const addOptionalSection = (type: StoreSectionType) => {
+    const sectionId = `sec-${type}-${Date.now()}`;
+    const newSection: StoreSection = {
+      id: sectionId,
+      type,
+      visible: true,
+      columns: 1,
+      title: '',
+      body: '',
+      imageUrl: '',
+      videoUrl: '',
+      videoSource: 'EMBED',
+    };
+    const insertIdx = sections.length > 0 ? sections.length - 1 : 0;
+    const newSections = [...sections];
+    newSections.splice(insertIdx, 0, newSection);
+    setSections(newSections);
+    markDirty();
+  };
+
+  const updateSectionContent = (id: string, partial: Partial<StoreSection>) => {
+    setSections(sections.map(s => s.id === id ? { ...s, ...partial } : s));
+    markDirty();
+  };
+
+  // Load content catalog for Careverse-controlled sections
+  const [contentCatalog, setContentCatalog] = useState<ContentCatalog | null>(null);
+  useEffect(() => {
+    setContentCatalog(loadContentCatalog());
+  }, []);
+
   // ─── Package management ──────────────────────────────────────────────────
 
-  const availableProducts = mockProducts.filter(p => p.availability === 'AVAILABLE');
+  const availableProducts = getAvailablePackages();
 
-  const togglePackage = (pkgName: string) => {
-    if (selectedPackages.includes(pkgName)) {
-      setSelectedPackages(selectedPackages.filter(p => p !== pkgName));
+  const togglePackage = (pkgId: string) => {
+    if (selectedPackages.includes(pkgId)) {
+      setSelectedPackages(selectedPackages.filter(p => p !== pkgId));
     } else {
-      setSelectedPackages([...selectedPackages, pkgName]);
+      setSelectedPackages([...selectedPackages, pkgId]);
     }
     markDirty();
   };
@@ -1013,11 +1091,11 @@ function PartnerStoreContent() {
               {selectedPackages.length === 0 && (
                 <p className="text-sm text-cv-muted text-center py-6">No packages selected yet. Add packages from the list below.</p>
               )}
-              {selectedPackages.map((pkgName, idx) => {
-                const product = mockProducts.find(p => p.name === pkgName);
+              {selectedPackages.map((pkgId, idx) => {
+                const product = getPackageById(pkgId);
                 if (!product) return null;
                 return (
-                  <div key={pkgName} className="flex items-center gap-3 rounded-xl border border-cv-line p-3">
+                  <div key={pkgId} className="flex items-center gap-3 rounded-xl border border-cv-line p-3">
                     <div className="flex flex-col">
                       <button onClick={() => movePackage(idx, 'up')} disabled={idx === 0} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
                       <button onClick={() => movePackage(idx, 'down')} disabled={idx === selectedPackages.length - 1} className="text-cv-muted hover:text-cv-ink disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
@@ -1025,9 +1103,9 @@ function PartnerStoreContent() {
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-[10px] font-extrabold">{idx + 1}</span>
                     <div className="flex-1">
                       <p className="text-sm font-bold text-cv-ink">{product.name} {product.popular && <span className="ml-1 inline-flex items-center rounded-full bg-cv-red/10 px-1.5 py-0.5 text-[9px] font-extrabold text-cv-red">POPULAR</span>}</p>
-                      <p className="text-xs text-cv-muted">{fmtMoney(product.price)} — {product.billingType.toLowerCase()}</p>
+                      <p className="text-xs text-cv-muted">{fmtMoney(product.price)} — {product.billingOption.toLowerCase()}</p>
                     </div>
-                    <button onClick={() => togglePackage(pkgName)} className="text-xs font-bold text-cv-muted hover:text-cv-red transition-colors">Remove</button>
+                    <button onClick={() => togglePackage(pkgId)} className="text-xs font-bold text-cv-muted hover:text-cv-red transition-colors">Remove</button>
                   </div>
                 );
               })}
@@ -1041,10 +1119,10 @@ function PartnerStoreContent() {
             <CardContent className="space-y-2">
               <p className="text-xs text-cv-muted mb-2">Select the packages you want to offer. Package names, prices, benefits, and product information are controlled by Careverse.</p>
               {availableProducts.map((product) => {
-                const isSelected = selectedPackages.includes(product.name);
+                const isSelected = selectedPackages.includes(product.id);
                 return (
                   <div key={product.id} className="rounded-xl border border-cv-line p-3">
-                    <button onClick={() => togglePackage(product.name)} className="w-full flex items-center gap-3 text-left">
+                    <button onClick={() => togglePackage(product.id)} className="w-full flex items-center gap-3 text-left">
                       <div className={cn('flex h-5 w-5 items-center justify-center rounded-md border-2 shrink-0', isSelected ? 'border-cv-ink bg-cv-ink' : 'border-cv-line')}>
                         {isSelected && <Check className="h-3 w-3 text-white" />}
                       </div>
@@ -1055,12 +1133,42 @@ function PartnerStoreContent() {
                       <Lock className="h-3.5 w-3.5 text-cv-muted shrink-0" />
                     </button>
                     {isSelected && (
-                      <div className="mt-3 pt-3 border-t border-cv-line space-y-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted">Package features (managed by Careverse)</p>
-                        <div className="flex flex-wrap gap-1">
-                          {product.features.map((f, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-cv-soft px-2 py-0.5 text-[10px] font-bold text-cv-body"><Lock className="h-2 w-2" />{f}</span>
-                          ))}
+                      <div className="mt-3 pt-3 border-t border-cv-line space-y-3">
+                        <div className="space-y-1.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted">Package features (locked — managed by Careverse)</p>
+                          <div className="flex flex-wrap gap-1">
+                            {product.features.map((f, i) => (
+                              <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-cv-soft px-2 py-0.5 text-[10px] font-bold text-cv-body"><Lock className="h-2 w-2" />{f}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <div className="rounded-lg bg-cv-soft/60 p-2.5">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Eligibility</p>
+                            <p className="text-[11px] text-cv-body mt-1">{product.eligibility.whoIsEligible}</p>
+                            <ul className="mt-1 space-y-0.5">
+                              {product.eligibility.requirements.map((r, i) => (
+                                <li key={i} className="text-[10px] text-cv-muted flex items-start gap-1"><span className="text-cv-muted mt-0.5">•</span>{r}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div className="rounded-lg bg-cv-soft/60 p-2.5">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Limits</p>
+                            <div className="mt-1 space-y-0.5">
+                              <p className="text-[10px] text-cv-body">Members: {product.limits.maxMembers ?? 'Unlimited'}</p>
+                              <p className="text-[10px] text-cv-body">Allowance: {product.limits.monthlyCareAllowance}</p>
+                              <p className="text-[10px] text-cv-body">Visits: {product.limits.includedVisits}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="rounded-lg bg-cv-soft/40 border border-cv-line p-2.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Legal &amp; Disclosure</p>
+                          <p className="text-[10px] text-cv-body mt-1">{product.disclosure.legalText}</p>
+                          <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
+                            <p className="text-[10px] text-cv-muted"><span className="font-bold">Cancellation:</span> {product.disclosure.cancellationPolicy}</p>
+                            <p className="text-[10px] text-cv-muted"><span className="font-bold">Auto-renewal:</span> {product.disclosure.autoRenewal}</p>
+                            <p className="text-[10px] text-cv-muted sm:col-span-2"><span className="font-bold">Additional fees:</span> {product.disclosure.additionalFees}</p>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1392,13 +1500,91 @@ function PartnerStoreContent() {
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
+                    {CAREVERSE_CONTROLLED_TYPES.includes(section.type) && (
+                      <Lock className="h-3 w-3 text-cv-muted" />
+                    )}
                   </div>
                 );
               })}
-              <Button variant="outline" className="w-full rounded-xl border-cv-line font-bold mt-3" onClick={addCreatorVideoSection}>
+              <Button variant="outline" className="w-full rounded-xl border-cv-line font-bold mt-3" onClick={() => setShowAddSection(!showAddSection)}>
                 <Plus className="h-4 w-4 mr-1.5" />
-                Add Video Section
+                Add Section
               </Button>
+              {showAddSection && (
+                <div className="mt-2 rounded-xl border border-cv-line p-3 bg-cv-soft/50 space-y-1.5">
+                  <p className="text-[10px] font-bold text-cv-muted uppercase tracking-wider mb-1">Optional Sections</p>
+                  {OPTIONAL_SECTION_TYPES.map((opt) => (
+                    <button
+                      key={opt.type}
+                      onClick={() => { addOptionalSection(opt.type); setShowAddSection(false); }}
+                      className="w-full flex items-start gap-2.5 text-left rounded-lg p-2.5 hover:bg-white transition-colors border border-transparent hover:border-cv-line"
+                    >
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white shrink-0 border border-cv-line">
+                        {(() => { const Icon = sectionTypeIcons[opt.type]; return <Icon className="h-3.5 w-3.5 text-cv-ink" />; })()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-cv-ink">{opt.label}</p>
+                          {opt.careverseControlled && <Lock className="h-3 w-3 text-cv-muted" />}
+                        </div>
+                        <p className="text-[10px] text-cv-muted">{opt.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Partner-owned section editors */}
+              {sections.filter(s => !CAREVERSE_CONTROLLED_TYPES.includes(s.type) && s.type !== 'hero' && s.type !== 'creatorVideo' && s.type !== 'packages' && s.type !== 'about' && s.type !== 'footer').map((section) => (
+                <div key={`editor-${section.id}`} className="mt-3 rounded-xl border border-cv-line p-3 space-y-2 bg-white">
+                  <div className="flex items-center gap-2">
+                    {(() => { const Icon = sectionTypeIcons[section.type]; return <Icon className="h-3.5 w-3.5 text-cv-ink" />; })()}
+                    <p className="text-xs font-bold text-cv-ink">{sectionTypeLabels[section.type]} — Content</p>
+                  </div>
+                  {(section.type === 'text' || section.type === 'partnerStory') && (
+                    <>
+                      <Input value={section.title || ''} onChange={(e) => updateSectionContent(section.id, { title: e.target.value })} className="cv-input text-xs" placeholder="Section title" />
+                      <Textarea value={section.body || ''} onChange={(e) => updateSectionContent(section.id, { body: e.target.value })} className="cv-input text-xs min-h-[80px]" placeholder="Write your content..." />
+                    </>
+                  )}
+                  {section.type === 'image' && (
+                    <>
+                      <Input value={section.title || ''} onChange={(e) => updateSectionContent(section.id, { title: e.target.value })} className="cv-input text-xs" placeholder="Image caption (optional)" />
+                      <Input value={section.imageUrl || ''} onChange={(e) => updateSectionContent(section.id, { imageUrl: e.target.value })} className="cv-input text-xs" placeholder="Image URL" />
+                    </>
+                  )}
+                  {section.type === 'video' && (
+                    <>
+                      <Input value={section.title || ''} onChange={(e) => updateSectionContent(section.id, { title: e.target.value })} className="cv-input text-xs" placeholder="Video title (optional)" />
+                      <Input value={section.videoUrl || ''} onChange={(e) => updateSectionContent(section.id, { videoUrl: e.target.value })} className="cv-input text-xs" placeholder="Video embed URL (YouTube, Vimeo, etc.)" />
+                    </>
+                  )}
+                  {section.type === 'contact' && (
+                    <>
+                      <Input value={section.title || ''} onChange={(e) => updateSectionContent(section.id, { title: e.target.value })} className="cv-input text-xs" placeholder="Section title (e.g. Contact Me)" />
+                      <Textarea value={section.body || ''} onChange={(e) => updateSectionContent(section.id, { body: e.target.value })} className="cv-input text-xs min-h-[60px]" placeholder="Contact message (e.g. Have questions? Reach out anytime.)" />
+                      <p className="text-[10px] text-cv-muted">Contact email and phone are set in the Brand step.</p>
+                    </>
+                  )}
+                </div>
+              ))}
+
+              {/* Careverse-controlled section info */}
+              {contentCatalog && sections.filter(s => CAREVERSE_CONTROLLED_TYPES.includes(s.type)).map((section) => {
+                let count = 0;
+                let label = '';
+                if (section.type === 'faq') { count = getPublishedFAQs(contentCatalog).length; label = 'FAQs'; }
+                if (section.type === 'testimonials') { count = getPublishedTestimonials(contentCatalog).length; label = 'testimonials'; }
+                if (section.type === 'careverseExplanation') { count = getPublishedCareverseExplanations(contentCatalog).length; label = 'explanations'; }
+                if (section.type === 'disclosures') { count = getPublishedDisclosures(contentCatalog).length; label = 'disclosures'; }
+                if (section.type === 'benefits') { count = getPublishedBenefitExplanations(contentCatalog).length; label = 'benefit explanations'; }
+                return (
+                  <div key={`info-${section.id}`} className="mt-2 rounded-lg border border-cv-line p-2.5 bg-cv-soft/30 flex items-center gap-2">
+                    <Lock className="h-3 w-3 text-cv-muted shrink-0" />
+                    <p className="text-[10px] text-cv-muted">{sectionTypeLabels[section.type]}: {count} {label} available from Careverse. You can show/hide and position this section.</p>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
@@ -1526,9 +1712,7 @@ function PartnerStoreContent() {
                         <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
                           <h3 className="text-lg font-bold mt-1 mb-4" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>Choose your plan</h3>
                           <div className="grid gap-3 sm:grid-cols-3">
-                            {selectedPackages.map((pkgName) => {
-                              const product = mockProducts.find(p => p.name === pkgName);
-                              if (!product) return null;
+                            {resolvePackages(selectedPackages).map((product) => {
                               return (
                                 <div key={product.id} className={cn('rounded-xl border p-4', product.popular ? 'ring-1' : '')} style={{ borderColor: product.popular ? 'var(--ink)' : 'var(--line)' }}>
                                   {product.popular && <span className="text-[9px] font-extrabold" style={{ color: 'var(--red)' }}>MOST POPULAR</span>}
@@ -1582,6 +1766,123 @@ function PartnerStoreContent() {
                             {!isWhiteLabel && showPoweredByFooter && (
                               <span className="text-[10px]" style={{ color: 'var(--night-text)' }}>Powered by Careverse</span>
                             )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (section.type === 'faq' && contentCatalog) {
+                      const faqs = getPublishedFAQs(contentCatalog);
+                      if (faqs.length === 0) return null;
+                      return (
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--cream)' }}>
+                          <h3 className="text-lg font-bold mt-1 mb-4" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>Frequently Asked Questions</h3>
+                          <div className="space-y-2">
+                            {faqs.map((faq) => (
+                              <div key={faq.id} className="rounded-lg p-3 border" style={{ backgroundColor: 'var(--white)', borderColor: 'var(--line)' }}>
+                                <p className="text-xs font-bold" style={{ color: 'var(--ink)' }}>{faq.question}</p>
+                                <p className="text-[10px] mt-1" style={{ color: 'var(--muted)' }}>{faq.answer}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (section.type === 'partnerStory' && section.body) {
+                      return (
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
+                          {section.title && <h3 className="text-lg font-bold mt-1 mb-3" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>{section.title}</h3>}
+                          <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{section.body}</p>
+                        </div>
+                      );
+                    }
+                    if (section.type === 'testimonials' && contentCatalog) {
+                      const testimonials = getPublishedTestimonials(contentCatalog);
+                      if (testimonials.length === 0) return null;
+                      return (
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--cream)' }}>
+                          <h3 className="text-lg font-bold mt-1 mb-4" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>What Members Say</h3>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {testimonials.map((t) => (
+                              <div key={t.id} className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--white)', borderColor: 'var(--line)' }}>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="flex h-7 w-7 items-center justify-center rounded-full text-white text-[10px] font-bold" style={{ backgroundColor: t.avatarColor }}>{t.authorName.charAt(0)}</div>
+                                  <div>
+                                    <p className="text-xs font-bold" style={{ color: 'var(--ink)' }}>{t.authorName}</p>
+                                    <p className="text-[10px]" style={{ color: 'var(--muted)' }}>{t.authorRole}</p>
+                                  </div>
+                                </div>
+                                <p className="text-[10px] leading-relaxed" style={{ color: 'var(--muted)' }}>&ldquo;{t.quote}&rdquo;</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (section.type === 'image' && section.imageUrl) {
+                      return (
+                        <div key={section.id} className="px-6 py-6" style={{ backgroundColor: 'var(--white)' }}>
+                          <img src={section.imageUrl} alt={section.title || ''} className="w-full rounded-xl" />
+                          {section.title && <p className="text-xs text-center mt-2" style={{ color: 'var(--muted)' }}>{section.title}</p>}
+                        </div>
+                      );
+                    }
+                    if (section.type === 'video' && section.videoUrl) {
+                      return (
+                        <div key={section.id} className="px-6 py-6" style={{ backgroundColor: 'var(--cream)' }}>
+                          {section.title && <p className="text-sm font-bold mb-2" style={{ color: 'var(--ink)', fontFamily: branding.headingFont }}>{section.title}</p>}
+                          <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--line)' }}>
+                            <iframe src={section.videoUrl} className="w-full aspect-video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (section.type === 'text' && section.body) {
+                      return (
+                        <div key={section.id} className="px-6 py-6" style={{ backgroundColor: 'var(--white)' }}>
+                          {section.title && <h3 className="text-base font-bold mb-2" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>{section.title}</h3>}
+                          <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{section.body}</p>
+                        </div>
+                      );
+                    }
+                    if (section.type === 'contact') {
+                      return (
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--cream)' }}>
+                          {section.title && <h3 className="text-lg font-bold mt-1 mb-3" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>{section.title}</h3>}
+                          {section.body && <p className="text-sm mb-3" style={{ color: 'var(--muted)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{section.body}</p>}
+                          <div className="flex flex-wrap gap-3">
+                            {contactEmail && <span className="inline-flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--ink)' }}><Mail className="h-3.5 w-3.5" />{contactEmail}</span>}
+                            {contactPhone && <span className="inline-flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--ink)' }}><Phone className="h-3.5 w-3.5" />{contactPhone}</span>}
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (section.type === 'careverseExplanation' && contentCatalog) {
+                      const explanations = getPublishedCareverseExplanations(contentCatalog);
+                      if (explanations.length === 0) return null;
+                      return (
+                        <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
+                          {explanations.map((exp) => (
+                            <div key={exp.id}>
+                              <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>{exp.title}</h3>
+                              <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{exp.body}</p>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    if (section.type === 'disclosures' && contentCatalog) {
+                      const disclosures = getPublishedDisclosures(contentCatalog);
+                      if (disclosures.length === 0) return null;
+                      return (
+                        <div key={section.id} className="px-6 py-6" style={{ backgroundColor: 'var(--cream)' }}>
+                          <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--ink)', fontFamily: branding.headingFont }}>Disclosures</h3>
+                          <div className="space-y-2">
+                            {disclosures.map((d) => (
+                              <div key={d.id} className="rounded-lg p-3 border" style={{ backgroundColor: 'var(--white)', borderColor: 'var(--line)' }}>
+                                <p className="text-[10px] font-bold" style={{ color: 'var(--ink)' }}>{d.title}</p>
+                                <p className="text-[9px] mt-1 leading-relaxed" style={{ color: 'var(--muted)' }}>{d.legalText}</p>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       );

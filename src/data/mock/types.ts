@@ -148,13 +148,34 @@ export type ContentSource = 'EMBED' | 'UPLOAD';
 export type ContentPlacement = 'TOP' | 'MIDDLE' | 'BOTTOM';
 export type ContentLayout = 'ONE_COLUMN' | 'TWO_COLUMN' | 'THREE_COLUMN';
 
-export type StoreSectionType = 'hero' | 'creatorVideo' | 'packages' | 'benefits' | 'about' | 'footer';
+export type StoreSectionType =
+  | 'hero'
+  | 'creatorVideo'
+  | 'packages'
+  | 'benefits'
+  | 'about'
+  | 'footer'
+  | 'faq'
+  | 'partnerStory'
+  | 'testimonials'
+  | 'image'
+  | 'video'
+  | 'text'
+  | 'contact'
+  | 'careverseExplanation'
+  | 'disclosures';
 
 export interface StoreSection {
   id: string;
   type: StoreSectionType;
   visible: boolean;
   columns?: 1 | 2 | 3;
+  title?: string;
+  body?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  videoSource?: 'EMBED' | 'UPLOAD';
+  contentIds?: string[];
 }
 
 export interface MockCreatorContent {
