@@ -26,6 +26,7 @@ import {
 } from '@/data/mock';
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { cn } from '@/lib/utils';
+import { PartnerCampaignOffers } from '@/components/shared/PartnerCampaignOffers';
 import {
   loadPendingStorefrontApplication, loadStorefrontApplicationsByPartner,
 } from '@/lib/creator-persistence';
@@ -268,6 +269,15 @@ export default function PartnerDashboardPage() {
               ))}
             </CardContent>
           </Card>
+        )}
+
+        {/* Campaign offers — only shown when unique offers exist */}
+        {partnerId && user?.partnerType && (
+          <PartnerCampaignOffers
+            partnerId={partnerId}
+            partnerType={user.partnerType}
+            qualifyingMemberships={recentConversions.filter(c => c.status === 'APPROVED' || c.status === 'PAID').length}
+          />
         )}
 
         {/* Recent Conversions (affiliate) */}
@@ -524,6 +534,15 @@ export default function PartnerDashboardPage() {
           description="Last 30 days"
         />
       </div>
+
+      {/* Campaign offers — only shown when unique offers exist */}
+      {partnerId && user?.partnerType && (
+        <PartnerCampaignOffers
+          partnerId={partnerId}
+          partnerType={user.partnerType}
+          qualifyingMemberships={recentConversions.filter(c => c.status === 'APPROVED' || c.status === 'PAID').length}
+        />
+      )}
 
       {/* Lidia engagement — future metrics placeholder */}
       <Card className="cv-card border-dashed border-cv-line bg-cv-soft/30">
