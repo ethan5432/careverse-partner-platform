@@ -28,38 +28,41 @@ import {
 type MockRole = 'ADMIN' | 'PARTNER';
 
 interface SignupData {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
-  phone: string;
+  phone?: string;
   country: string;
-  stateProvince: string;
+  stateProvince?: string;
   partnerType: PartnerType;
-  password: string;
-  acceptTerms: boolean;
-  acceptPrivacy: boolean;
-  displayName?: string;
+  creatorName?: string;
   website?: string;
-  socialPlatform?: string;
-  socialHandle?: string;
   creatorProfiles?: CreatorProfile[];
   legalBusinessName?: string;
   brandName?: string;
-  businessEntityType?: BusinessEntityType;
-  businessRegistrationNumber?: string;
-  registrationStateProvinceCountry?: string;
   businessWebsite?: string;
-  businessMailingAddress?: string;
   businessDescription?: string;
   businessCategory?: BusinessCategory;
+  businessEntityType?: BusinessEntityType;
+  businessRegistrationNumber?: string;
+  registrationLocation?: string;
+  businessMailingAddress?: string;
   businessOperatingDuration?: BusinessOperatingDuration;
-  bookOfBusinessSize?: string;
-  estimatedMonthlyVolume?: string;
-  expectedPerformance?: string;
-  howCustomersReachCareverse?: string;
-  paidAdvertising?: string;
-  decisionMakingAuthority?: string;
   businessProfiles?: BusinessProfile[];
+  bookOfBusinessDescription?: string;
+  estimatedVolumeDescription?: string;
+  partnershipExpectations?: string;
+  acquisitionMethods?: string[];
+  acquisitionOtherDetail?: string;
+  purchasesAdvertising?: 'YES' | 'NO';
+  advertisingPlatforms?: string[];
+  advertisingPlatformOtherDetail?: string;
+  hasDecisionAuthority?: 'YES' | 'NO';
+  decisionMakerName?: string;
+  decisionMakerRole?: string;
+  decisionMakerEmail?: string;
+  confirmAccurate: boolean;
+  confirmNoGuarantee: boolean;
+  acceptTerms: boolean;
 }
 
 interface MockAuthContextValue {
@@ -77,6 +80,8 @@ interface MockAuthContextValue {
   switchStatus: (status: PartnerStatus) => void;
   signup: (data: SignupData) => { success: boolean; error?: string };
   approveApplication: (applicationId: string) => void;
+  rejectApplication: (applicationId: string) => void;
+  resendActivationEmail: (applicationId: string) => void;
   activateAccount: (password: string) => { success: boolean; error?: string };
   updateOnboarding: (updates: Partial<OnboardingProgress>) => void;
   isOnboardingComplete: () => boolean;
@@ -234,47 +239,48 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signup = useCallback((data: SignupData): { success: boolean; error?: string } => {
-    if (!data.acceptTerms || !data.acceptPrivacy) {
-      return { success: false, error: 'You must accept the Terms and Privacy Policy.' };
-    }
-    if (data.password.length < 8) {
-      return { success: false, error: 'Password must be at least 8 characters.' };
+    if (!data.confirmAccurate || !data.confirmNoGuarantee || !data.acceptTerms) {
+      return { success: false, error: 'You must complete all confirmations.' };
     }
     const app: PartnerApplication = {
       id: `app-${Date.now()}`,
-      firstName: data.firstName,
-      lastName: data.lastName,
+      fullName: data.fullName,
       email: data.email,
       phone: data.phone,
       country: data.country,
       stateProvince: data.stateProvince,
       partnerType: data.partnerType,
-      password: data.password,
-      acceptTerms: data.acceptTerms,
-      acceptPrivacy: data.acceptPrivacy,
-      displayName: data.displayName,
+      creatorName: data.creatorName,
       website: data.website,
-      socialPlatform: data.socialPlatform,
-      socialHandle: data.socialHandle,
       creatorProfiles: data.creatorProfiles,
       legalBusinessName: data.legalBusinessName,
       brandName: data.brandName,
-      businessEntityType: data.businessEntityType,
-      businessRegistrationNumber: data.businessRegistrationNumber,
-      registrationStateProvinceCountry: data.registrationStateProvinceCountry,
       businessWebsite: data.businessWebsite,
-      businessMailingAddress: data.businessMailingAddress,
       businessDescription: data.businessDescription,
       businessCategory: data.businessCategory,
+      businessEntityType: data.businessEntityType,
+      businessRegistrationNumber: data.businessRegistrationNumber,
+      registrationLocation: data.registrationLocation,
+      businessMailingAddress: data.businessMailingAddress,
       businessOperatingDuration: data.businessOperatingDuration,
-      bookOfBusinessSize: data.bookOfBusinessSize,
-      estimatedMonthlyVolume: data.estimatedMonthlyVolume,
-      expectedPerformance: data.expectedPerformance,
-      howCustomersReachCareverse: data.howCustomersReachCareverse,
-      paidAdvertising: data.paidAdvertising,
-      decisionMakingAuthority: data.decisionMakingAuthority,
       businessProfiles: data.businessProfiles,
+      bookOfBusinessDescription: data.bookOfBusinessDescription,
+      estimatedVolumeDescription: data.estimatedVolumeDescription,
+      partnershipExpectations: data.partnershipExpectations,
+      acquisitionMethods: data.acquisitionMethods,
+      acquisitionOtherDetail: data.acquisitionOtherDetail,
+      purchasesAdvertising: data.purchasesAdvertising,
+      advertisingPlatforms: data.advertisingPlatforms,
+      advertisingPlatformOtherDetail: data.advertisingPlatformOtherDetail,
+      hasDecisionAuthority: data.hasDecisionAuthority,
+      decisionMakerName: data.decisionMakerName,
+      decisionMakerRole: data.decisionMakerRole,
+      decisionMakerEmail: data.decisionMakerEmail,
+      confirmAccurate: data.confirmAccurate,
+      confirmNoGuarantee: data.confirmNoGuarantee,
+      acceptTerms: data.acceptTerms,
       applicationState: 'SUBMITTED',
+      accountStatus: 'PENDING_ACTIVATION',
       submittedAt: new Date().toISOString(),
     };
     persistApplication(app);
@@ -291,7 +297,36 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       const updated: PartnerApplication = {
         ...prev,
         applicationState: 'APPROVED' as ApplicationState,
+        accountStatus: 'PENDING_ACTIVATION',
         approvedAt: new Date().toISOString(),
+        reviewedAt: new Date().toISOString(),
+        activationEmailSentAt: new Date().toISOString(),
+      };
+      persistApplication(updated);
+      return updated;
+    });
+  }, []);
+
+  const rejectApplication = useCallback((_applicationId: string) => {
+    setApplication(prev => {
+      if (!prev) return prev;
+      const updated: PartnerApplication = {
+        ...prev,
+        applicationState: 'REJECTED' as ApplicationState,
+        rejectedAt: new Date().toISOString(),
+        reviewedAt: new Date().toISOString(),
+      };
+      persistApplication(updated);
+      return updated;
+    });
+  }, []);
+
+  const resendActivationEmail = useCallback((_applicationId: string) => {
+    setApplication(prev => {
+      if (!prev) return prev;
+      const updated: PartnerApplication = {
+        ...prev,
+        activationEmailSentAt: new Date().toISOString(),
       };
       persistApplication(updated);
       return updated;
@@ -306,9 +341,12 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
     if (!app) {
       return { success: false, error: 'No application found.' };
     }
+    if (app.applicationState !== 'APPROVED') {
+      return { success: false, error: 'Your application has not been approved yet.' };
+    }
     const name = app.partnerType === 'CREATOR'
-      ? (app.displayName || `${app.firstName} ${app.lastName}`)
-      : (app.brandName || app.legalBusinessName || `${app.firstName} ${app.lastName}`);
+      ? (app.creatorName || app.fullName)
+      : (app.brandName || app.legalBusinessName || app.fullName);
     const newUser: MockUser = {
       id: `u-${Date.now()}`,
       name,
@@ -320,7 +358,6 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       lastActive: new Date().toISOString().slice(0, 10),
     };
     persistUser(newUser);
-    // Load creator profiles and affiliate link for the new user
     if (app.partnerType === 'CREATOR') {
       const profiles = loadCreatorProfiles(newUser.id);
       setCreatorProfiles(profiles);
@@ -332,15 +369,13 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       const affLink = loadAffiliateLink(newUser.id);
       setAffiliateLink(affLink);
     } else {
-      // Business partners get storefront access by default
       saveStorefrontAccess(newUser.id, 'UNLOCKED');
       setStorefrontAccess('UNLOCKED');
     }
     const updatedApp: PartnerApplication = {
       ...app,
-      applicationState: 'APPROVED',
       activatedAt: new Date().toISOString(),
-      password,
+      accountStatus: 'ACTIVE',
     };
     persistApplication(updatedApp);
     persistEmailVerified(true);
@@ -402,7 +437,6 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Also refresh access and profiles when user changes (e.g. after login)
   useEffect(() => {
     if (user) {
       const profiles = loadCreatorProfiles(user.id);
@@ -435,6 +469,8 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
         switchStatus,
         signup,
         approveApplication,
+        rejectApplication,
+        resendActivationEmail,
         activateAccount,
         updateOnboarding,
         isOnboardingComplete,

@@ -17,8 +17,8 @@ export const mockUsers: MockUser[] = [
   { id: 'u-partner-1', name: 'Marcus Johnson', email: 'marcus@carepartners.co', role: 'PARTNER', partnerType: 'BUSINESS', status: 'ACTIVE', joinedDate: '2025-03-22', lastActive: '2026-09-14' },
   { id: 'u-partner-2', name: 'Emily Rodriguez', email: 'emily@healthhub.com', role: 'PARTNER', partnerType: 'CREATOR', status: 'ACTIVE', joinedDate: '2025-05-10', lastActive: '2026-09-13' },
   { id: 'u-partner-3', name: 'David Kim', email: 'david@careagency.io', role: 'PARTNER', partnerType: 'BUSINESS', status: 'ACTIVE', joinedDate: '2025-06-01', lastActive: '2026-09-12' },
-  { id: 'u-partner-4', name: 'Lisa Thompson', email: 'lisa@wellnessgroup.net', role: 'PARTNER', partnerType: 'CREATOR', status: 'PENDING', joinedDate: '2026-09-01', lastActive: '2026-09-01' },
-  { id: 'u-partner-5', name: 'James Wilson', email: 'james@carecollective.org', role: 'PARTNER', partnerType: 'BUSINESS', status: 'INCOMPLETE', joinedDate: '2026-08-20', lastActive: '2026-08-25' },
+  { id: 'u-partner-4', name: 'Lisa Thompson', email: 'lisa@wellnessgroup.net', role: 'PARTNER', partnerType: 'CREATOR', status: 'PENDING_ACTIVATION', joinedDate: '2026-09-01', lastActive: '2026-09-01' },
+  { id: 'u-partner-5', name: 'James Wilson', email: 'james@carecollective.org', role: 'PARTNER', partnerType: 'BUSINESS', status: 'PENDING_ACTIVATION', joinedDate: '2026-08-20', lastActive: '2026-08-25' },
   { id: 'u-partner-6', name: 'Aisha Patel', email: 'aisha@familycarepartners.com', role: 'PARTNER', partnerType: 'BUSINESS', status: 'SUSPENDED', joinedDate: '2025-04-12', lastActive: '2026-07-30' },
 ];
 
@@ -26,8 +26,8 @@ export const mockPartners: MockPartner[] = [
   { id: 'p-1', name: 'Marcus Johnson', email: 'marcus@carepartners.co', type: 'BUSINESS', status: 'ACTIVE', storefrontId: 's-1', storefrontName: 'Marcus Care Partners', conversions: 142, revenue: 28480, commission: 5696, joinedDate: '2025-03-22', lastActive: '2026-09-14', avatarColor: '#E1062C' },
   { id: 'p-2', name: 'Emily Rodriguez', email: 'emily@healthhub.com', type: 'CREATOR', status: 'ACTIVE', storefrontId: 's-2', storefrontName: 'Emily\'s Health Hub', conversions: 87, revenue: 17400, commission: 3480, joinedDate: '2025-05-10', lastActive: '2026-09-13', avatarColor: '#0B9B6B' },
   { id: 'p-3', name: 'David Kim', email: 'david@careagency.io', type: 'BUSINESS', status: 'ACTIVE', storefrontId: 's-3', storefrontName: 'Care Agency Direct', conversions: 64, revenue: 12800, commission: 2560, joinedDate: '2025-06-01', lastActive: '2026-09-12', avatarColor: '#18191D' },
-  { id: 'p-4', name: 'Lisa Thompson', email: 'lisa@wellnessgroup.net', type: 'CREATOR', status: 'PENDING', storefrontId: 's-4', storefrontName: 'Wellness with Lisa', conversions: 0, revenue: 0, commission: 0, joinedDate: '2026-09-01', lastActive: '2026-09-01', avatarColor: '#6B6E76' },
-  { id: 'p-5', name: 'James Wilson', email: 'james@carecollective.org', type: 'BUSINESS', status: 'INCOMPLETE', storefrontId: 's-5', storefrontName: 'Care Collective', conversions: 0, revenue: 0, commission: 0, joinedDate: '2026-08-20', lastActive: '2026-08-25', avatarColor: '#4A4D55' },
+  { id: 'p-4', name: 'Lisa Thompson', email: 'lisa@wellnessgroup.net', type: 'CREATOR', status: 'PENDING_ACTIVATION', storefrontId: 's-4', storefrontName: 'Wellness with Lisa', conversions: 0, revenue: 0, commission: 0, joinedDate: '2026-09-01', lastActive: '2026-09-01', avatarColor: '#6B6E76' },
+  { id: 'p-5', name: 'James Wilson', email: 'james@carecollective.org', type: 'BUSINESS', status: 'PENDING_ACTIVATION', storefrontId: 's-5', storefrontName: 'Care Collective', conversions: 0, revenue: 0, commission: 0, joinedDate: '2026-08-20', lastActive: '2026-08-25', avatarColor: '#4A4D55' },
   { id: 'p-6', name: 'Aisha Patel', email: 'aisha@familycarepartners.com', type: 'BUSINESS', status: 'SUSPENDED', storefrontId: 's-6', storefrontName: 'Family Care Partners', conversions: 23, revenue: 4600, commission: 920, joinedDate: '2025-04-12', lastActive: '2026-07-30', avatarColor: '#B10522' },
   { id: 'p-7', name: 'Tom Bradley', email: 'tom@bradleynetwork.com', type: 'BUSINESS', status: 'ACTIVE', storefrontId: 's-7', storefrontName: 'Bradley Care Network', conversions: 98, revenue: 19600, commission: 3920, joinedDate: '2025-02-14', lastActive: '2026-09-11', avatarColor: '#0B9B6B' },
   { id: 'p-8', name: 'Nina Garcia', email: 'nina@carereferrals.co', type: 'CREATOR', status: 'ACTIVE', storefrontId: 's-8', storefrontName: 'Nina\'s Care Referrals', conversions: 51, revenue: 10200, commission: 2040, joinedDate: '2025-07-08', lastActive: '2026-09-10', avatarColor: '#E1062C' },
@@ -438,7 +438,7 @@ export const mockReportSummaries = {
   partners: {
     total: mockPartners.length,
     active: mockPartners.filter((p) => p.status === 'ACTIVE').length,
-    pending: mockPartners.filter((p) => p.status === 'PENDING').length,
+    pending: mockPartners.filter((p) => p.status === 'PENDING_ACTIVATION').length,
     suspended: mockPartners.filter((p) => p.status === 'SUSPENDED').length,
     creators: mockPartners.filter((p) => p.type === 'CREATOR').length,
     businesses: mockPartners.filter((p) => p.type === 'BUSINESS').length,

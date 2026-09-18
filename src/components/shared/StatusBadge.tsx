@@ -3,10 +3,11 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-type StatusVariant = 'pending' | 'approved' | 'paid' | 'reversed' | 'active' | 'suspended' | 'incomplete' | 'live' | 'draft' | 'processing' | 'failed' | 'available' | 'connected' | 'none' | 'paused';
+type StatusVariant = 'pending' | 'pending_activation' | 'approved' | 'paid' | 'reversed' | 'active' | 'suspended' | 'incomplete' | 'live' | 'draft' | 'processing' | 'failed' | 'available' | 'connected' | 'none' | 'paused';
 
 const statusConfig: Record<StatusVariant, { label: string; className: string; dot: string }> = {
   pending: { label: 'Pending', className: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
+  pending_activation: { label: 'Pending Activation', className: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
   approved: { label: 'Approved', className: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   paid: { label: 'Paid', className: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   reversed: { label: 'Reversed', className: 'bg-red-50 text-red-700 border-red-200', dot: 'bg-red-500' },

@@ -322,9 +322,9 @@ function IntegrationRow({
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <button onClick={onToggle} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-cv-soft transition-colors" title={config.status === 'ACTIVE' ? 'Pause' : 'Activate'}>
+            <div className="flex items-center justify-center" title={config.status === 'ACTIVE' ? 'Pause' : 'Activate'}>
               <Switch checked={config.status === 'ACTIVE'} onCheckedChange={onToggle} />
-            </button>
+            </div>
             <button onClick={onEdit} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-cv-soft transition-colors" title="Edit">
               <Pencil className="h-3.5 w-3.5 text-cv-muted" />
             </button>

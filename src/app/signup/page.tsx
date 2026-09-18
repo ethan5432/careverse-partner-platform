@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Mail, Lock, User, Phone, Globe, ArrowRight, ArrowLeft,
+  Mail, User, Phone, Globe, ArrowRight, ArrowLeft,
   Loader as Loader2, Check, User as UserIcon, Building,
   Plus, Trash2, Link as LinkIcon,
 } from 'lucide-react';
@@ -22,7 +22,7 @@ const countries = [
   'United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Spain', 'Other',
 ];
 
-const socialPlatforms = ['Instagram', 'YouTube', 'TikTok', 'Twitter/X', 'Facebook', 'LinkedIn', 'Blog/Website', 'Other'];
+const socialPlatforms = ['Instagram', 'TikTok', 'YouTube', 'X', 'Facebook', 'LinkedIn', 'Other'];
 
 const businessEntityTypes: { value: BusinessEntityType; label: string }[] = [
   { value: 'LLC', label: 'LLC' },
@@ -53,12 +53,11 @@ const operatingDurations: { value: BusinessOperatingDuration; label: string }[] 
   { value: '10_PLUS_YEARS', label: '10+ years' },
 ];
 
-const bookOfBusinessOptions = ['Less than 50', '50–100', '100–500', '500–1,000', '1,000–5,000', '5,000+'];
-const monthlyVolumeOptions = ['Less than 10', '10–50', '50–100', '100–500', '500+'];
-const performanceOptions = ['Just getting started', 'Growing steadily', 'Established and scaling', 'High volume'];
-const reachOptions = ['Email marketing', 'Social media', 'Website / blog', 'In-person events', 'Paid advertising', 'Referral / word of mouth', 'Other'];
-const paidAdOptions = ['Yes, actively', 'Yes, occasionally', 'No, but planning to', 'No'];
-const authorityOptions = ['I am the decision maker', 'I recommend and co-decide', 'I need approval from others'];
+const acquisitionMethodOptions = [
+  'Organic social', 'Your website', 'Email', 'Paid advertising', 'Direct sales', 'Client / member distribution', 'Other',
+];
+
+const advertisingPlatformOptions = ['Meta', 'Google', 'TikTok', 'YouTube', 'Other'];
 
 export default function SignupPage() {
   const router = useRouter();
@@ -68,80 +67,165 @@ export default function SignupPage() {
 
   const [partnerType, setPartnerType] = useState<PartnerType>('CREATOR');
 
-  // Common fields
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  // Basic Information — all applicants
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('United States');
   const [stateProvince, setStateProvince] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
   // Creator fields
-  const [displayName, setDisplayName] = useState('');
+  const [creatorName, setCreatorName] = useState('');
   const [website, setWebsite] = useState('');
   const [creatorProfiles, setCreatorProfiles] = useState<CreatorProfile[]>([
-    { id: `cp-${Date.now()}`, platform: 'Instagram', handle: '', profileUrl: '' },
+    { id: `cp-${Date.now()}`, platform: 'Instagram', handle: '', profileUrl: '', followerCount: 0 },
   ]);
 
-  // Business fields — basic
+  // Business fields
   const [legalBusinessName, setLegalBusinessName] = useState('');
   const [brandName, setBrandName] = useState('');
-  const [businessEntityType, setBusinessEntityType] = useState<BusinessEntityType>('LLC');
-  const [businessRegistrationNumber, setBusinessRegistrationNumber] = useState('');
-  const [registrationStateProvinceCountry, setRegistrationStateProvinceCountry] = useState('');
   const [businessWebsite, setBusinessWebsite] = useState('');
-  const [businessMailingAddress, setBusinessMailingAddress] = useState('');
   const [businessDescription, setBusinessDescription] = useState('');
   const [businessCategory, setBusinessCategory] = useState<BusinessCategory>('BENEFITS_HR');
+  const [businessEntityType, setBusinessEntityType] = useState<BusinessEntityType>('LLC');
+  const [businessRegistrationNumber, setBusinessRegistrationNumber] = useState('');
+  const [registrationLocation, setRegistrationLocation] = useState('');
+  const [businessMailingAddress, setBusinessMailingAddress] = useState('');
   const [businessOperatingDuration, setBusinessOperatingDuration] = useState<BusinessOperatingDuration>('LESS_THAN_1_YEAR');
   const [businessProfiles, setBusinessProfiles] = useState<BusinessProfile[]>([
     { id: `bp-${Date.now()}`, platform: 'LinkedIn', profileUrl: '' },
   ]);
-  // Business fields — existing questions
-  const [bookOfBusinessSize, setBookOfBusinessSize] = useState('');
-  const [estimatedMonthlyVolume, setEstimatedMonthlyVolume] = useState('');
-  const [expectedPerformance, setExpectedPerformance] = useState('');
-  const [howCustomersReachCareverse, setHowCustomersReachCareverse] = useState('');
-  const [paidAdvertising, setPaidAdvertising] = useState('');
-  const [decisionMakingAuthority, setDecisionMakingAuthority] = useState('');
+  const [bookOfBusinessDescription, setBookOfBusinessDescription] = useState('');
+  const [estimatedVolumeDescription, setEstimatedVolumeDescription] = useState('');
+
+  // Partnership expectations — all applicants
+  const [partnershipExpectations, setPartnershipExpectations] = useState('');
+
+  // Customer acquisition — all applicants
+  const [acquisitionMethods, setAcquisitionMethods] = useState<string[]>([]);
+  const [acquisitionOtherDetail, setAcquisitionOtherDetail] = useState('');
+
+  // Paid advertising — all applicants
+  const [purchasesAdvertising, setPurchasesAdvertising] = useState<'YES' | 'NO' | ''>('');
+  const [advertisingPlatforms, setAdvertisingPlatforms] = useState<string[]>([]);
+  const [advertisingPlatformOtherDetail, setAdvertisingPlatformOtherDetail] = useState('');
+
+  // Decision-making authority — all applicants
+  const [hasDecisionAuthority, setHasDecisionAuthority] = useState<'YES' | 'NO' | ''>('');
+  const [decisionMakerName, setDecisionMakerName] = useState('');
+  const [decisionMakerRole, setDecisionMakerRole] = useState('');
+  const [decisionMakerEmail, setDecisionMakerEmail] = useState('');
+
+  // Final confirmations
+  const [confirmAccurate, setConfirmAccurate] = useState(false);
+  const [confirmNoGuarantee, setConfirmNoGuarantee] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+
+  const toggleAcquisitionMethod = (method: string) => {
+    setAcquisitionMethods(prev => prev.includes(method) ? prev.filter(m => m !== method) : [...prev, method]);
+  };
+
+  const toggleAdvertisingPlatform = (platform: string) => {
+    setAdvertisingPlatforms(prev => prev.includes(platform) ? prev.filter(p => p !== platform) : [...prev, platform]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!firstName || !lastName || !email || !phone) {
-      setError('Please fill in all required fields.');
-      return;
+    // Basic information validation
+    if (!fullName.trim()) { setError('Please enter your full name.'); return; }
+    if (!email.trim()) { setError('Please enter your email address.'); return; }
+    if (!country) { setError('Please select your country.'); return; }
+
+    // Creator-specific validation
+    if (partnerType === 'CREATOR') {
+      if (!creatorName.trim()) { setError('Please enter your creator / public name.'); return; }
+      const validProfiles = creatorProfiles.filter(p => p.handle.trim() || p.profileUrl.trim());
+      if (validProfiles.length === 0) { setError('Please add at least one social account.'); return; }
+      for (const p of validProfiles) {
+        if (!p.handle.trim() && !p.profileUrl.trim()) { setError('Each social account needs a handle or profile URL.'); return; }
+        if (!p.followerCount || p.followerCount <= 0) { setError('Please enter an approximate follower count for each social account.'); return; }
+        if (p.platform === 'Other' && !p.platformOther?.trim()) { setError('Please specify the platform for "Other" social accounts.'); return; }
+      }
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
+
+    // Business-specific validation
+    if (partnerType === 'BUSINESS') {
+      if (!legalBusinessName.trim()) { setError('Please enter your legal business name.'); return; }
+      if (!businessWebsite.trim()) { setError('Please enter your business website.'); return; }
+      if (!businessDescription.trim()) { setError('Please describe what your business primarily does.'); return; }
+      if (!businessRegistrationNumber.trim()) { setError('Please enter your registration number.'); return; }
+      if (!registrationLocation.trim()) { setError('Please enter your registration location.'); return; }
+      if (!businessMailingAddress.trim()) { setError('Please enter your mailing address.'); return; }
+      if (!bookOfBusinessDescription.trim()) { setError('Please tell us about the approximate size of your current book of business.'); return; }
+      if (!estimatedVolumeDescription.trim()) { setError('Please tell us about the membership volume you could realistically generate.'); return; }
     }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
+
+    // Partnership expectations validation
+    if (!partnershipExpectations.trim()) { setError('Please tell us how you expect to perform with Careverse.'); return; }
+
+    // Customer acquisition validation
+    if (acquisitionMethods.length === 0) { setError('Please select at least one way customers will reach Careverse.'); return; }
+    if (acquisitionMethods.includes('Other') && !acquisitionOtherDetail.trim()) { setError('Please specify the "Other" acquisition method.'); return; }
+
+    // Paid advertising validation
+    if (!purchasesAdvertising) { setError('Please indicate whether you purchase advertising.'); return; }
+    if (purchasesAdvertising === 'YES') {
+      if (advertisingPlatforms.length === 0) { setError('Please select at least one advertising platform.'); return; }
+      if (advertisingPlatforms.includes('Other') && !advertisingPlatformOtherDetail.trim()) { setError('Please specify the "Other" advertising platform.'); return; }
     }
-    if (!acceptTerms || !acceptPrivacy) {
-      setError('You must accept the Terms and Privacy Policy to continue.');
-      return;
+
+    // Decision-making authority validation
+    if (!hasDecisionAuthority) { setError('Please indicate your decision-making authority.'); return; }
+    if (hasDecisionAuthority === 'NO') {
+      if (!decisionMakerName.trim()) { setError('Please enter the decision-maker name.'); return; }
+      if (!decisionMakerRole.trim()) { setError('Please enter the decision-maker role.'); return; }
+      if (!decisionMakerEmail.trim()) { setError('Please enter the decision-maker email.'); return; }
     }
+
+    // Final confirmations
+    if (!confirmAccurate) { setError('Please confirm that the information in your application is accurate.'); return; }
+    if (!confirmNoGuarantee) { setError('Please confirm that you understand submission does not guarantee acceptance.'); return; }
+    if (!acceptTerms) { setError('You must agree to the Careverse Partner Terms to continue.'); return; }
 
     setLoading(true);
     const result = signup({
-      firstName, lastName, email, phone, country, stateProvince,
-      partnerType, password, acceptTerms, acceptPrivacy,
-      displayName, website,
+      fullName,
+      email,
+      phone,
+      country,
+      stateProvince,
+      partnerType,
+      creatorName: partnerType === 'CREATOR' ? creatorName : undefined,
+      website: partnerType === 'CREATOR' ? website : undefined,
       creatorProfiles: partnerType === 'CREATOR' ? creatorProfiles.filter(p => p.handle.trim() || p.profileUrl.trim()) : undefined,
-      legalBusinessName, brandName, businessEntityType, businessRegistrationNumber,
-      registrationStateProvinceCountry, businessWebsite, businessMailingAddress,
-      businessDescription, businessCategory, businessOperatingDuration,
-      bookOfBusinessSize, estimatedMonthlyVolume, expectedPerformance,
-      howCustomersReachCareverse, paidAdvertising, decisionMakingAuthority,
+      legalBusinessName: partnerType === 'BUSINESS' ? legalBusinessName : undefined,
+      brandName: partnerType === 'BUSINESS' ? brandName : undefined,
+      businessWebsite: partnerType === 'BUSINESS' ? businessWebsite : undefined,
+      businessDescription: partnerType === 'BUSINESS' ? businessDescription : undefined,
+      businessCategory: partnerType === 'BUSINESS' ? businessCategory : undefined,
+      businessEntityType: partnerType === 'BUSINESS' ? businessEntityType : undefined,
+      businessRegistrationNumber: partnerType === 'BUSINESS' ? businessRegistrationNumber : undefined,
+      registrationLocation: partnerType === 'BUSINESS' ? registrationLocation : undefined,
+      businessMailingAddress: partnerType === 'BUSINESS' ? businessMailingAddress : undefined,
+      businessOperatingDuration: partnerType === 'BUSINESS' ? businessOperatingDuration : undefined,
       businessProfiles: partnerType === 'BUSINESS' ? businessProfiles.filter(p => p.profileUrl.trim()) : undefined,
+      bookOfBusinessDescription: partnerType === 'BUSINESS' ? bookOfBusinessDescription : undefined,
+      estimatedVolumeDescription: partnerType === 'BUSINESS' ? estimatedVolumeDescription : undefined,
+      partnershipExpectations,
+      acquisitionMethods,
+      acquisitionOtherDetail: acquisitionMethods.includes('Other') ? acquisitionOtherDetail : undefined,
+      purchasesAdvertising: purchasesAdvertising as 'YES' | 'NO',
+      advertisingPlatforms: purchasesAdvertising === 'YES' ? advertisingPlatforms : undefined,
+      advertisingPlatformOtherDetail: purchasesAdvertising === 'YES' && advertisingPlatforms.includes('Other') ? advertisingPlatformOtherDetail : undefined,
+      hasDecisionAuthority: hasDecisionAuthority as 'YES' | 'NO',
+      decisionMakerName: hasDecisionAuthority === 'NO' ? decisionMakerName : undefined,
+      decisionMakerRole: hasDecisionAuthority === 'NO' ? decisionMakerRole : undefined,
+      decisionMakerEmail: hasDecisionAuthority === 'NO' ? decisionMakerEmail : undefined,
+      confirmAccurate,
+      confirmNoGuarantee,
+      acceptTerms,
     });
     setLoading(false);
 
@@ -164,10 +248,10 @@ export default function SignupPage() {
           <CareverseLogo size={40} className="justify-center mb-4" />
           <div className="flex items-center justify-center gap-2 mb-1">
             <div className="cv-red-rule" />
-            <span className="cv-eyebrow uppercase">Partner Portal</span>
+            <span className="cv-eyebrow uppercase">Partner Program</span>
           </div>
-          <h1 className="text-3xl font-bold text-cv-ink tracking-tight">Create your partner account</h1>
-          <p className="text-cv-muted text-sm mt-2">Join the Careverse partner program and start earning</p>
+          <h1 className="text-3xl font-bold text-cv-ink tracking-tight">Partner Application</h1>
+          <p className="text-cv-muted text-sm mt-2">Apply to join the Careverse partner program</p>
         </div>
 
         <form onSubmit={handleSubmit} className="cv-card p-6 sm:p-8 space-y-6">
@@ -212,35 +296,29 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Personal Information */}
+          {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Personal Information</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="firstName" className="text-xs font-bold uppercase text-cv-muted">First name *</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
-                  <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="cv-input pl-10" placeholder="Jane" required />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="lastName" className="text-xs font-bold uppercase text-cv-muted">Last name *</Label>
-                <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className="cv-input" placeholder="Smith" required />
+            <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Basic Information</h3>
+            <div className="space-y-1.5">
+              <Label htmlFor="fullName" className="text-xs font-bold uppercase text-cv-muted">Full name *</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} className="cv-input pl-10" placeholder="Jane Smith" required />
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-bold uppercase text-cv-muted">Email *</Label>
+                <Label htmlFor="email" className="text-xs font-bold uppercase text-cv-muted">Email address *</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
                   <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="cv-input pl-10" placeholder="you@example.com" required />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-xs font-bold uppercase text-cv-muted">Phone *</Label>
+                <Label htmlFor="phone" className="text-xs font-bold uppercase text-cv-muted">Phone number</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
-                  <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="cv-input pl-10" placeholder="+1 (555) 000-0000" required />
+                  <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="cv-input pl-10" placeholder="+1 (555) 000-0000" />
                 </div>
               </div>
             </div>
@@ -271,24 +349,24 @@ export default function SignupPage() {
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Creator Details</h3>
               <div className="space-y-1.5">
-                <Label htmlFor="displayName" className="text-xs font-bold uppercase text-cv-muted">Public / Display Name</Label>
-                <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="cv-input" placeholder="Jane Smith Wellness" />
+                <Label htmlFor="creatorName" className="text-xs font-bold uppercase text-cv-muted">Creator / public name *</Label>
+                <Input id="creatorName" value={creatorName} onChange={(e) => setCreatorName(e.target.value)} className="cv-input" placeholder="Jane Smith Wellness" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="website" className="text-xs font-bold uppercase text-cv-muted">Website</Label>
                 <Input id="website" type="url" value={website} onChange={(e) => setWebsite(e.target.value)} className="cv-input" placeholder="https://janesmith.com" />
               </div>
 
-              {/* Multiple creator profiles */}
+              {/* Social accounts — at least one required */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">Public Profiles</Label>
+                  <Label className="text-xs font-bold uppercase text-cv-muted">Social Accounts (at least one required)</Label>
                   <span className="text-[10px] text-cv-muted">Add one or more platforms</span>
                 </div>
                 {creatorProfiles.map((profile, idx) => (
                   <div key={profile.id} className="rounded-xl border border-cv-line p-4 space-y-3 bg-cv-soft/30">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-cv-ink">Profile {idx + 1}</span>
+                      <span className="text-xs font-bold text-cv-ink">Account {idx + 1}</span>
                       {creatorProfiles.length > 1 && (
                         <button
                           type="button"
@@ -311,34 +389,32 @@ export default function SignupPage() {
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase text-cv-muted">Handle</Label>
+                        <Label className="text-[10px] font-bold uppercase text-cv-muted">Handle or profile URL</Label>
                         <Input
                           value={profile.handle}
                           onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, handle: e.target.value } : p))}
                           className="cv-input"
-                          placeholder="@janesmith"
+                          placeholder="@janesmith or https://instagram.com/janesmith"
                         />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-cv-muted">Profile URL</Label>
-                      <div className="relative">
-                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
+                    {profile.platform === 'Other' && (
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-cv-muted">Please specify *</Label>
                         <Input
-                          type="url"
-                          value={profile.profileUrl}
-                          onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, profileUrl: e.target.value } : p))}
-                          className="cv-input pl-10"
-                          placeholder="https://instagram.com/janesmith"
+                          value={profile.platformOther ?? ''}
+                          onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, platformOther: e.target.value } : p))}
+                          className="cv-input"
+                          placeholder="Platform name"
                         />
                       </div>
-                    </div>
+                    )}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-cv-muted">Follower Count (optional)</Label>
+                      <Label className="text-[10px] font-bold uppercase text-cv-muted">Approximate followers *</Label>
                       <Input
                         type="number"
-                        value={profile.followerCount ?? ''}
-                        onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, followerCount: e.target.value ? parseInt(e.target.value) : undefined } : p))}
+                        value={profile.followerCount || ''}
+                        onChange={(e) => setCreatorProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, followerCount: e.target.value ? parseInt(e.target.value) : 0 } : p))}
                         className="cv-input"
                         placeholder="50000"
                       />
@@ -347,11 +423,11 @@ export default function SignupPage() {
                 ))}
                 <button
                   type="button"
-                  onClick={() => setCreatorProfiles(prev => [...prev, { id: `cp-${Date.now()}`, platform: 'Instagram', handle: '', profileUrl: '' }])}
+                  onClick={() => setCreatorProfiles(prev => [...prev, { id: `cp-${Date.now()}`, platform: 'Instagram', handle: '', profileUrl: '', followerCount: 0 }])}
                   className="flex items-center gap-2 text-xs font-bold text-cv-ink hover:text-cv-red transition-colors"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Add another profile
+                  Add another social account
                 </button>
               </div>
             </div>
@@ -360,49 +436,18 @@ export default function SignupPage() {
           {/* Business-specific fields */}
           {partnerType === 'BUSINESS' && (
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Business Information</h3>
+              <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Business / Agency Information</h3>
               <div className="space-y-1.5">
-                <Label htmlFor="legalBusinessName" className="text-xs font-bold uppercase text-cv-muted">Legal Business Name *</Label>
+                <Label htmlFor="legalBusinessName" className="text-xs font-bold uppercase text-cv-muted">Legal business name *</Label>
                 <Input id="legalBusinessName" value={legalBusinessName} onChange={(e) => setLegalBusinessName(e.target.value)} className="cv-input" placeholder="Smith Wellness LLC" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="brandName" className="text-xs font-bold uppercase text-cv-muted">Brand / Company Name (if different)</Label>
+                <Label htmlFor="brandName" className="text-xs font-bold uppercase text-cv-muted">Brand / company name (if different)</Label>
                 <Input id="brandName" value={brandName} onChange={(e) => setBrandName(e.target.value)} className="cv-input" placeholder="Smith Wellness" />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">Business Entity Type *</Label>
-                  <select
-                    value={businessEntityType}
-                    onChange={(e) => setBusinessEntityType(e.target.value as BusinessEntityType)}
-                    className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                  >
-                    {businessEntityTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="businessRegistrationNumber" className="text-xs font-bold uppercase text-cv-muted">Business Registration Number</Label>
-                  <Input id="businessRegistrationNumber" value={businessRegistrationNumber} onChange={(e) => setBusinessRegistrationNumber(e.target.value)} className="cv-input" placeholder="Where applicable" />
-                </div>
-              </div>
               <div className="space-y-1.5">
-                <Label htmlFor="registrationStateProvinceCountry" className="text-xs font-bold uppercase text-cv-muted">Registration State / Province / Country</Label>
-                <Input id="registrationStateProvinceCountry" value={registrationStateProvinceCountry} onChange={(e) => setRegistrationStateProvinceCountry(e.target.value)} className="cv-input" placeholder="Where applicable" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="businessWebsite" className="text-xs font-bold uppercase text-cv-muted">Business Website *</Label>
+                <Label htmlFor="businessWebsite" className="text-xs font-bold uppercase text-cv-muted">Website *</Label>
                 <Input id="businessWebsite" type="url" value={businessWebsite} onChange={(e) => setBusinessWebsite(e.target.value)} className="cv-input" placeholder="https://smithwellness.com" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="businessMailingAddress" className="text-xs font-bold uppercase text-cv-muted">Business Mailing Address *</Label>
-                <textarea
-                  id="businessMailingAddress"
-                  value={businessMailingAddress}
-                  onChange={(e) => setBusinessMailingAddress(e.target.value)}
-                  rows={2}
-                  className="cv-input w-full resize-none py-3 px-4"
-                  placeholder="Street, City, State, ZIP, Country"
-                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="businessDescription" className="text-xs font-bold uppercase text-cv-muted">What does your business primarily do? *</Label>
@@ -417,7 +462,7 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">Business Category *</Label>
+                  <Label className="text-xs font-bold uppercase text-cv-muted">Business category *</Label>
                   <select
                     value={businessCategory}
                     onChange={(e) => setBusinessCategory(e.target.value as BusinessCategory)}
@@ -427,26 +472,55 @@ export default function SignupPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">How long has the business been operating? *</Label>
+                  <Label className="text-xs font-bold uppercase text-cv-muted">Entity type *</Label>
                   <select
-                    value={businessOperatingDuration}
-                    onChange={(e) => setBusinessOperatingDuration(e.target.value as BusinessOperatingDuration)}
+                    value={businessEntityType}
+                    onChange={(e) => setBusinessEntityType(e.target.value as BusinessEntityType)}
                     className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
                   >
-                    {operatingDurations.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                    {businessEntityTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
               </div>
-
-              {/* Public business profiles (up to 3) */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">Public Business Profiles (optional, up to 3)</Label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="businessRegistrationNumber" className="text-xs font-bold uppercase text-cv-muted">Registration number *</Label>
+                  <Input id="businessRegistrationNumber" value={businessRegistrationNumber} onChange={(e) => setBusinessRegistrationNumber(e.target.value)} className="cv-input" placeholder="Where applicable" />
                 </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="registrationLocation" className="text-xs font-bold uppercase text-cv-muted">Registration location *</Label>
+                  <Input id="registrationLocation" value={registrationLocation} onChange={(e) => setRegistrationLocation(e.target.value)} className="cv-input" placeholder="State / Province / Country" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="businessMailingAddress" className="text-xs font-bold uppercase text-cv-muted">Mailing address *</Label>
+                <textarea
+                  id="businessMailingAddress"
+                  value={businessMailingAddress}
+                  onChange={(e) => setBusinessMailingAddress(e.target.value)}
+                  rows={2}
+                  className="cv-input w-full resize-none py-3 px-4"
+                  placeholder="Street, City, State, ZIP, Country"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase text-cv-muted">How long has the business operated? *</Label>
+                <select
+                  value={businessOperatingDuration}
+                  onChange={(e) => setBusinessOperatingDuration(e.target.value as BusinessOperatingDuration)}
+                  className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
+                >
+                  {operatingDurations.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                </select>
+              </div>
+
+              {/* Public business/profile links — optional */}
+              <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase text-cv-muted">Public business / profile links (optional)</Label>
                 {businessProfiles.map((profile, idx) => (
                   <div key={profile.id} className="rounded-xl border border-cv-line p-4 space-y-3 bg-cv-soft/30">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-cv-ink">Profile {idx + 1}</span>
+                      <span className="text-xs font-bold text-cv-ink">Link {idx + 1}</span>
                       {businessProfiles.length > 1 && (
                         <button
                           type="button"
@@ -457,24 +531,15 @@ export default function SignupPage() {
                         </button>
                       )}
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase text-cv-muted">Platform</Label>
-                        <select
-                          value={profile.platform}
-                          onChange={(e) => setBusinessProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, platform: e.target.value } : p))}
-                          className="cv-input h-11 w-full rounded-xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                        >
-                          {socialPlatforms.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase text-cv-muted">Profile URL</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-cv-muted">Profile URL</Label>
+                      <div className="relative">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
                         <Input
                           type="url"
                           value={profile.profileUrl}
                           onChange={(e) => setBusinessProfiles(prev => prev.map(p => p.id === profile.id ? { ...p, profileUrl: e.target.value } : p))}
-                          className="cv-input"
+                          className="cv-input pl-10"
                           placeholder="https://linkedin.com/company/smithwellness"
                         />
                       </div>
@@ -488,129 +553,204 @@ export default function SignupPage() {
                     className="flex items-center gap-2 text-xs font-bold text-cv-ink hover:text-cv-red transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    Add another profile
+                    Add another link
                   </button>
                 )}
               </div>
 
-              {/* Existing business questions */}
-              <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pt-2 pb-2 border-b border-cv-line">Business & Partnership Questions</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">Approximate size of your book of business</Label>
-                  <select
-                    value={bookOfBusinessSize}
-                    onChange={(e) => setBookOfBusinessSize(e.target.value)}
-                    className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                  >
-                    <option value="">Select...</option>
-                    {bookOfBusinessOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">Estimated monthly Careverse membership volume</Label>
-                  <select
-                    value={estimatedMonthlyVolume}
-                    onChange={(e) => setEstimatedMonthlyVolume(e.target.value)}
-                    className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                  >
-                    <option value="">Select...</option>
-                    {monthlyVolumeOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              </div>
+              {/* Book of business — long text */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase text-cv-muted">Expected performance</Label>
-                <select
-                  value={expectedPerformance}
-                  onChange={(e) => setExpectedPerformance(e.target.value)}
-                  className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                >
-                  <option value="">Select...</option>
-                  {performanceOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
+                <Label className="text-xs font-bold uppercase text-cv-muted">Tell us about the approximate size of your current book of business. *</Label>
+                <textarea
+                  value={bookOfBusinessDescription}
+                  onChange={(e) => setBookOfBusinessDescription(e.target.value)}
+                  rows={3}
+                  className="cv-input w-full resize-none py-3 px-4"
+                  placeholder="Describe the approximate size of your current book of business."
+                />
               </div>
+
+              {/* Estimated Careverse membership volume — long text */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase text-cv-muted">How will customers reach Careverse through you?</Label>
-                <select
-                  value={howCustomersReachCareverse}
-                  onChange={(e) => setHowCustomersReachCareverse(e.target.value)}
-                  className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                >
-                  <option value="">Select...</option>
-                  {reachOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">Paid advertising</Label>
-                  <select
-                    value={paidAdvertising}
-                    onChange={(e) => setPaidAdvertising(e.target.value)}
-                    className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                  >
-                    <option value="">Select...</option>
-                    {paidAdOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-cv-muted">Decision-making authority</Label>
-                  <select
-                    value={decisionMakingAuthority}
-                    onChange={(e) => setDecisionMakingAuthority(e.target.value)}
-                    className="cv-input h-12 w-full rounded-2xl border border-cv-line bg-white text-sm font-bold text-cv-ink"
-                  >
-                    <option value="">Select...</option>
-                    {authorityOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
+                <Label className="text-xs font-bold uppercase text-cv-muted">What level of monthly Careverse membership volume do you believe you could realistically generate? *</Label>
+                <textarea
+                  value={estimatedVolumeDescription}
+                  onChange={(e) => setEstimatedVolumeDescription(e.target.value)}
+                  rows={3}
+                  className="cv-input w-full resize-none py-3 px-4"
+                  placeholder="Describe the membership volume you believe you could realistically generate."
+                />
               </div>
             </div>
           )}
 
-          {/* Data Purpose */}
-          <div className="rounded-xl border border-cv-line bg-cv-soft/30 p-4 space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Why we ask for this information</p>
-            <p className="text-xs text-cv-body leading-relaxed">
-              We use the information you provide to review your partnership application, verify your business or organization, assess your fit for the Careverse partner program, create and manage your partner account, and administer your partnership. See our{' '}
-              <a href="https://careverse.ai/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-cv-ink underline">Privacy Policy</a>
-              {' '}for more details.
-            </p>
-          </div>
-
-          {/* Password */}
+          {/* Partnership Expectations — all applicants */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Security</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-xs font-bold uppercase text-cv-muted">Password *</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
-                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="cv-input pl-10" placeholder="At least 8 characters" required />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="confirmPassword" className="text-xs font-bold uppercase text-cv-muted">Confirm Password *</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cv-muted" />
-                  <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="cv-input pl-10" placeholder="Re-enter password" required />
-                </div>
-              </div>
+            <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Partnership Expectations</h3>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase text-cv-muted">How do you expect to perform with Careverse? *</Label>
+              <p className="text-[11px] text-cv-muted -mt-0.5">Tell us briefly how you expect to generate Careverse memberships and what level of volume you believe is realistic.</p>
+              <textarea
+                value={partnershipExpectations}
+                onChange={(e) => setPartnershipExpectations(e.target.value)}
+                rows={3}
+                className="cv-input w-full resize-none py-3 px-4"
+                placeholder="How you expect to perform with Careverse..."
+              />
             </div>
           </div>
 
-          {/* Agreements */}
+          {/* Customer Acquisition — all applicants */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Customer Acquisition</h3>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-cv-muted">How will customers reach Careverse through your partnership? * (select all that apply)</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {acquisitionMethodOptions.map(method => (
+                  <label key={method} className="flex items-center gap-2.5 cursor-pointer rounded-lg border border-cv-line p-2.5 hover:bg-cv-soft/50 transition-colors">
+                    <Checkbox
+                      checked={acquisitionMethods.includes(method)}
+                      onCheckedChange={() => toggleAcquisitionMethod(method)}
+                    />
+                    <span className="text-xs font-bold text-cv-body">{method}</span>
+                  </label>
+                ))}
+              </div>
+              {acquisitionMethods.includes('Other') && (
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-cv-muted">Please specify *</Label>
+                  <Input
+                    value={acquisitionOtherDetail}
+                    onChange={(e) => setAcquisitionOtherDetail(e.target.value)}
+                    className="cv-input"
+                    placeholder="Describe the other method"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Paid Advertising — all applicants */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Paid Advertising</h3>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-cv-muted">Do you purchase advertising specifically to generate customers or conversions? *</Label>
+              <div className="flex gap-3">
+                {(['YES', 'NO'] as const).map(opt => (
+                  <label key={opt} className={cn(
+                    'flex items-center gap-2.5 cursor-pointer rounded-lg border px-4 py-2.5 transition-colors',
+                    purchasesAdvertising === opt ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink' : 'border-cv-line hover:bg-cv-soft/50'
+                  )}>
+                    <Checkbox
+                      checked={purchasesAdvertising === opt}
+                      onCheckedChange={() => setPurchasesAdvertising(opt)}
+                    />
+                    <span className="text-xs font-bold text-cv-body">{opt === 'YES' ? 'Yes' : 'No'}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {purchasesAdvertising === 'YES' && (
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-cv-muted">Where do you typically purchase advertising? (select all that apply) *</Label>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {advertisingPlatformOptions.map(platform => (
+                    <label key={platform} className="flex items-center gap-2.5 cursor-pointer rounded-lg border border-cv-line p-2.5 hover:bg-cv-soft/50 transition-colors">
+                      <Checkbox
+                        checked={advertisingPlatforms.includes(platform)}
+                        onCheckedChange={() => toggleAdvertisingPlatform(platform)}
+                      />
+                      <span className="text-xs font-bold text-cv-body">{platform}</span>
+                    </label>
+                  ))}
+                </div>
+                {advertisingPlatforms.includes('Other') && (
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-cv-muted">Please specify *</Label>
+                    <Input
+                      value={advertisingPlatformOtherDetail}
+                      onChange={(e) => setAdvertisingPlatformOtherDetail(e.target.value)}
+                      className="cv-input"
+                      placeholder="Describe the other platform"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Decision-Making Authority — all applicants */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Decision-Making Authority</h3>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-cv-muted">Are you authorized to make decisions about this partnership on behalf of yourself or your organization? *</Label>
+              <div className="flex flex-col gap-2">
+                <label className={cn(
+                  'flex items-center gap-2.5 cursor-pointer rounded-lg border px-4 py-2.5 transition-colors',
+                  hasDecisionAuthority === 'YES' ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink' : 'border-cv-line hover:bg-cv-soft/50'
+                )}>
+                  <Checkbox
+                    checked={hasDecisionAuthority === 'YES'}
+                    onCheckedChange={() => setHasDecisionAuthority('YES')}
+                  />
+                  <span className="text-xs font-bold text-cv-body">Yes — I can approve and enter into this partnership</span>
+                </label>
+                <label className={cn(
+                  'flex items-center gap-2.5 cursor-pointer rounded-lg border px-4 py-2.5 transition-colors',
+                  hasDecisionAuthority === 'NO' ? 'border-cv-ink bg-cv-soft ring-1 ring-cv-ink' : 'border-cv-line hover:bg-cv-soft/50'
+                )}>
+                  <Checkbox
+                    checked={hasDecisionAuthority === 'NO'}
+                    onCheckedChange={() => setHasDecisionAuthority('NO')}
+                  />
+                  <span className="text-xs font-bold text-cv-body">No — someone else needs to approve it</span>
+                </label>
+              </div>
+            </div>
+            {hasDecisionAuthority === 'NO' && (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-cv-muted">Decision-maker name *</Label>
+                  <Input value={decisionMakerName} onChange={(e) => setDecisionMakerName(e.target.value)} className="cv-input" placeholder="John Doe" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-cv-muted">Decision-maker role *</Label>
+                  <Input value={decisionMakerRole} onChange={(e) => setDecisionMakerRole(e.target.value)} className="cv-input" placeholder="CEO" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-cv-muted">Decision-maker email *</Label>
+                  <Input type="email" value={decisionMakerEmail} onChange={(e) => setDecisionMakerEmail(e.target.value)} className="cv-input" placeholder="john@company.com" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Data Notice */}
+          <div className="rounded-xl border border-cv-line bg-cv-soft/30 p-4 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Data Notice</p>
+            <p className="text-xs text-cv-body leading-relaxed">
+              We use the information you provide to review your application, create and manage your partner account, configure tracking, and determine the appropriate partner relationship and commission structure.
+            </p>
+          </div>
+
+          {/* Final Confirmations */}
           <div className="space-y-3 pt-2">
             <label className="flex items-start gap-3 cursor-pointer">
-              <Checkbox checked={acceptTerms} onCheckedChange={(v) => setAcceptTerms(v === true)} className="mt-0.5" />
+              <Checkbox checked={confirmAccurate} onCheckedChange={(v) => setConfirmAccurate(v === true)} className="mt-0.5" />
               <span className="text-xs text-cv-body leading-relaxed">
-                I accept the <a href="https://careverse.ai/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-cv-ink underline">Terms of Service</a>
+                I confirm that the information in this application is accurate.
               </span>
             </label>
             <label className="flex items-start gap-3 cursor-pointer">
-              <Checkbox checked={acceptPrivacy} onCheckedChange={(v) => setAcceptPrivacy(v === true)} className="mt-0.5" />
+              <Checkbox checked={confirmNoGuarantee} onCheckedChange={(v) => setConfirmNoGuarantee(v === true)} className="mt-0.5" />
               <span className="text-xs text-cv-body leading-relaxed">
-                I accept the <a href="https://careverse.ai/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-cv-ink underline">Privacy Policy</a>
+                I understand that submitting an application does not guarantee acceptance or a particular commission rate.
+              </span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox checked={acceptTerms} onCheckedChange={(v) => setAcceptTerms(v === true)} className="mt-0.5" />
+              <span className="text-xs text-cv-body leading-relaxed">
+                I agree to the <a href="https://careverse.ai/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-cv-ink underline">Careverse Partner Terms</a>.
               </span>
             </label>
           </div>

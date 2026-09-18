@@ -18,7 +18,7 @@ import {
   Users, Search, UserPlus, ArrowLeftRight, DollarSign,
   Store, MessageSquare, StickyNote, Settings as SettingsIcon, Activity as ActivityIcon,
   Send, ExternalLink, Pencil, Check, Mail, Clock, AlertCircle, CheckCircle2, XCircle,
-  FileText, ChevronRight,
+  FileText, ChevronRight, Ban,
 } from 'lucide-react';
 import {
   mockPartners, mockConversions, mockCommissions, mockStorefronts,
@@ -35,17 +35,15 @@ import {
 const fmtMoney = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-const partnerStatusMap: Record<PartnerStatus, 'active' | 'pending' | 'incomplete' | 'suspended'> = {
+const partnerStatusMap: Record<PartnerStatus, 'active' | 'pending_activation' | 'suspended'> = {
   ACTIVE: 'active',
-  PENDING: 'pending',
-  INCOMPLETE: 'incomplete',
+  PENDING_ACTIVATION: 'pending_activation',
   SUSPENDED: 'suspended',
 };
 
 const partnerStatusLabel: Record<PartnerStatus, string> = {
   ACTIVE: 'Active',
-  PENDING: 'Pending',
-  INCOMPLETE: 'Incomplete',
+  PENDING_ACTIVATION: 'Pending Activation',
   SUSPENDED: 'Suspended',
 };
 
@@ -60,8 +58,7 @@ type StatusFilter = 'ALL' | PartnerStatus;
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: 'ALL', label: 'All' },
   { value: 'ACTIVE', label: 'Active' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'INCOMPLETE', label: 'Incomplete' },
+  { value: 'PENDING_ACTIVATION', label: 'Pending Activation' },
   { value: 'SUSPENDED', label: 'Suspended' },
 ];
 
@@ -104,7 +101,7 @@ export default function AdminPartnersPage() {
     setApprovalEmailStatuses((prev) => ({ ...prev, [partner.id]: emailStatus }));
 
     setPartners((prev) => prev.map((p) =>
-      p.id === partner.id ? { ...p, status: 'ACTIVE' as PartnerStatus } : p
+      p.id === partner.id ? { ...p, status: 'PENDING_ACTIVATION' as PartnerStatus } : p
     ));
 
     const now = new Date().toISOString().slice(0, 10);
@@ -115,6 +112,29 @@ export default function AdminPartnersPage() {
         : [{ description: `Approval email NOT sent — automation not configured`, date: now }]),
     ];
     setApprovalActivity((prev) => ({ ...prev, [partner.id]: [...(prev[partner.id] || []), ...activities] }));
+  };
+
+  const handleReject = (partner: MockPartner) => {
+    setPartners((prev) => prev.filter((p) => p.id !== partner.id));
+    const now = new Date().toISOString().slice(0, 10);
+    setApprovalActivity((prev) => ({ ...prev, [partner.id]: [...(prev[partner.id] || []), { description: `Partner application rejected by admin`, date: now }] }));
+  };
+
+  const handleResendActivation = (partner: MockPartner) => {
+    const now = new Date().toISOString().slice(0, 10);
+    setApprovalActivity((prev) => ({ ...prev, [partner.id]: [...(prev[partner.id] || []), { description: `Activation email resent to partner`, date: now }] }));
+  };
+
+  const handleSuspend = (partner: MockPartner) => {
+    setPartners((prev) => prev.map((p) => p.id === partner.id ? { ...p, status: 'SUSPENDED' as PartnerStatus } : p));
+    const now = new Date().toISOString().slice(0, 10);
+    setApprovalActivity((prev) => ({ ...prev, [partner.id]: [...(prev[partner.id] || []), { description: `Partner account suspended by admin`, date: now }] }));
+  };
+
+  const handleReactivate = (partner: MockPartner) => {
+    setPartners((prev) => prev.map((p) => p.id === partner.id ? { ...p, status: 'ACTIVE' as PartnerStatus } : p));
+    const now = new Date().toISOString().slice(0, 10);
+    setApprovalActivity((prev) => ({ ...prev, [partner.id]: [...(prev[partner.id] || []), { description: `Partner account reactivated by admin`, date: now }] }));
   };
 
   const filtered = useMemo(() => {
@@ -135,7 +155,7 @@ export default function AdminPartnersPage() {
 
   const stats = useMemo(() => {
     const active = partners.filter((p) => p.status === 'ACTIVE').length;
-    const pending = partners.filter((p) => p.status === 'PENDING').length;
+    const pending = partners.filter((p) => p.status === 'PENDING_ACTIVATION').length;
     const revenue = partners.reduce((s, p) => s + p.revenue, 0);
     return { total: partners.length, active, pending, revenue };
   }, [partners]);
@@ -291,6 +311,10 @@ export default function AdminPartnersPage() {
         onClose={() => setSelectedId(null)}
         approvalEmailStatus={selectedPartner ? approvalEmailStatuses[selectedPartner.id] : undefined}
         onApprove={handleApprove}
+        onReject={handleReject}
+        onResendActivation={handleResendActivation}
+        onSuspend={handleSuspend}
+        onReactivate={handleReactivate}
         extraActivity={selectedPartner ? approvalActivity[selectedPartner.id] || [] : []}
       />
         </TabsContent>
@@ -348,12 +372,16 @@ function loadApplicationByEmail(email: string): PartnerApplication | null {
 }
 
 function PartnerDialog({
-  partner, onClose, approvalEmailStatus, onApprove, extraActivity,
+  partner, onClose, approvalEmailStatus, onApprove, extraActivity, onResendActivation, onSuspend, onReactivate, onReject,
 }: {
   partner: MockPartner | null;
   onClose: () => void;
   approvalEmailStatus?: ApprovalEmailStatus;
   onApprove: (partner: MockPartner) => void;
+  onReject: (partner: MockPartner) => void;
+  onResendActivation: (partner: MockPartner) => void;
+  onSuspend: (partner: MockPartner) => void;
+  onReactivate: (partner: MockPartner) => void;
   extraActivity: { description: string; date: string }[];
 }) {
   const router = useRouter();
@@ -425,10 +453,9 @@ function PartnerDialog({
     setMsgDraft('');
   };
 
-  const statusOptions: { value: PartnerStatus; label: string; badge: 'active' | 'pending' | 'incomplete' | 'suspended' | 'paused' }[] = [
+  const statusOptions: { value: PartnerStatus; label: string; badge: 'active' | 'pending_activation' | 'suspended' }[] = [
     { value: 'ACTIVE', label: 'Active', badge: 'active' },
-    { value: 'PENDING', label: 'Pending', badge: 'pending' },
-    { value: 'INCOMPLETE', label: 'Incomplete', badge: 'incomplete' },
+    { value: 'PENDING_ACTIVATION', label: 'Pending Activation', badge: 'pending_activation' },
     { value: 'SUSPENDED', label: 'Suspended', badge: 'suspended' },
   ];
 
@@ -454,9 +481,7 @@ function PartnerDialog({
               <Tabs defaultValue="overview">
                 <TabsList className="bg-cv-soft h-auto p-1 flex flex-wrap gap-1">
                   <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
-                  {partner.type === 'BUSINESS' && (
-                    <TabsTrigger value="application" className="text-xs">Application</TabsTrigger>
-                  )}
+                  <TabsTrigger value="application" className="text-xs">Application</TabsTrigger>
                   <TabsTrigger value="activity" className="text-xs">Activity</TabsTrigger>
                   <TabsTrigger value="conversions" className="text-xs">Conversions</TabsTrigger>
                   <TabsTrigger value="commissions" className="text-xs">Commissions</TabsTrigger>
@@ -487,16 +512,16 @@ function PartnerDialog({
                       <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Application</p>
                         <p className="text-sm font-bold text-cv-ink mt-0.5">
-                          {partner.status === 'PENDING' || partner.status === 'INCOMPLETE'
-                            ? 'Awaiting approval'
+                          {partner.status === 'PENDING_ACTIVATION'
+                            ? 'Approved — awaiting activation'
                             : partner.status === 'ACTIVE'
-                              ? 'Approved'
+                              ? 'Active'
                               : partner.status === 'SUSPENDED'
                                 ? 'Suspended'
                                 : 'Unknown'}
                         </p>
                       </div>
-                      {(partner.status === 'PENDING' || partner.status === 'INCOMPLETE') && !approvalEmailStatus && (
+                      {partner.status === 'PENDING_ACTIVATION' && !approvalEmailStatus && (
                         <Button
                           className="bg-cv-good text-white hover:bg-cv-good/90 rounded-full text-sm font-bold"
                           onClick={() => onApprove(partner)}
@@ -530,12 +555,10 @@ function PartnerDialog({
                   </div>
                 </TabsContent>
 
-                {/* Application (Business) */}
-                {partner.type === 'BUSINESS' && (
-                  <TabsContent value="application" className="mt-4">
-                    <BusinessApplicationTab email={partner.email} />
-                  </TabsContent>
-                )}
+                {/* Application */}
+                <TabsContent value="application" className="mt-4">
+                  <BusinessApplicationTab email={partner.email} />
+                </TabsContent>
 
                 {/* Activity */}
                 <TabsContent value="activity" className="mt-4">
@@ -725,6 +748,36 @@ function PartnerDialog({
                     <DetailField label="Email" value={partner.email} />
                     <DetailField label="Type" value={partner.type} />
                     <DetailField label="Joined" value={fmtDate(partner.joinedDate)} />
+
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Account Actions</p>
+                      <div className="flex flex-wrap gap-2">
+                        {partner.status === 'PENDING_ACTIVATION' && (
+                          <Button
+                            className="bg-blue-600 text-white hover:bg-blue-700 rounded-full text-xs font-bold"
+                            onClick={() => onResendActivation(partner)}
+                          >
+                            <Mail className="h-3.5 w-3.5" /> Resend activation email
+                          </Button>
+                        )}
+                        {partner.status === 'ACTIVE' && (
+                          <Button
+                            className="bg-cv-red text-white hover:bg-cv-red/90 rounded-full text-xs font-bold"
+                            onClick={() => onSuspend(partner)}
+                          >
+                            <Ban className="h-3.5 w-3.5" /> Suspend account
+                          </Button>
+                        )}
+                        {partner.status === 'SUSPENDED' && (
+                          <Button
+                            className="bg-cv-good text-white hover:bg-cv-good/90 rounded-full text-xs font-bold"
+                            onClick={() => onReactivate(partner)}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Reactivate account
+                          </Button>
+                        )}
+                      </div>
+                    </div>
 
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-2">Account Status</p>
@@ -936,55 +989,126 @@ function BusinessApplicationTab({ email }: { email: string }) {
 
   return (
     <div className="space-y-4">
-      {/* Business Information */}
+      {/* Basic Information */}
       <div className="space-y-2">
-        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Business Information</p>
-        <DetailField label="Legal Business Name" value={app.legalBusinessName || '—'} />
-        <DetailField label="Brand / Company Name" value={app.brandName || '—'} />
-        <DetailField label="Entity Type" value={app.businessEntityType ? businessEntityTypeLabels[app.businessEntityType] : '—'} />
-        <DetailField label="Registration Number" value={app.businessRegistrationNumber || '—'} />
-        <DetailField label="Registration State / Province / Country" value={app.registrationStateProvinceCountry || '—'} />
-        <DetailField label="Business Website" value={app.businessWebsite || '—'} />
-        <DetailField label="Mailing Address" value={app.businessMailingAddress || '—'} />
-        <DetailField label="Category" value={app.businessCategory ? businessCategoryLabels[app.businessCategory] : '—'} />
-        <DetailField label="Operating Duration" value={app.businessOperatingDuration ? operatingDurationLabels[app.businessOperatingDuration] : '—'} />
+        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Basic Information</p>
+        <DetailField label="Full Name" value={app.fullName || '—'} />
+        <DetailField label="Email" value={app.email || '—'} />
+        <DetailField label="Phone" value={app.phone || '—'} />
+        <DetailField label="Country" value={app.country || '—'} />
+        {app.stateProvince && <DetailField label="State / Province" value={app.stateProvince} />}
+        <DetailField label="Partner Type" value={app.partnerType === 'CREATOR' ? 'Creator' : 'Business / Agency'} />
       </div>
 
-      {app.businessDescription && (
-        <div className="rounded-xl bg-cv-soft p-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">What the business does</p>
-          <p className="text-sm text-cv-body">{app.businessDescription}</p>
-        </div>
-      )}
-
-      {/* Business Profiles */}
-      {app.businessProfiles && app.businessProfiles.length > 0 && (
+      {/* Creator-specific */}
+      {app.partnerType === 'CREATOR' && (
         <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Public Business Profiles</p>
-          {app.businessProfiles.map(p => (
-            <div key={p.id} className="flex items-center justify-between rounded-lg border border-cv-line px-3 py-2">
-              <span className="text-sm font-bold text-cv-ink">{p.platform}</span>
-              {p.profileUrl ? (
-                <a href={p.profileUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-cv-ink hover:text-cv-red flex items-center gap-1">
-                  Visit <ExternalLink className="h-3 w-3" />
-                </a>
-              ) : (
-                <span className="text-xs text-cv-muted">No URL</span>
-              )}
+          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Creator Details</p>
+          <DetailField label="Creator / Public Name" value={app.creatorName || '—'} />
+          {app.website && <DetailField label="Website" value={app.website} />}
+          {app.creatorProfiles && app.creatorProfiles.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Social Accounts</p>
+              {app.creatorProfiles.map(p => (
+                <div key={p.id} className="flex items-center justify-between rounded-lg border border-cv-line px-3 py-2">
+                  <div>
+                    <p className="text-sm font-bold text-cv-ink">{p.platform === 'Other' ? p.platformOther : p.platform}</p>
+                    <p className="text-xs text-cv-muted">{p.handle || p.profileUrl}</p>
+                  </div>
+                  <span className="text-xs font-bold text-cv-ink">{p.followerCount.toLocaleString()} followers</span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* Partnership Questions */}
+      {/* Business-specific */}
+      {app.partnerType === 'BUSINESS' && (
+        <>
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Business Information</p>
+            <DetailField label="Legal Business Name" value={app.legalBusinessName || '—'} />
+            <DetailField label="Brand / Company Name" value={app.brandName || '—'} />
+            <DetailField label="Entity Type" value={app.businessEntityType ? businessEntityTypeLabels[app.businessEntityType] : '—'} />
+            <DetailField label="Registration Number" value={app.businessRegistrationNumber || '—'} />
+            <DetailField label="Registration Location" value={app.registrationLocation || '—'} />
+            <DetailField label="Business Website" value={app.businessWebsite || '—'} />
+            <DetailField label="Mailing Address" value={app.businessMailingAddress || '—'} />
+            <DetailField label="Category" value={app.businessCategory ? businessCategoryLabels[app.businessCategory] : '—'} />
+            <DetailField label="Operating Duration" value={app.businessOperatingDuration ? operatingDurationLabels[app.businessOperatingDuration] : '—'} />
+          </div>
+
+          {app.businessDescription && (
+            <div className="rounded-xl bg-cv-soft p-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">What the business does</p>
+              <p className="text-sm text-cv-body">{app.businessDescription}</p>
+            </div>
+          )}
+
+          {app.businessProfiles && app.businessProfiles.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Public Business Profiles</p>
+              {app.businessProfiles.map(p => (
+                <div key={p.id} className="flex items-center justify-between rounded-lg border border-cv-line px-3 py-2">
+                  <span className="text-sm font-bold text-cv-ink">{p.platform}</span>
+                  {p.profileUrl ? (
+                    <a href={p.profileUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-cv-ink hover:text-cv-red flex items-center gap-1">
+                      Visit <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ) : (
+                    <span className="text-xs text-cv-muted">No URL</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Book of Business</p>
+            <div className="rounded-xl bg-cv-soft p-3">
+              <p className="text-sm text-cv-body">{app.bookOfBusinessDescription || '—'}</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Estimated Careverse Membership Volume</p>
+            <div className="rounded-xl bg-cv-soft p-3">
+              <p className="text-sm text-cv-body">{app.estimatedVolumeDescription || '—'}</p>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Partnership & Acquisition — all applicants */}
       <div className="space-y-2">
-        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Business & Partnership Questions</p>
-        <DetailField label="Book of Business Size" value={app.bookOfBusinessSize || '—'} />
-        <DetailField label="Estimated Monthly Volume" value={app.estimatedMonthlyVolume || '—'} />
-        <DetailField label="Expected Performance" value={app.expectedPerformance || '—'} />
-        <DetailField label="How Customers Reach Careverse" value={app.howCustomersReachCareverse || '—'} />
-        <DetailField label="Paid Advertising" value={app.paidAdvertising || '—'} />
-        <DetailField label="Decision-Making Authority" value={app.decisionMakingAuthority || '—'} />
+        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Partnership & Acquisition</p>
+        <div className="rounded-xl bg-cv-soft p-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-cv-muted mb-1">Partnership Expectations</p>
+          <p className="text-sm text-cv-body">{app.partnershipExpectations || '—'}</p>
+        </div>
+        <DetailField label="Customer Acquisition Methods" value={(app.acquisitionMethods || []).join(', ') + (app.acquisitionOtherDetail ? ` (${app.acquisitionOtherDetail})` : '') || '—'} />
+        <DetailField label="Purchases Advertising" value={app.purchasesAdvertising ? (app.purchasesAdvertising === 'YES' ? 'Yes' : 'No') : '—'} />
+        {app.purchasesAdvertising === 'YES' && (
+          <DetailField label="Advertising Platforms" value={(app.advertisingPlatforms || []).join(', ') + (app.advertisingPlatformOtherDetail ? ` (${app.advertisingPlatformOtherDetail})` : '') || '—'} />
+        )}
+        <DetailField label="Decision-Making Authority" value={app.hasDecisionAuthority ? (app.hasDecisionAuthority === 'YES' ? 'Yes — can approve' : 'No — needs approval') : '—'} />
+        {app.hasDecisionAuthority === 'NO' && (
+          <>
+            <DetailField label="Decision-Maker Name" value={app.decisionMakerName || '—'} />
+            <DetailField label="Decision-Maker Role" value={app.decisionMakerRole || '—'} />
+            <DetailField label="Decision-Maker Email" value={app.decisionMakerEmail || '—'} />
+          </>
+        )}
+      </div>
+
+      {/* Application state */}
+      <div className="space-y-2">
+        <p className="text-xs font-bold uppercase tracking-wider text-cv-muted">Application Status</p>
+        <DetailField label="Application State" value={app.applicationState} />
+        <DetailField label="Account Status" value={app.accountStatus} />
+        {app.approvedAt && <DetailField label="Approved On" value={fmtDate(app.approvedAt)} />}
+        {app.activatedAt && <DetailField label="Activated On" value={fmtDate(app.activatedAt)} />}
+        {app.activationEmailSentAt && <DetailField label="Activation Email Sent" value={fmtDate(app.activationEmailSentAt)} />}
       </div>
 
       <div className="text-xs text-cv-muted pt-2">

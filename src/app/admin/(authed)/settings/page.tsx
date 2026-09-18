@@ -31,14 +31,15 @@ const initialRules: CommissionRule[] = [
 interface Integration {
   id: string; name: string; description: string; category: string; connected: boolean;
 }
-  const [integrations, setIntegrations] = useState<Integration[]>([
+
+const initialIntegrations: Integration[] = [
   { id: 'int-1', name: 'Stripe', description: 'Process partner payouts and track payment activity.', category: 'Payments', connected: true },
   { id: 'int-2', name: 'Mailgun', description: 'Transactional email delivery for automations.', category: 'Email', connected: true },
   { id: 'int-3', name: 'Slack', description: 'Get alerts for new partner signups and conversions.', category: 'Notifications', connected: false },
   { id: 'int-4', name: 'Zapier', description: 'Connect Careverse to 5,000+ apps and automate workflows.', category: 'Automation', connected: false },
   { id: 'int-5', name: 'Google Analytics', description: 'Track storefront traffic and conversion attribution.', category: 'Analytics', connected: true },
   { id: 'int-6', name: 'Twilio', description: 'SMS notifications for partners and verification.', category: 'Notifications', connected: false },
-]);
+];
 
 interface TeamMember {
   id: string; name: string; email: string; role: 'Owner' | 'Admin' | 'Editor' | 'Viewer'; lastActive: string;
@@ -84,6 +85,7 @@ export default function AdminSettingsPage() {
     currency: 'USD', maintenanceMode: false,
   });
   const [team, setTeam] = useState<TeamMember[]>(initialTeam);
+  const [integrations, setIntegrations] = useState<Integration[]>(initialIntegrations);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'Admin' | 'Editor' | 'Viewer'>('Editor');
