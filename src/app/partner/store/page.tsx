@@ -550,10 +550,6 @@ export default function PartnerStorePage() {
       <div className="mb-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="cv-red-rule" />
-              <span className="cv-eyebrow uppercase">Store</span>
-            </div>
             <h1 className="text-2xl font-bold text-cv-ink">Edit Store</h1>
             <p className="text-sm text-cv-muted mt-1">Customize your storefront, manage packages, and publish to your audience.</p>
           </div>
@@ -1426,8 +1422,6 @@ export default function PartnerStorePage() {
                     if (section.type === 'hero') {
                       return (
                         <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
-                          <div className="mb-2" style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-                          <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Care Benefits</span>
                           {heroImage && <img src={heroImage} alt="Hero" className="w-full rounded-xl mb-4 mt-2 max-h-48 object-cover" />}
                           <h2 className="text-xl font-bold mt-2 mb-3" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>{heroHeadline || 'Quality care for your family'}</h2>
                           <p className="text-sm mb-4" style={{ color: 'var(--muted)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{heroSupportingCopy || introCopy}</p>
@@ -1468,8 +1462,6 @@ export default function PartnerStorePage() {
                     if (section.type === 'packages') {
                       return (
                         <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
-                          <div className="mb-2" style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-                          <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Packages</span>
                           <h3 className="text-lg font-bold mt-1 mb-4" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>Choose your plan</h3>
                           <div className="grid gap-3 sm:grid-cols-3">
                             {selectedPackages.map((pkgName) => {
@@ -1491,8 +1483,6 @@ export default function PartnerStorePage() {
                     if (section.type === 'benefits') {
                       return (
                         <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--cream)' }}>
-                          <div className="mb-2" style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-                          <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>Benefits</span>
                           <h3 className="text-lg font-bold mt-1 mb-4" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>What&apos;s included</h3>
                           <div className="grid gap-2 sm:grid-cols-2">
                             {['Included Services', 'Lower Prices', 'Product Specials', 'Free Samples', 'Care Allowance', 'Health Advocacy'].map((b) => (
@@ -1508,8 +1498,6 @@ export default function PartnerStorePage() {
                     if (section.type === 'about' && aboutContent) {
                       return (
                         <div key={section.id} className="px-6 py-8" style={{ backgroundColor: 'var(--white)' }}>
-                          <div className="mb-2" style={{ width: 24, height: 3, backgroundColor: 'var(--red)', borderRadius: 2 }} />
-                          <span className="cv-eyebrow uppercase" style={{ color: 'var(--muted)' }}>About</span>
                           <h3 className="text-lg font-bold mt-1 mb-3" style={{ color: 'var(--ink)', fontFamily: branding.headingFont, fontWeight: branding.headingWeight }}>About {storefrontName}</h3>
                           <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)', fontFamily: branding.bodyFont, fontWeight: branding.bodyWeight }}>{aboutContent}</p>
                           {showProfile && !isWhiteLabel && (
