@@ -17,6 +17,7 @@ import {
   LogOut,
   ChevronsUpDown,
   Lock,
+  Users,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,6 +33,8 @@ import { cn } from '@/lib/utils';
 const baseNavItems = [
   { title: 'Overview', url: '/partner', icon: LayoutDashboard },
   { title: 'Store', url: '/partner/store', icon: Store },
+  { title: 'Storefronts', url: '/partner/storefronts', icon: Store },
+  { title: 'Team', url: '/partner/team', icon: Users },
   { title: 'Conversions', url: '/partner/conversions', icon: ArrowLeftRight },
   { title: 'Commissions', url: '/partner/commissions', icon: Percent },
   { title: 'Payouts', url: '/partner/payouts', icon: Wallet },
@@ -54,13 +57,22 @@ function PartnerSidebar() {
   };
 
   const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
+  const isBusiness = user?.partnerType === 'BUSINESS';
 
-  const navItems = baseNavItems.map((item) => {
-    if (item.title === 'Store' && storeLocked) {
-      return { ...item, locked: true as const };
-    }
-    return item;
-  });
+  const navItems = baseNavItems
+    .filter((item) => {
+      // Business/Agency partners use the multi-storefront workspace instead of the single store builder
+      if (isBusiness && item.title === 'Store') return false;
+      if (!isBusiness && item.title === 'Storefronts') return false;
+      if (!isBusiness && item.title === 'Team') return false;
+      return true;
+    })
+    .map((item) => {
+      if (item.title === 'Store' && storeLocked) {
+        return { ...item, locked: true as const };
+      }
+      return item;
+    });
 
   return (
     <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-cv-line h-screen sticky top-0">
@@ -169,12 +181,20 @@ function MobileNav() {
   const router = useRouter();
   const { user, hasStorefrontAccess } = useMockAuth();
   const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
-  const navItems = [...baseNavItems, ...bottomNavItems].map((item) => {
-    if (item.title === 'Store' && storeLocked) {
-      return { ...item, locked: true as const };
-    }
-    return item;
-  });
+  const isBusiness = user?.partnerType === 'BUSINESS';
+  const navItems = [...baseNavItems, ...bottomNavItems]
+    .filter((item) => {
+      if (isBusiness && item.title === 'Store') return false;
+      if (!isBusiness && item.title === 'Storefronts') return false;
+      if (!isBusiness && item.title === 'Team') return false;
+      return true;
+    })
+    .map((item) => {
+      if (item.title === 'Store' && storeLocked) {
+        return { ...item, locked: true as const };
+      }
+      return item;
+    });
 
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';

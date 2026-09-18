@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ import {
   loadStorefrontConfig, saveStorefrontConfig, StorefrontConfig, StoreBranding,
   storeVideoFile, getVideoObjectURL, deleteVideoFile,
   FONT_OPTIONS, FONT_WEIGHTS, DEFAULT_BRANDING, BrandMode,
+  loadStorefrontConfigById, saveStorefrontConfigById,
 } from '@/lib/store-persistence';
 import { cn } from '@/lib/utils';
 import { useMockAuth } from '@/hooks/useMockAuth';
@@ -126,7 +127,17 @@ function StepHint({ children }: { children: React.ReactNode }) {
 }
 
 export default function PartnerStorePage() {
+  return (
+    <Suspense fallback={<div className="cv-page min-h-[60vh] flex items-center justify-center"><div className="text-sm text-cv-muted">Loading store editor...</div></div>}>
+      <PartnerStoreContent />
+    </Suspense>
+  );
+}
+
+function PartnerStoreContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const storeId = searchParams.get('store');
   const { onboarding, updateOnboarding, user, hasStorefrontAccess } = useMockAuth();
   const [activeStep, setActiveStep] = useState<BuilderStep>('brand');
   const [saved, setSaved] = useState(false);
@@ -198,7 +209,10 @@ export default function PartnerStorePage() {
 
   // Load saved config on mount
   useEffect(() => {
-    const config = loadStorefrontConfig();
+    // Multi-storefront: load by ID if provided, otherwise load single config (Creator flow)
+    const config = storeId
+      ? (loadStorefrontConfigById(storeId) || loadStorefrontConfig())
+      : loadStorefrontConfig();
     setStorefrontName(config.name);
     setLogo(config.logo);
     setPartnerPhoto(config.partnerPhoto);
@@ -243,12 +257,25 @@ export default function PartnerStorePage() {
     loadVideos();
   }, []);
 
+  // Track the active storefront config id/url for multi-storefront mode
+  const [activeStoreId, setActiveStoreId] = useState(currentPartnerStorefront.id);
+  const [activeStoreUrl, setActiveStoreUrl] = useState(currentPartnerStorefront.url);
+
+  // Update active store id/url when config loads
+  useEffect(() => {
+    const config = storeId
+      ? (loadStorefrontConfigById(storeId) || loadStorefrontConfig())
+      : loadStorefrontConfig();
+    setActiveStoreId(config.id);
+    setActiveStoreUrl(config.url);
+  }, [storeId]);
+
   // Build config from state
   const buildConfig = useCallback((): StorefrontConfig => ({
-    id: currentPartnerStorefront.id,
+    id: activeStoreId,
     partnerId: currentPartnerStorefront.partnerId,
     name: storefrontName,
-    url: currentPartnerStorefront.url,
+    url: activeStoreUrl,
     status: publishStatus,
     logo,
     favicon,
@@ -277,7 +304,7 @@ export default function PartnerStorePage() {
     contactEmail,
     contactPhone,
     savedAt: new Date().toISOString(),
-  }), [storefrontName, logo, favicon, partnerPhoto, heroImage, sectionImages, introCopy, brandPresentation, brandingMode, branding,
+  }), [activeStoreId, activeStoreUrl, storefrontName, logo, favicon, partnerPhoto, heroImage, sectionImages, introCopy, brandPresentation, brandingMode, branding,
        heroHeadline, heroSupportingCopy, ctaText, aboutContent, customDomain,
        domainStatus, selectedPackages, sections, contentBlocks, publishStatus,
        showProfile, showVerifiedBadge, showPoweredByFooter, showCareverseInHeader, showCareverseInFooter,
@@ -286,7 +313,12 @@ export default function PartnerStorePage() {
   const handleSave = () => {
     setSaveStatus('saving');
     try {
-      saveStorefrontConfig(buildConfig());
+      const config = buildConfig();
+      if (storeId) {
+        saveStorefrontConfigById(config);
+      } else {
+        saveStorefrontConfig(config);
+      }
       setSaveStatus('saved');
       setSaved(true);
       setDirty(false);
