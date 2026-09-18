@@ -40,14 +40,15 @@ const socialPlatforms: { value: SocialLink['platform']; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
-type BuilderStep = 'brand' | 'packages' | 'content' | 'domain' | 'publish';
+type BuilderStep = 'brand' | 'packages' | 'story' | 'domain' | 'preview' | 'publish';
 
 const steps: { value: BuilderStep; label: string; icon: typeof Package; description: string }[] = [
   { value: 'brand', label: 'Brand', icon: Palette, description: 'Name, logo, colors, fonts, and contact info' },
   { value: 'packages', label: 'Packages', icon: Package, description: 'Select which care plans to offer' },
-  { value: 'content', label: 'Content', icon: Video, description: 'Hero text, about, videos, and section order' },
+  { value: 'story', label: 'Story', icon: Target, description: 'Headline, about, images, and videos' },
   { value: 'domain', label: 'Domain', icon: Globe, description: 'Your storefront URL and custom domain' },
-  { value: 'publish', label: 'Review & Publish', icon: Rocket, description: 'Preview, publish, and share your store' },
+  { value: 'preview', label: 'Preview', icon: Eye, description: 'See your storefront before publishing' },
+  { value: 'publish', label: 'Publish', icon: Rocket, description: 'Publish your store and share it' },
 ];
 
 const colorFields: { key: keyof StoreBranding; label: string }[] = [
@@ -769,89 +770,11 @@ export default function PartnerStorePage() {
                 </div>
               </div>
 
-              {/* Partner photo + Hero image */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label className="text-sm font-bold text-cv-ink">Profile Image</Label>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
-                      {partnerPhoto ? <img src={partnerPhoto} alt="Partner" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-cv-muted" />}
-                    </div>
-                    <div className="flex-1">
-                      <input ref={photoInputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => handleImageUpload(e, setPartnerPhoto)} />
-                      <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => photoInputRef.current?.click()}>
-                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
-                      </Button>
-                      {partnerPhoto && <button onClick={() => { setPartnerPhoto(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
-                    </div>
-                  </div>
-                  <StepHint>Shown in the About section of your storefront</StepHint>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label className="text-sm font-bold text-cv-ink">Hero Image</Label>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
-                      {heroImage ? <img src={heroImage} alt="Hero" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-cv-muted" />}
-                    </div>
-                    <div className="flex-1">
-                      <input ref={heroImageInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => handleImageUpload(e, setHeroImage)} />
-                      <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => heroImageInputRef.current?.click()}>
-                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
-                      </Button>
-                      {heroImage && <button onClick={() => { setHeroImage(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
-                    </div>
-                  </div>
-                  <StepHint>Shown at the top of your storefront, above the headline</StepHint>
-                </div>
-              </div>
-
               {/* Brand presentation */}
               <div className="grid gap-2">
                 <Label className="text-sm font-bold text-cv-ink">Tagline</Label>
                 <Input value={brandPresentation} onChange={(e) => { setBrandPresentation(e.target.value); markDirty(); }} className="cv-input" maxLength={80} placeholder="Trusted, family-focused care guidance" />
                 <StepHint>Shown under your storefront name in the header</StepHint>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Hero & Messaging */}
-          <Card className="cv-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-cv-ink">Hero &amp; Messaging</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Hero Headline</Label>
-                <Input value={heroHeadline} onChange={(e) => { setHeroHeadline(e.target.value); markDirty(); }} className="cv-input" maxLength={60} placeholder="Quality care for your family" />
-                <div className="flex items-center justify-between">
-                  <StepHint>The large title at the top of your storefront</StepHint>
-                  <p className="text-[10px] text-cv-muted">{heroHeadline.length}/60</p>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Supporting Copy</Label>
-                <Textarea value={heroSupportingCopy} onChange={(e) => { setHeroSupportingCopy(e.target.value); markDirty(); }} className="cv-input min-h-[70px]" maxLength={160} placeholder="I help families like yours discover affordable, comprehensive care benefits through Careverse." />
-                <div className="flex items-center justify-between">
-                  <StepHint>The text below the headline on your storefront</StepHint>
-                  <p className="text-[10px] text-cv-muted">{heroSupportingCopy.length}/160</p>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">Button Text</Label>
-                <Input value={ctaText} onChange={(e) => { setCtaText(e.target.value); markDirty(); }} className="cv-input" maxLength={20} placeholder="Request Care" />
-                <div className="flex items-center justify-between">
-                  <StepHint>The action button in the hero section</StepHint>
-                  <p className="text-[10px] text-cv-muted">{ctaText.length}/20</p>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm font-bold text-cv-ink">About Content</Label>
-                <Textarea value={aboutContent} onChange={(e) => { setAboutContent(e.target.value); markDirty(); }} className="cv-input min-h-[120px]" maxLength={500} placeholder="Tell families about your care philosophy and experience..." />
-                <div className="flex items-center justify-between">
-                  <StepHint>Shown in the About section of your storefront</StepHint>
-                  <p className="text-[10px] text-cv-muted">{aboutContent.length}/500</p>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -1117,9 +1040,104 @@ export default function PartnerStorePage() {
         </div>
       )}
 
-      {/* ─── Step 3: Content ─── */}
-      {activeStep === 'content' && (
+      {/* ─── Step 3: Story ─── */}
+      {activeStep === 'story' && (
         <div className="max-w-2xl space-y-4">
+          {/* Hero & Messaging */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Hero &amp; Messaging</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Hero Headline</Label>
+                <Input value={heroHeadline} onChange={(e) => { setHeroHeadline(e.target.value); markDirty(); }} className="cv-input" maxLength={60} placeholder="Quality care for your family" />
+                <div className="flex items-center justify-between">
+                  <StepHint>The large title at the top of your storefront</StepHint>
+                  <p className="text-[10px] text-cv-muted">{heroHeadline.length}/60</p>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Supporting Copy</Label>
+                <Textarea value={heroSupportingCopy} onChange={(e) => { setHeroSupportingCopy(e.target.value); markDirty(); }} className="cv-input min-h-[70px]" maxLength={160} placeholder="I help families like yours discover affordable, comprehensive care benefits through Careverse." />
+                <div className="flex items-center justify-between">
+                  <StepHint>The text below the headline on your storefront</StepHint>
+                  <p className="text-[10px] text-cv-muted">{heroSupportingCopy.length}/160</p>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">Button Text</Label>
+                <Input value={ctaText} onChange={(e) => { setCtaText(e.target.value); markDirty(); }} className="cv-input" maxLength={20} placeholder="Request Care" />
+                <div className="flex items-center justify-between">
+                  <StepHint>The action button in the hero section</StepHint>
+                  <p className="text-[10px] text-cv-muted">{ctaText.length}/20</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Images */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">Images</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Hero Image</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
+                      {heroImage ? <img src={heroImage} alt="Hero" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-cv-muted" />}
+                    </div>
+                    <div className="flex-1">
+                      <input ref={heroImageInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => handleImageUpload(e, setHeroImage)} />
+                      <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => heroImageInputRef.current?.click()}>
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
+                      </Button>
+                      {heroImage && <button onClick={() => { setHeroImage(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
+                    </div>
+                  </div>
+                  <StepHint>Shown at the top of your storefront, above the headline</StepHint>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-sm font-bold text-cv-ink">Profile Image</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-cv-line bg-cv-soft overflow-hidden shrink-0">
+                      {partnerPhoto ? <img src={partnerPhoto} alt="Partner" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-cv-muted" />}
+                    </div>
+                    <div className="flex-1">
+                      <input ref={photoInputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => handleImageUpload(e, setPartnerPhoto)} />
+                      <Button variant="outline" className="rounded-full border-cv-line font-bold text-xs" onClick={() => photoInputRef.current?.click()}>
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
+                      </Button>
+                      {partnerPhoto && <button onClick={() => { setPartnerPhoto(''); markDirty(); }} className="text-[10px] font-bold text-cv-red ml-2">Remove</button>}
+                    </div>
+                  </div>
+                  <StepHint>Shown next to your About section on your storefront</StepHint>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* About */}
+          <Card className="cv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-cv-ink">About</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label className="text-sm font-bold text-cv-ink">About Content</Label>
+                <Textarea value={aboutContent} onChange={(e) => { setAboutContent(e.target.value); markDirty(); }} className="cv-input min-h-[120px]" maxLength={500} placeholder="Tell families about your care philosophy and experience..." />
+                <div className="flex items-center justify-between">
+                  <StepHint>Shown in the About section of your storefront</StepHint>
+                  <p className="text-[10px] text-cv-muted">{aboutContent.length}/500</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Creator Content */}
           <Card className="cv-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-xs text-cv-muted">
@@ -1390,10 +1408,9 @@ export default function PartnerStorePage() {
         </div>
       )}
 
-      {/* ─── Step 5: Review & Publish ─── */}
-      {activeStep === 'publish' && (
+      {/* ─── Step 5: Preview ─── */}
+      {activeStep === 'preview' && (
         <div className="space-y-4">
-          {/* Preview */}
           <Card className="cv-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1540,18 +1557,27 @@ export default function PartnerStorePage() {
                     return null;
                   })}
                 </div>
-
-                <div className="px-6 py-4 border-t" style={{ backgroundColor: 'var(--white)', borderColor: 'var(--line)' }}>
-                  <Button variant="outline" className="w-full rounded-full border-cv-line font-bold text-xs" onClick={() => router.push('/storefront')}>
-                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Open Full Storefront
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>
 
+          <div className="flex justify-center pt-2">
+            <Button
+              className="cv-btn-primary rounded-full"
+              onClick={() => router.push('/storefront')}
+            >
+              <ExternalLink className="h-4 w-4 mr-1.5" />
+              View Store
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Step 6: Publish ─── */}
+      {activeStep === 'publish' && (
+        <div className="max-w-lg space-y-4">
           {/* Publish Status */}
-          <Card className="cv-card max-w-lg">
+          <Card className="cv-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-bold text-cv-ink">Publish Status</CardTitle>
             </CardHeader>
@@ -1591,7 +1617,7 @@ export default function PartnerStorePage() {
           </Card>
 
           {/* Storefront Checklist */}
-          <Card className="cv-card max-w-lg">
+          <Card className="cv-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-bold text-cv-ink">Storefront Checklist</CardTitle>
             </CardHeader>
