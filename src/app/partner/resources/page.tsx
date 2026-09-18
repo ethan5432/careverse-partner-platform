@@ -76,9 +76,12 @@ function ResourceCard({ resource, onView }: { resource: MockResource; onView: (r
     }
     return () => {
       revoked = true;
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
     };
-  }, [resource, canPreview, previewUrl]);
+  }, [resource.assetId, resource.assetSource, canPreview]);
 
   const handleCopyLink = (e: React.MouseEvent) => {
     e.stopPropagation();

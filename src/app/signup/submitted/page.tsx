@@ -30,7 +30,7 @@ export default function SignupSubmittedPage() {
           <p className="text-sm text-cv-body leading-relaxed">
             Thank you for applying to the Careverse Partner Program. Our team will review your
             application and get back to you within 1-2 business days. You&apos;ll receive an email
-            once your application is approved.
+            once your application has been accepted with a secure link to activate your account.
           </p>
 
           <div className="rounded-xl bg-cv-soft p-4 text-left space-y-3">
@@ -40,11 +40,11 @@ export default function SignupSubmittedPage() {
             </div>
             <div className="flex items-center gap-3 opacity-40">
               <Clock className="h-4 w-4 text-cv-muted shrink-0" />
-              <span className="text-xs font-bold text-cv-muted">Pending review</span>
+              <span className="text-xs font-bold text-cv-muted">Submitted / In Review</span>
             </div>
             <div className="flex items-center gap-3 opacity-40">
               <Clock className="h-4 w-4 text-cv-muted shrink-0" />
-              <span className="text-xs font-bold text-cv-muted">Account activation</span>
+              <span className="text-xs font-bold text-cv-muted">Accepted — set password and activate</span>
             </div>
             <div className="flex items-center gap-3 opacity-40">
               <Clock className="h-4 w-4 text-cv-muted shrink-0" />
@@ -53,14 +53,9 @@ export default function SignupSubmittedPage() {
           </div>
 
           <p className="text-xs text-cv-muted">
-            For this demo, you can simulate approval by going to the activation page.
+            If your application is accepted, you&apos;ll receive an email with a secure activation link.
+            You&apos;ll create your password during activation — no password is needed during the application.
           </p>
-
-          <Link href="/activate">
-            <Button className="cv-btn-primary w-full rounded-full">
-              Continue to activation
-            </Button>
-          </Link>
 
           <Link href="/login" className="inline-flex items-center gap-1.5 text-sm font-bold text-cv-muted hover:text-cv-ink transition-colors">
             <ArrowLeft className="h-3.5 w-3.5" />

@@ -72,11 +72,13 @@ function useWhiteLabel() {
 function PartnerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, switchPartnerType, switchStatus, hasStorefrontAccess } = useMockAuth();
+  const { user, logout, hasStorefrontAccess } = useMockAuth();
   const wlConfig = useWhiteLabel();
 
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';
+    // Exact match for /partner/store to avoid matching /partner/storefronts or /partner/storefront-application
+    if (url === '/partner/store') return pathname === '/partner/store';
     return pathname.startsWith(url);
   };
 
@@ -179,23 +181,10 @@ function PartnerSidebar() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-52" align="end" sideOffset={8}>
-            <div className="px-2 py-1.5">
-              <p className="text-xs font-bold text-cv-muted uppercase tracking-wider">Switch role (mock)</p>
-            </div>
-            <DropdownMenuItem onClick={() => { switchPartnerType('CREATOR'); router.push('/partner'); }}>
-              Creator
+            <DropdownMenuItem onClick={() => router.push('/partner/settings')} className="font-bold">
+              <Settings className="mr-2 h-4 w-4" />
+              Account Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { switchPartnerType('BUSINESS'); router.push('/partner'); }}>
-              Business / Agency
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1.5">
-              <p className="text-xs font-bold text-cv-muted uppercase tracking-wider">Switch status (mock)</p>
-            </div>
-            <DropdownMenuItem onClick={() => switchStatus('ACTIVE')}>Active</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => switchStatus('PENDING')}>Pending</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => switchStatus('INCOMPLETE')}>Incomplete</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => switchStatus('SUSPENDED')}>Suspended</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => { logout(); router.push('/login'); }} className="text-cv-red">
               <LogOut className="mr-2 h-4 w-4" />
@@ -231,6 +220,7 @@ function MobileNav() {
 
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';
+    if (url === '/partner/store') return pathname === '/partner/store';
     return pathname.startsWith(url);
   };
 
@@ -296,8 +286,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
   if (!user) return null;
 
   // Show status-based notices
-  const showPendingNotice = user.status === 'PENDING';
-  const showIncompleteNotice = user.status === 'INCOMPLETE';
+  const showPendingNotice = user.status === 'PENDING_ACTIVATION';
   const showSuspendedNotice = user.status === 'SUSPENDED';
 
   return (
@@ -318,7 +307,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
           </div>
           <div className="hidden lg:block">
             <p className="text-sm text-cv-muted">
-              {user.status === 'ACTIVE' ? 'Welcome back' : 'Account status:'}{' '}
+              {user.status === 'ACTIVE' ? 'Welcome back' : `Account ${user.status.toLowerCase()}:`}{' '}
               <span className="font-bold text-cv-ink">{user.name}</span>
             </p>
           </div>
@@ -331,14 +320,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
         {showPendingNotice && (
           <div className="bg-amber-50 border-b border-amber-200 px-5 lg:px-8 py-3">
             <p className="text-sm font-bold text-amber-700">
-              Your account is pending approval. Some features may be limited until your account is activated.
-            </p>
-          </div>
-        )}
-        {showIncompleteNotice && (
-          <div className="bg-amber-50 border-b border-amber-200 px-5 lg:px-8 py-3">
-            <p className="text-sm font-bold text-amber-700">
-              Your onboarding is incomplete. Please complete your profile and storefront setup to start earning.
+              Your application has been accepted. Please activate your account to access all features.
             </p>
           </div>
         )}

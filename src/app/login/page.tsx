@@ -26,9 +26,11 @@ export default function PartnerLoginPage() {
 
     const result = login(email, password, 'PARTNER');
     if (result.success) {
-      if (application && application.applicationState === 'SUBMITTED') {
+      if (application && (application.applicationState === 'SUBMITTED' || application.applicationState === 'IN_REVIEW')) {
         router.push('/activate');
       } else if (application && application.applicationState === 'APPROVED' && !application.activatedAt) {
+        router.push('/activate');
+      } else if (application && application.applicationState === 'REJECTED') {
         router.push('/activate');
       } else {
         router.push('/partner');

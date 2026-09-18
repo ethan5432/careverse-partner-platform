@@ -120,7 +120,8 @@ export default function PartnerStorefrontsPage() {
   };
 
   const handleView = (url: string) => {
-    router.push(`/storefront`);
+    const target = url || '/storefront';
+    router.push(target);
   };
 
   const canCreate = newName.trim().length > 0 && (

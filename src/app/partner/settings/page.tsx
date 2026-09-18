@@ -244,10 +244,13 @@ export default function SettingsPage() {
   const handleSaveWhiteLabel = (e: React.FormEvent) => {
     e.preventDefault();
     if (!wlConfig) return;
+    const domainChanged = wlDomainInput !== wlConfig.customDomain;
     const updated = {
       ...wlConfig,
       customDomain: wlDomainInput,
-      domainStatus: wlDomainInput ? ('PENDING' as const) : ('NONE' as const),
+      domainStatus: domainChanged
+        ? wlDomainInput ? ('PENDING' as const) : ('NONE' as const)
+        : wlConfig.domainStatus,
     };
     setWlConfig(updated);
     saveWhiteLabelConfig(updated);
@@ -522,8 +525,8 @@ export default function SettingsPage() {
                     placeholder="First National Bank"
                   />
                   <Field
-                    id="payout-account-last4"
-                    label="Account (last 4)"
+                    id="payout-account-name"
+                    label="Name on account"
                     value={payout.accountLast4 ?? ''}
                     onChange={(e) => setPayout({ ...payout, accountLast4: e.target.value })}
                     placeholder="Name on the account"

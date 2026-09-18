@@ -1,8 +1,8 @@
 export type PartnerType = 'CREATOR' | 'BUSINESS';
-export type PartnerStatus = 'ACTIVE' | 'PENDING' | 'INCOMPLETE' | 'SUSPENDED';
-export type AccountState = 'ACTIVE' | 'PENDING' | 'INCOMPLETE' | 'SUSPENDED';
+export type PartnerStatus = 'PENDING_ACTIVATION' | 'ACTIVE' | 'SUSPENDED';
+export type AccountState = 'PENDING_ACTIVATION' | 'ACTIVE' | 'SUSPENDED';
 
-export type ApplicationState = 'SUBMITTED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+export type ApplicationState = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED';
 
 export type BusinessEntityType = 'LLC' | 'CORPORATION' | 'PARTNERSHIP' | 'SOLE_PROPRIETOR' | 'NONPROFIT' | 'OTHER';
 export type BusinessCategory = 'BENEFITS_HR' | 'FINANCIAL_SERVICES' | 'INSURANCE_BROKER' | 'CARE_HEALTHCARE_SERVICES' | 'WELLNESS' | 'PROFESSIONAL_SERVICES' | 'MARKETING_AGENCY' | 'COMMUNITY_MEMBERSHIP_ORGANIZATION' | 'OTHER';
@@ -16,45 +16,58 @@ export interface BusinessProfile {
 
 export interface PartnerApplication {
   id: string;
-  firstName: string;
-  lastName: string;
+  // Basic Information — all applicants
+  fullName: string;
   email: string;
-  phone: string;
+  phone?: string;
   country: string;
-  stateProvince: string;
+  stateProvince?: string;
   partnerType: PartnerType;
-  password: string;
-  acceptTerms: boolean;
-  acceptPrivacy: boolean;
   // Creator-specific
-  displayName?: string;
+  creatorName?: string;
   website?: string;
-  socialPlatform?: string;
-  socialHandle?: string;
   creatorProfiles?: CreatorProfile[];
-  // Business-specific
+  // Business / Agency-specific
   legalBusinessName?: string;
   brandName?: string;
-  businessEntityType?: BusinessEntityType;
-  businessRegistrationNumber?: string;
-  registrationStateProvinceCountry?: string;
   businessWebsite?: string;
-  businessMailingAddress?: string;
   businessDescription?: string;
   businessCategory?: BusinessCategory;
+  businessEntityType?: BusinessEntityType;
+  businessRegistrationNumber?: string;
+  registrationLocation?: string;
+  businessMailingAddress?: string;
   businessOperatingDuration?: BusinessOperatingDuration;
-  bookOfBusinessSize?: string;
-  estimatedMonthlyVolume?: string;
-  expectedPerformance?: string;
-  howCustomersReachCareverse?: string;
-  paidAdvertising?: string;
-  decisionMakingAuthority?: string;
   businessProfiles?: BusinessProfile[];
+  bookOfBusinessDescription?: string;
+  estimatedVolumeDescription?: string;
+  // Partnership expectations — all applicants
+  partnershipExpectations?: string;
+  // Customer acquisition — all applicants
+  acquisitionMethods?: string[];
+  acquisitionOtherDetail?: string;
+  // Paid advertising — all applicants
+  purchasesAdvertising?: 'YES' | 'NO';
+  advertisingPlatforms?: string[];
+  advertisingPlatformOtherDetail?: string;
+  // Decision-making authority — all applicants
+  hasDecisionAuthority?: 'YES' | 'NO';
+  decisionMakerName?: string;
+  decisionMakerRole?: string;
+  decisionMakerEmail?: string;
+  // Final confirmations
+  confirmAccurate: boolean;
+  confirmNoGuarantee: boolean;
+  acceptTerms: boolean;
   // State
   applicationState: ApplicationState;
+  accountStatus: PartnerStatus;
   submittedAt: string;
+  reviewedAt?: string;
   approvedAt?: string;
+  rejectedAt?: string;
   activatedAt?: string;
+  activationEmailSentAt?: string;
 }
 
 export interface OnboardingProgress {
@@ -454,9 +467,10 @@ export interface MockOrder {
 export interface CreatorProfile {
   id: string;
   platform: string;
+  platformOther?: string;
   handle: string;
   profileUrl: string;
-  followerCount?: number;
+  followerCount: number;
 }
 
 export type StorefrontApplicationStatus = 'SUBMITTED' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED';
