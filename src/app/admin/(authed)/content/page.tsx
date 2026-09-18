@@ -80,6 +80,14 @@ export default function AdminContentPage() {
     saveContentCatalog(updated);
   }, []);
 
+  // ─── Draft state for each content type (must be above any early return) ─────
+  const [faqDraft, setFaqDraft] = useState<Partial<FAQItem>>({});
+  const [benefitDraft, setBenefitDraft] = useState<Partial<BenefitExplanation>>({});
+  const [careverseDraft, setCareverseDraft] = useState<Partial<CareverseExplanation>>({});
+  const [disclosureDraft, setDisclosureDraft] = useState<Partial<RequiredDisclosure>>({});
+  const [testimonialDraft, setTestimonialDraft] = useState<Partial<ApprovedTestimonial>>({});
+  const [promoDraft, setPromoDraft] = useState<Partial<PromoCopy>>({});
+
   if (!catalog) return null;
 
   // ─── Generic lifecycle helpers ─────────────────────────────────────────────
@@ -140,7 +148,6 @@ export default function AdminContentPage() {
   // ─── FAQ CRUD ──────────────────────────────────────────────────────────────
 
   const faqs = catalog.faqs.sort((a, b) => a.order - b.order);
-  const [faqDraft, setFaqDraft] = useState<Partial<FAQItem>>({});
 
   const openCreateFaq = () => {
     setFaqDraft({ question: '', answer: '', category: 'General', order: catalog.faqs.length });
@@ -168,7 +175,6 @@ export default function AdminContentPage() {
   // ─── Benefit Explanation CRUD ──────────────────────────────────────────────
 
   const benefits = catalog.benefitExplanations.sort((a, b) => a.order - b.order);
-  const [benefitDraft, setBenefitDraft] = useState<Partial<BenefitExplanation>>({});
 
   const openCreateBenefit = () => {
     setBenefitDraft({ title: '', description: '', icon: 'gift', order: catalog.benefitExplanations.length });
@@ -196,7 +202,6 @@ export default function AdminContentPage() {
   // ─── Careverse Explanation CRUD ─────────────────────────────────────────────
 
   const careverseExps = catalog.careverseExplanations.sort((a, b) => a.order - b.order);
-  const [careverseDraft, setCareverseDraft] = useState<Partial<CareverseExplanation>>({});
 
   const openCreateCareverse = () => {
     setCareverseDraft({ title: '', body: '', order: catalog.careverseExplanations.length });
@@ -224,7 +229,6 @@ export default function AdminContentPage() {
   // ─── Required Disclosure CRUD ───────────────────────────────────────────────
 
   const disclosures = catalog.requiredDisclosures.sort((a, b) => a.order - b.order);
-  const [disclosureDraft, setDisclosureDraft] = useState<Partial<RequiredDisclosure>>({});
 
   const openCreateDisclosure = () => {
     setDisclosureDraft({ title: '', body: '', legalText: '', order: catalog.requiredDisclosures.length });
@@ -252,7 +256,6 @@ export default function AdminContentPage() {
   // ─── Testimonial CRUD ───────────────────────────────────────────────────────
 
   const testimonials = catalog.testimonials.sort((a, b) => a.order - b.order);
-  const [testimonialDraft, setTestimonialDraft] = useState<Partial<ApprovedTestimonial>>({});
 
   const openCreateTestimonial = () => {
     setTestimonialDraft({ authorName: '', authorRole: '', quote: '', rating: 5, avatarColor: '#E1062C', order: catalog.testimonials.length });
@@ -280,7 +283,6 @@ export default function AdminContentPage() {
   // ─── Promo Copy CRUD ────────────────────────────────────────────────────────
 
   const promoCopy = catalog.promoCopy.sort((a, b) => a.order - b.order);
-  const [promoDraft, setPromoDraft] = useState<Partial<PromoCopy>>({});
 
   const openCreatePromo = () => {
     setPromoDraft({ title: '', body: '', placement: 'GENERAL', order: catalog.promoCopy.length });
