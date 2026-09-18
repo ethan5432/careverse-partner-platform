@@ -138,7 +138,7 @@ export default function PartnerDashboardPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
-                className="rounded-full bg-cv-ink text-white hover:bg-cv-ink/90 text-sm font-bold"
+                className="rounded-full bg-cv-red text-white hover:bg-cv-red/90 text-sm font-bold"
                 onClick={() => router.push('/partner/storefront-application')}
               >
                 <Store className="h-4 w-4 mr-1.5" />
@@ -218,7 +218,7 @@ export default function PartnerDashboardPage() {
                   <span className="font-bold">Feedback: </span>{rejectedApp.feedback}
                 </p>
               )}
-              <Button className="rounded-full bg-cv-ink text-white hover:bg-cv-ink/90 text-sm font-bold" onClick={() => router.push('/partner/storefront-application')}>
+              <Button className="rounded-full bg-cv-red text-white hover:bg-cv-red/90 text-sm font-bold" onClick={() => router.push('/partner/storefront-application')}>
                 Apply again <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </CardContent>
@@ -236,7 +236,7 @@ export default function PartnerDashboardPage() {
               <p className="text-sm text-cv-body">
                 A storefront lets you customize your page, showcase your content, and sell Careverse memberships directly. Submit 5 pieces of content for review.
               </p>
-              <Button className="rounded-full bg-cv-ink text-white hover:bg-cv-ink/90 text-sm font-bold" onClick={() => router.push('/partner/storefront-application')}>
+              <Button className="rounded-full bg-cv-red text-white hover:bg-cv-red/90 text-sm font-bold" onClick={() => router.push('/partner/storefront-application')}>
                 <FileText className="h-4 w-4 mr-1.5" />
                 Apply for a storefront
               </Button>

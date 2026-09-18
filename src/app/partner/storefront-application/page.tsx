@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  ArrowLeft, CheckCircle2, Clock, XCircle, ExternalLink, Send, AlertCircle, Lock,
+  ArrowLeft, CheckCircle2, Clock, XCircle, ExternalLink, Send, AlertCircle, Lock, Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -138,7 +138,7 @@ export default function StorefrontApplicationPage() {
           onSubmit={() => {
             const valid = contentFields.every(c => c.contentUrl.trim());
             if (!valid) {
-              setError('All 5 content links are required.');
+              setError(`All ${contentFields.length} content links are required.`);
               return;
             }
             const validUrls = contentFields.every(c => {
@@ -256,16 +256,16 @@ function ApplicationForm({
           </div>
           <div className="space-y-2 text-sm text-cv-body leading-relaxed">
             <p>
-              To be considered for a storefront, submit 5 pieces of high-quality content that you would be comfortable having associated with Careverse.
+              To be considered for a Careverse storefront, submit at least 5 of your best pieces of content about Careverse.
             </p>
             <p>
-              Your five pieces can come from one platform or multiple platforms.
+              These should be content you have already created and published on one or more platforms. We'll review your submissions for quality, accuracy, and fit with the Careverse brand.
             </p>
             <p>
-              We are looking for content that is original, high quality, professional, on-brand, and appropriate to represent Careverse.
+              If we believe your content meets the standard, we'll approve your storefront access.
             </p>
             <p>
-              Submit exactly 5 publicly viewable content links. All submissions are reviewed before storefront access is granted.
+              Submit 5 or more public links to your best Careverse content.
             </p>
           </div>
         </CardContent>
@@ -294,7 +294,7 @@ function ApplicationForm({
 
       {/* Content submission fields */}
       <div className="space-y-4">
-        <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Content Submissions (5 required)</h3>
+        <h3 className="text-sm font-bold text-cv-ink uppercase tracking-wider pb-2 border-b border-cv-line">Content Submissions</h3>
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
@@ -305,6 +305,15 @@ function ApplicationForm({
             <div className="flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cv-ink text-white text-xs font-bold">{idx + 1}</span>
               <span className="text-sm font-bold text-cv-ink">Content Piece {idx + 1}</span>
+              {contentFields.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setContentFields(prev => prev.filter(c => c.id !== field.id))}
+                  className="ml-auto text-cv-muted hover:text-cv-red transition-colors text-xs font-bold flex items-center gap-1"
+                >
+                  <XCircle className="h-3.5 w-3.5" /> Remove
+                </button>
+              )}
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
@@ -330,6 +339,14 @@ function ApplicationForm({
             </div>
           </div>
         ))}
+        <button
+          type="button"
+          onClick={() => setContentFields(prev => [...prev, { id: `content-${Date.now()}`, platform: 'Instagram', contentUrl: '' }])}
+          className="flex items-center gap-2 text-sm font-bold text-cv-ink hover:text-cv-red transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Add another piece
+        </button>
       </div>
 
       <button
@@ -341,7 +358,7 @@ function ApplicationForm({
         Submit Application
       </button>
       {!allFilled && (
-        <p className="text-center text-xs text-cv-muted">All 5 content links are required to submit.</p>
+        <p className="text-center text-xs text-cv-muted">All {contentFields.length} content links are required to submit.</p>
       )}
     </div>
   );
