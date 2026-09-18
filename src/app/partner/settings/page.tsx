@@ -41,7 +41,7 @@ import type {
   MockPayoutSetup,
   MockNotificationSettings,
 } from '@/data/mock/types';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useMockAuth, useEffectivePartner } from '@/hooks/useMockAuth';
 import { SupportLink } from '@/components/shared/SupportLink';
 import { cn } from '@/lib/utils';
 import {
@@ -162,6 +162,7 @@ function ColorField({ id, label, value, onChange }: { id: string; label: string;
 
 export default function SettingsPage() {
   const { user, updateOnboarding, onboarding } = useMockAuth();
+  const partner = useEffectivePartner();
 
   // Profile
   const [profile, setProfile] = useState(mockPartnerProfile);
@@ -191,14 +192,14 @@ export default function SettingsPage() {
   const [wlDomainInput, setWlDomainInput] = useState('');
 
   React.useEffect(() => {
-    if (user?.partnerType === 'BUSINESS' && user.id) {
+    if (partner?.partnerType === 'BUSINESS' && partner.id) {
       const admin = loadWhiteLabelAdminConfig();
-      setWlEligible(isWhiteLabelEligible(user.partnerType, admin));
-      const cfg = loadWhiteLabelConfig(user.id);
+      setWlEligible(isWhiteLabelEligible(partner.partnerType, admin));
+      const cfg = loadWhiteLabelConfig(partner.id);
       setWlConfig(cfg);
       setWlDomainInput(cfg.customDomain || '');
     }
-  }, [user]);
+  }, [partner]);
 
   const flash = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
     setter(true);
@@ -327,12 +328,12 @@ export default function SettingsPage() {
               <div className="flex items-center gap-4">
                 <Avatar
                   name={profile.name}
-                  color={user?.partnerType === 'BUSINESS' ? '#18191D' : '#0B9B6B'}
+                  color={partner?.partnerType === 'BUSINESS' ? '#18191D' : '#0B9B6B'}
                   size={56}
                 />
                 <div>
                   <p className="text-sm font-bold text-cv-ink">{profile.name}</p>
-                  <p className="text-xs text-cv-muted">{user?.partnerType}</p>
+                  <p className="text-xs text-cv-muted">{partner?.partnerType}</p>
                 </div>
               </div>
 

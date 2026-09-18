@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useMockAuth, useEffectivePartner } from '@/hooks/useMockAuth';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ const statusConfig: Record<StorefrontApplicationStatus, { label: string; icon: R
 export default function StorefrontApplicationPage() {
   const router = useRouter();
   const { user, creatorProfiles } = useMockAuth();
+  const partner = useEffectivePartner();
 
   const [contentFields, setContentFields] = useState<StorefrontApplicationContent[]>(
     Array.from({ length: 5 }, (_, i) => ({ id: `content-${i}`, platform: 'Instagram', contentUrl: '' }))
@@ -42,20 +43,20 @@ export default function StorefrontApplicationPage() {
   const [currentApp, setCurrentApp] = useState<StorefrontApplication | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    const apps = loadStorefrontApplicationsByPartner(user.id);
+    if (!partner) return;
+    const apps = loadStorefrontApplicationsByPartner(partner.id);
     setExistingApps(apps);
-    const pending = loadPendingStorefrontApplication(user.id);
+    const pending = loadPendingStorefrontApplication(partner.id);
     if (pending) {
       setCurrentApp(pending);
     } else if (apps.length > 0 && apps[apps.length - 1].status === 'REJECTED') {
       setCurrentApp(apps[apps.length - 1]);
     }
-  }, [user, submitted]);
+  }, [partner, submitted]);
 
-  if (!user) return null;
+  if (!partner) return null;
 
-  const isCreator = user.partnerType === 'CREATOR';
+  const isCreator = partner.partnerType === 'CREATOR';
   if (!isCreator) {
     return (
       <div className="max-w-2xl mx-auto py-12 text-center">
@@ -148,7 +149,7 @@ export default function StorefrontApplicationPage() {
               setError('All content links must be valid URLs.');
               return;
             }
-            submitStorefrontApplication(user.id, user.name, user.email, creatorProfiles, contentFields);
+            submitStorefrontApplication(partner.id, partner.name, partner.email, creatorProfiles, contentFields);
             setSubmitted(true);
             setError('');
             setContentFields(Array.from({ length: 5 }, (_, i) => ({ id: `content-${i}`, platform: 'Instagram', contentUrl: '' })));
@@ -217,7 +218,7 @@ export default function StorefrontApplicationPage() {
             setError('All content links must be valid URLs.');
             return;
           }
-          submitStorefrontApplication(user.id, user.name, user.email, creatorProfiles, contentFields);
+          submitStorefrontApplication(partner.id, partner.name, partner.email, creatorProfiles, contentFields);
           setSubmitted(true);
           setError('');
           setContentFields(Array.from({ length: 5 }, (_, i) => ({ id: `content-${i}`, platform: 'Instagram', contentUrl: '' })));

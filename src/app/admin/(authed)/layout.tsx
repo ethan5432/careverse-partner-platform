@@ -8,8 +8,10 @@ import { Avatar } from '@/components/shared/StatusBadge';
 import { LayoutDashboard, Users, Store, ArrowLeftRight, Percent, Wallet, Package, MessageSquare, Mail, ChartBar as BarChart3, Settings, LogOut, ChevronsUpDown, Bell, Layers, FileText, LayoutTemplate, Eye, User as UserIcon, Building } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
+import { mockUsers } from '@/data/mock';
+import type { PartnerType } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
 
 const adminNavItems = [
@@ -133,8 +135,11 @@ function ViewAsDropdown() {
   const router = useRouter();
   const { setViewAs } = useMockAuth();
 
-  const handleViewAs = (type: 'CREATOR' | 'BUSINESS') => {
-    setViewAs(type);
+  const creators = mockUsers.filter(u => u.role === 'PARTNER' && u.partnerType === 'CREATOR' && u.status === 'ACTIVE');
+  const businesses = mockUsers.filter(u => u.role === 'PARTNER' && u.partnerType === 'BUSINESS' && u.status === 'ACTIVE');
+
+  const handleViewAs = (type: PartnerType, partnerId: string) => {
+    setViewAs(type, partnerId);
     router.push('/partner');
   };
 
@@ -147,25 +152,26 @@ function ViewAsDropdown() {
           <ChevronsUpDown className="h-3 w-3" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-48" align="end" sideOffset={8}>
+      <DropdownMenuContent className="w-56" align="end" sideOffset={8}>
         <div className="px-2 py-1.5">
           <p className="text-[10px] font-bold uppercase tracking-wider text-cv-muted">Test partner experience</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleViewAs('CREATOR')}>
-          <UserIcon className="mr-2 h-4 w-4" />
-          <div className="flex flex-col">
-            <span className="text-sm font-bold">Creator</span>
-            <span className="text-[10px] text-cv-muted">Content creator experience</span>
-          </div>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleViewAs('BUSINESS')}>
-          <Building className="mr-2 h-4 w-4" />
-          <div className="flex flex-col">
-            <span className="text-sm font-bold">Business / Agency</span>
-            <span className="text-[10px] text-cv-muted">Business partner experience</span>
-          </div>
-        </DropdownMenuItem>
+        <DropdownMenuLabel className="text-xs font-bold uppercase tracking-wider text-cv-muted">Creators</DropdownMenuLabel>
+        {creators.map(p => (
+          <DropdownMenuItem key={p.id} onClick={() => handleViewAs('CREATOR', p.id)}>
+            <UserIcon className="mr-2 h-4 w-4" />
+            <span className="text-sm font-bold">{p.name}</span>
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs font-bold uppercase tracking-wider text-cv-muted">Business / Agency</DropdownMenuLabel>
+        {businesses.map(p => (
+          <DropdownMenuItem key={p.id} onClick={() => handleViewAs('BUSINESS', p.id)}>
+            <Building className="mr-2 h-4 w-4" />
+            <span className="text-sm font-bold">{p.name}</span>
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

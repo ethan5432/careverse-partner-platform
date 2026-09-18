@@ -51,13 +51,17 @@ const bottomNavItems = [
 ];
 
 function useWhiteLabel() {
-  const { user } = useMockAuth();
+  const { user, viewAs, viewingPartner } = useMockAuth();
   const [wlConfig, setWlConfig] = React.useState<WhiteLabelConfig | null>(null);
 
+  // In view-as mode, use the viewing partner's id/type for white-label lookups
+  const effectiveId = viewAs ? viewingPartner?.id : user?.id;
+  const effectiveType = viewAs ? viewingPartner?.partnerType : user?.partnerType;
+
   React.useEffect(() => {
-    if (user?.id && user.partnerType === 'BUSINESS') {
-      const cfg = loadWhiteLabelConfig(user.id);
-      if (isWhiteLabelEligible(user.partnerType) && cfg.status !== 'DISABLED') {
+    if (effectiveId && effectiveType === 'BUSINESS') {
+      const cfg = loadWhiteLabelConfig(effectiveId);
+      if (isWhiteLabelEligible(effectiveType) && cfg.status !== 'DISABLED') {
         setWlConfig(cfg);
       } else {
         setWlConfig(null);
@@ -65,7 +69,7 @@ function useWhiteLabel() {
     } else {
       setWlConfig(null);
     }
-  }, [user]);
+  }, [effectiveId, effectiveType]);
 
   return wlConfig;
 }
@@ -73,8 +77,13 @@ function useWhiteLabel() {
 function PartnerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, hasStorefrontAccess } = useMockAuth();
+  const { user, viewAs, viewingPartner, clearViewAs, logout, hasStorefrontAccess } = useMockAuth();
   const wlConfig = useWhiteLabel();
+
+  // When viewing as a partner, display the viewing partner's info
+  const displayName = viewAs ? (viewingPartner?.name || 'Partner') : (user?.name || 'User');
+  const displayType = viewAs ? viewingPartner?.partnerType : user?.partnerType;
+  const displayStatus = viewAs ? viewingPartner?.status : user?.status;
 
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';
@@ -83,8 +92,8 @@ function PartnerSidebar() {
     return pathname.startsWith(url);
   };
 
-  const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
-  const isBusiness = user?.partnerType === 'BUSINESS';
+  const storeLocked = displayType === 'CREATOR' && !hasStorefrontAccess();
+  const isBusiness = displayType === 'BUSINESS';
 
   const navItems = baseNavItems
     .filter((item) => {
@@ -173,10 +182,10 @@ function PartnerSidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-cv-soft transition-colors">
-              <Avatar name={user?.name || 'User'} color={user?.partnerType === 'BUSINESS' ? '#18191D' : '#0B9B6B'} size={32} />
+              <Avatar name={displayName} color={displayType === 'BUSINESS' ? '#18191D' : '#0B9B6B'} size={32} />
               <div className="flex-1 text-left min-w-0">
-                <p className="text-sm font-bold text-cv-ink truncate">{user?.name}</p>
-                <p className="text-xs text-cv-muted truncate">{user?.partnerType}</p>
+                <p className="text-sm font-bold text-cv-ink truncate">{displayName}</p>
+                <p className="text-xs text-cv-muted truncate">{displayType}</p>
               </div>
               <ChevronsUpDown className="h-4 w-4 text-cv-muted" />
             </button>
@@ -187,10 +196,17 @@ function PartnerSidebar() {
               Account Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { logout(); router.push('/login'); }} className="text-cv-red">
-              <LogOut className="mr-2 h-4 w-4" />
-              Log out
-            </DropdownMenuItem>
+            {viewAs ? (
+              <DropdownMenuItem onClick={() => { clearViewAs(); router.push('/admin'); }} className="text-cv-ink">
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                Return to Admin
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => { logout(); router.push('/login'); }} className="text-cv-red">
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -201,9 +217,10 @@ function PartnerSidebar() {
 function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, hasStorefrontAccess } = useMockAuth();
-  const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
-  const isBusiness = user?.partnerType === 'BUSINESS';
+  const { user, viewAs, viewingPartner, hasStorefrontAccess } = useMockAuth();
+  const displayType = viewAs ? viewingPartner?.partnerType : user?.partnerType;
+  const storeLocked = displayType === 'CREATOR' && !hasStorefrontAccess();
+  const isBusiness = displayType === 'BUSINESS';
   const wlConfig = useWhiteLabel();
   const navItems = [...baseNavItems, ...bottomNavItems]
     .filter((item) => {
@@ -258,17 +275,23 @@ function MobileNav() {
 }
 
 export default function PartnerLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, viewAs, clearViewAs } = useMockAuth();
+  const { user, loading, viewAs, viewingPartner, clearViewAs } = useMockAuth();
   const router = useRouter();
   const wlConfig = useWhiteLabel();
 
-  const shouldRedirect = !loading && (!user || (user.role !== 'PARTNER' && !viewAs));
+  // Allow ADMIN users with viewAs set, or PARTNER users
+  const shouldRedirect = !loading && (!user || (user.role !== 'PARTNER' && !(user.role === 'ADMIN' && viewAs)));
 
   useEffect(() => {
     if (shouldRedirect) {
-      router.push('/login');
+      // If an admin with invalid viewAs state, send back to admin
+      if (user?.role === 'ADMIN') {
+        router.push('/admin');
+      } else {
+        router.push('/login');
+      }
     }
-  }, [shouldRedirect, router]);
+  }, [shouldRedirect, router, user]);
 
   if (loading || shouldRedirect) {
     return (
@@ -286,9 +309,13 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
 
   if (!user) return null;
 
-  // Show status-based notices
-  const showPendingNotice = user.status === 'PENDING_ACTIVATION';
-  const showSuspendedNotice = user.status === 'SUSPENDED';
+  // Use viewing partner info when in view-as mode
+  const displayName = viewAs ? (viewingPartner?.name || user.name) : user.name;
+  const displayStatus = viewAs ? (viewingPartner?.status || user.status) : user.status;
+
+  // Show status-based notices (use viewing partner status in view-as mode)
+  const showPendingNotice = displayStatus === 'PENDING_ACTIVATION';
+  const showSuspendedNotice = displayStatus === 'SUSPENDED';
 
   return (
     <div className="flex cv-page">
@@ -308,8 +335,8 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
           </div>
           <div className="hidden lg:block">
             <p className="text-sm text-cv-muted">
-              {user.status === 'ACTIVE' ? 'Welcome back' : `Account ${user.status.toLowerCase()}:`}{' '}
-              <span className="font-bold text-cv-ink">{user.name}</span>
+              {displayStatus === 'ACTIVE' ? 'Welcome back' : `Account ${displayStatus?.toLowerCase()}:`}{' '}
+              <span className="font-bold text-cv-ink">{displayName}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -323,9 +350,9 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
             <div className="flex items-center gap-2">
               <Eye className="h-3.5 w-3.5" />
               <span className="text-xs font-bold">
-                Viewing as {viewAs === 'CREATOR' ? 'Creator' : 'Business / Agency'}
+                Viewing as {viewAs === 'CREATOR' ? 'Creator' : 'Business / Agency'}{viewingPartner ? `: ${viewingPartner.name}` : ''}
               </span>
-              <span className="text-[10px] text-white/60 ml-2 hidden sm:inline">Admin testing mode — no changes are permanent</span>
+              <span className="text-[10px] text-white/60 ml-2 hidden sm:inline">Admin viewing mode — your admin session is preserved</span>
             </div>
             <button
               onClick={() => {

@@ -65,6 +65,14 @@ interface SignupData {
   acceptTerms: boolean;
 }
 
+interface ViewingPartner {
+  id: string;
+  name: string;
+  email: string;
+  partnerType: PartnerType;
+  status: PartnerStatus;
+}
+
 interface MockAuthContextValue {
   user: MockUser | null;
   loading: boolean;
@@ -75,6 +83,7 @@ interface MockAuthContextValue {
   storefrontAccess: StorefrontAccessState;
   affiliateLink: AffiliateLink | null;
   viewAs: PartnerType | null;
+  viewingPartner: ViewingPartner | null;
   adminUser: MockUser | null;
   login: (email: string, password: string, role: MockRole) => { success: boolean; error?: string };
   logout: () => void;
@@ -94,7 +103,7 @@ interface MockAuthContextValue {
   hasStorefrontAccess: () => boolean;
   grantStorefrontAccess: () => void;
   refreshStorefrontAccess: () => void;
-  setViewAs: (type: PartnerType) => void;
+  setViewAs: (type: PartnerType, partnerId?: string) => void;
   clearViewAs: () => void;
 }
 
@@ -115,6 +124,7 @@ const APPLICATION_KEY = 'careverse_mock_application';
 const ONBOARDING_KEY = 'careverse_mock_onboarding';
 const EMAIL_VERIFIED_KEY = 'careverse_mock_email_verified';
 const VIEW_AS_KEY = 'careverse_view_as';
+const VIEWING_PARTNER_KEY = 'careverse_viewing_partner';
 const ADMIN_USER_KEY = 'careverse_admin_user';
 
 export function MockAuthProvider({ children }: { children: React.ReactNode }) {
@@ -127,6 +137,7 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
   const [storefrontAccess, setStorefrontAccess] = useState<StorefrontAccessState>('NONE');
   const [affiliateLink, setAffiliateLink] = useState<AffiliateLink | null>(null);
   const [viewAs, setViewAsState] = useState<PartnerType | null>(null);
+  const [viewingPartner, setViewingPartnerState] = useState<ViewingPartner | null>(null);
   const [adminUser, setAdminUser] = useState<MockUser | null>(null);
 
   useEffect(() => {
@@ -159,6 +170,14 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       const storedViewAs = localStorage.getItem(VIEW_AS_KEY);
       if (storedViewAs === 'CREATOR' || storedViewAs === 'BUSINESS') {
         setViewAsState(storedViewAs as PartnerType);
+      }
+      const storedViewingPartner = localStorage.getItem(VIEWING_PARTNER_KEY);
+      if (storedViewingPartner) {
+        try {
+          setViewingPartnerState(JSON.parse(storedViewingPartner) as ViewingPartner);
+        } catch {
+          // ignore
+        }
       }
       const storedAdmin = localStorage.getItem(ADMIN_USER_KEY);
       if (storedAdmin) {
@@ -227,9 +246,11 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     persistUser(null);
     setViewAsState(null);
+    setViewingPartnerState(null);
     setAdminUser(null);
     try {
       localStorage.removeItem(VIEW_AS_KEY);
+      localStorage.removeItem(VIEWING_PARTNER_KEY);
       localStorage.removeItem(ADMIN_USER_KEY);
     } catch {
       // ignore
@@ -461,7 +482,7 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  const setViewAs = useCallback((type: PartnerType) => {
+  const setViewAs = useCallback((type: PartnerType, partnerId?: string) => {
     if (user) {
       setAdminUser(user);
       try {
@@ -470,9 +491,25 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
         // ignore
       }
     }
-    const mockPartner = mockUsers.find(u => u.role === 'PARTNER' && u.partnerType === type && u.status === 'ACTIVE');
+    // Find the mock partner to view as — do NOT replace the authenticated user
+    const mockPartner = partnerId
+      ? mockUsers.find(u => u.id === partnerId && u.role === 'PARTNER')
+      : mockUsers.find(u => u.role === 'PARTNER' && u.partnerType === type && u.status === 'ACTIVE');
     if (mockPartner) {
-      persistUser(mockPartner);
+      const vp: ViewingPartner = {
+        id: mockPartner.id,
+        name: mockPartner.name,
+        email: mockPartner.email,
+        partnerType: mockPartner.partnerType as PartnerType,
+        status: mockPartner.status as PartnerStatus,
+      };
+      setViewingPartnerState(vp);
+      try {
+        localStorage.setItem(VIEWING_PARTNER_KEY, JSON.stringify(vp));
+      } catch {
+        // ignore
+      }
+      // Load partner-specific state for the viewing partner
       const access = loadStorefrontAccess(mockPartner.id);
       setStorefrontAccess(access);
       const profiles = loadCreatorProfiles(mockPartner.id);
@@ -489,8 +526,8 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const clearViewAs = useCallback(() => {
+    // Restore admin-specific state (the admin user was never replaced)
     if (adminUser) {
-      persistUser(adminUser);
       const access = loadStorefrontAccess(adminUser.id);
       setStorefrontAccess(access);
       const profiles = loadCreatorProfiles(adminUser.id);
@@ -500,8 +537,10 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
     }
     setAdminUser(null);
     setViewAsState(null);
+    setViewingPartnerState(null);
     try {
       localStorage.removeItem(VIEW_AS_KEY);
+      localStorage.removeItem(VIEWING_PARTNER_KEY);
       localStorage.removeItem(ADMIN_USER_KEY);
     } catch {
       // ignore
@@ -535,6 +574,7 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
         storefrontAccess,
         affiliateLink,
         viewAs,
+        viewingPartner,
         adminUser,
         login,
         logout,
@@ -569,4 +609,18 @@ export function useMockAuth() {
     throw new Error('useMockAuth must be used within MockAuthProvider');
   }
   return ctx;
+}
+
+export function useEffectivePartner() {
+  const { user, viewAs, viewingPartner } = useMockAuth();
+  if (viewAs && viewingPartner) {
+    return {
+      id: viewingPartner.id,
+      email: viewingPartner.email,
+      name: viewingPartner.name,
+      partnerType: viewingPartner.partnerType,
+      status: viewingPartner.status,
+    };
+  }
+  return user;
 }

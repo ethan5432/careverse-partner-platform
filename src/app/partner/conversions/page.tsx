@@ -20,7 +20,7 @@ import { mockConversions, mockStorefronts, getPartnerIdByEmail } from '@/data/mo
 import type { MockConversion, ConversionStatus, AttributionState } from '@/data/mock/types';
 import { SupportLink } from '@/components/shared/SupportLink';
 import { cn } from '@/lib/utils';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useMockAuth, useEffectivePartner } from '@/hooks/useMockAuth';
 
 type FilterTab = 'ALL' | ConversionStatus;
 type DateFilter = 'ALL' | '7D' | '30D' | '90D';
@@ -58,7 +58,8 @@ const ATTRIBUTION_COLORS: Record<AttributionState, string> = {
 export default function PartnerConversionsPage() {
   const router = useRouter();
   const { user, hasStorefrontAccess } = useMockAuth();
-  const isAffiliateOnly = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
+  const partner = useEffectivePartner();
+  const isAffiliateOnly = partner?.partnerType === 'CREATOR' && !hasStorefrontAccess();
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [dateFilter, setDateFilter] = useState<DateFilter>('ALL');
   const [storefrontFilter, setStorefrontFilter] = useState<StorefrontFilter>('ALL');
@@ -70,7 +71,7 @@ export default function PartnerConversionsPage() {
   const fmtDate = (d: string) =>
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  const partnerId = user ? getPartnerIdByEmail(user.email) : null;
+  const partnerId = partner ? getPartnerIdByEmail(partner.email) : null;
 
   const partnerConversions = useMemo(
     () => mockConversions.filter((c) => c.partnerId === partnerId),

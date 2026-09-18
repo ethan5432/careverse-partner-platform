@@ -17,7 +17,7 @@ import { SupportLink } from '@/components/shared/SupportLink';
 import { mockCommissions, getPartnerIdByEmail } from '@/data/mock';
 import type { CommissionStatus, MockCommission } from '@/data/mock/types';
 import { cn } from '@/lib/utils';
-import { useMockAuth } from '@/hooks/useMockAuth';
+import { useMockAuth, useEffectivePartner } from '@/hooks/useMockAuth';
 
 type FilterTab = 'ALL' | CommissionStatus;
 
@@ -32,6 +32,7 @@ const FILTER_TABS: { key: FilterTab; label: string }[] = [
 export default function PartnerCommissionsPage() {
   const router = useRouter();
   const { user } = useMockAuth();
+  const partner = useEffectivePartner();
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<MockCommission | null>(null);
@@ -40,7 +41,7 @@ export default function PartnerCommissionsPage() {
   const fmtMoney2 = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  const partnerId = user ? getPartnerIdByEmail(user.email) : null;
+  const partnerId = partner ? getPartnerIdByEmail(partner.email) : null;
   const partnerCommissions = useMemo(
     () => mockCommissions.filter((c) => c.partnerId === partnerId),
     [partnerId],
