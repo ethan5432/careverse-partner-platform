@@ -30,6 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PartnerNotifications } from '@/components/shared/PartnerNotifications';
 import { cn } from '@/lib/utils';
+import { loadWhiteLabelConfig, isWhiteLabelEligible, type WhiteLabelConfig } from '@/lib/white-label-persistence';
 
 const baseNavItems = [
   { title: 'Overview', url: '/partner', icon: LayoutDashboard },
@@ -48,10 +49,31 @@ const bottomNavItems = [
   { title: 'Settings', url: '/partner/settings', icon: Settings },
 ];
 
+function useWhiteLabel() {
+  const { user } = useMockAuth();
+  const [wlConfig, setWlConfig] = React.useState<WhiteLabelConfig | null>(null);
+
+  React.useEffect(() => {
+    if (user?.id && user.partnerType === 'BUSINESS') {
+      const cfg = loadWhiteLabelConfig(user.id);
+      if (isWhiteLabelEligible(user.partnerType) && cfg.status !== 'DISABLED') {
+        setWlConfig(cfg);
+      } else {
+        setWlConfig(null);
+      }
+    } else {
+      setWlConfig(null);
+    }
+  }, [user]);
+
+  return wlConfig;
+}
+
 function PartnerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, switchPartnerType, switchStatus, hasStorefrontAccess } = useMockAuth();
+  const wlConfig = useWhiteLabel();
 
   const isActive = (url: string) => {
     if (url === '/partner') return pathname === '/partner';
@@ -80,10 +102,18 @@ function PartnerSidebar() {
     <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-cv-line h-screen sticky top-0">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 h-[72px] border-b border-cv-line">
-        <CareverseMark size={28} />
+        {wlConfig?.logoUrl ? (
+          <img src={wlConfig.logoUrl} alt={wlConfig.platformName} className="h-7 w-auto max-w-[140px] object-contain" />
+        ) : (
+          <CareverseMark size={28} />
+        )}
         <div className="flex flex-col leading-tight">
-          <span className="text-sm font-extrabold text-cv-ink">Careverse</span>
-          <span className="text-[10px] font-bold text-cv-muted uppercase tracking-wider">Partners</span>
+          <span className="text-sm font-extrabold text-cv-ink" style={wlConfig ? { fontFamily: wlConfig.headingFont } : undefined}>
+            {wlConfig?.platformName || 'Careverse'}
+          </span>
+          <span className="text-[10px] font-bold text-cv-muted uppercase tracking-wider">
+            {wlConfig ? 'Partner Platform' : 'Partners'}
+          </span>
         </div>
       </div>
 
@@ -184,6 +214,7 @@ function MobileNav() {
   const { user, hasStorefrontAccess } = useMockAuth();
   const storeLocked = user?.partnerType === 'CREATOR' && !hasStorefrontAccess();
   const isBusiness = user?.partnerType === 'BUSINESS';
+  const wlConfig = useWhiteLabel();
   const navItems = [...baseNavItems, ...bottomNavItems]
     .filter((item) => {
       if (isBusiness && item.title === 'Store') return false;
@@ -238,6 +269,7 @@ function MobileNav() {
 export default function PartnerLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useMockAuth();
   const router = useRouter();
+  const wlConfig = useWhiteLabel();
 
   const shouldRedirect = !loading && (!user || user.role !== 'PARTNER');
 
@@ -275,8 +307,14 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
         {/* Top bar */}
         <header className="sticky top-0 z-40 flex h-[72px] items-center justify-between px-5 lg:px-8 bg-cv-cream/88 backdrop-blur-md border-b border-cv-line">
           <div className="lg:hidden flex items-center gap-2">
-            <CareverseMark size={24} />
-            <span className="text-sm font-extrabold text-cv-ink">Careverse</span>
+            {wlConfig?.logoUrl ? (
+              <img src={wlConfig.logoUrl} alt={wlConfig.platformName} className="h-6 w-auto max-w-[120px] object-contain" />
+            ) : (
+              <CareverseMark size={24} />
+            )}
+            <span className="text-sm font-extrabold text-cv-ink" style={wlConfig ? { fontFamily: wlConfig.headingFont } : undefined}>
+              {wlConfig?.platformName || 'Careverse'}
+            </span>
           </div>
           <div className="hidden lg:block">
             <p className="text-sm text-cv-muted">

@@ -24,6 +24,9 @@ import {
   Bell,
   Wallet,
   Check,
+  Palette,
+  Globe,
+  Mail,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -41,6 +44,14 @@ import type {
 import { useMockAuth } from '@/hooks/useMockAuth';
 import { SupportLink } from '@/components/shared/SupportLink';
 import { cn } from '@/lib/utils';
+import {
+  loadWhiteLabelConfig,
+  saveWhiteLabelConfig,
+  loadWhiteLabelAdminConfig,
+  isWhiteLabelEligible,
+  WL_FONT_OPTIONS,
+  type WhiteLabelConfig,
+} from '@/lib/white-label-persistence';
 
 interface FieldProps {
   id: string;
@@ -126,6 +137,29 @@ const payoutStatusToBadge: Record<PayoutSetupStatus, 'connected' | 'none' | 'pro
   processing: 'processing',
 };
 
+function ColorField({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs font-bold uppercase tracking-wider text-cv-muted">{label}</Label>
+      <div className="flex items-center gap-2">
+        <input
+          id={id}
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-10 w-12 rounded-lg border border-cv-line cursor-pointer shrink-0"
+        />
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="cv-input font-mono text-xs"
+          placeholder="#18191D"
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { user, updateOnboarding, onboarding } = useMockAuth();
 
@@ -149,6 +183,22 @@ export default function SettingsPage() {
   // Payout
   const [payout, setPayout] = useState<MockPayoutSetup>(mockPayoutSetup);
   const [payoutSaved, setPayoutSaved] = useState(false);
+
+  // White label
+  const [wlConfig, setWlConfig] = useState<WhiteLabelConfig | null>(null);
+  const [wlSaved, setWlSaved] = useState(false);
+  const [wlEligible, setWlEligible] = useState(false);
+  const [wlDomainInput, setWlDomainInput] = useState('');
+
+  React.useEffect(() => {
+    if (user?.partnerType === 'BUSINESS' && user.id) {
+      const admin = loadWhiteLabelAdminConfig();
+      setWlEligible(isWhiteLabelEligible(user.partnerType, admin));
+      const cfg = loadWhiteLabelConfig(user.id);
+      setWlConfig(cfg);
+      setWlDomainInput(cfg.customDomain || '');
+    }
+  }, [user]);
 
   const flash = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
     setter(true);
@@ -189,6 +239,19 @@ export default function SettingsPage() {
     e.preventDefault();
     flash(setPayoutSaved);
     if (!onboarding.payoutsSetup) updateOnboarding({ payoutsSetup: true });
+  };
+
+  const handleSaveWhiteLabel = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wlConfig) return;
+    const updated = {
+      ...wlConfig,
+      customDomain: wlDomainInput,
+      domainStatus: wlDomainInput ? ('PENDING' as const) : ('NONE' as const),
+    };
+    setWlConfig(updated);
+    saveWhiteLabelConfig(updated);
+    flash(setWlSaved);
   };
 
   const notificationItems: { key: keyof MockNotificationSettings; label: string; description: string }[] = [
@@ -240,6 +303,14 @@ export default function SettingsPage() {
           >
             Payout Setup
           </TabsTrigger>
+          {wlEligible && (
+            <TabsTrigger
+              value="whitelabel"
+              className="rounded-lg px-4 py-1.5 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-cv-ink data-[state=active]:shadow-sm text-cv-muted"
+            >
+              White Label
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Profile */}
@@ -489,6 +560,214 @@ export default function SettingsPage() {
             </SectionCard>
           </form>
         </TabsContent>
+
+        {/* White Label */}
+        {wlEligible && wlConfig && (
+          <TabsContent value="whitelabel" className="mt-6 space-y-6">
+            <form onSubmit={handleSaveWhiteLabel} className="space-y-6">
+              {/* Branding */}
+              <SectionCard
+                icon={Palette}
+                title="Platform Branding"
+                description="Customize how the partner platform looks for your team. These settings apply across the partner dashboard, login screens, and communications."
+              >
+                <Field
+                  id="wl-platform-name"
+                  label="Platform Name"
+                  value={wlConfig.platformName}
+                  onChange={(e) => setWlConfig({ ...wlConfig, platformName: e.target.value })}
+                  placeholder="Your branded platform name"
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted">Logo URL</Label>
+                    <Input
+                      value={wlConfig.logoUrl}
+                      onChange={(e) => setWlConfig({ ...wlConfig, logoUrl: e.target.value })}
+                      className="cv-input"
+                      placeholder="https://yourbrand.com/logo.png"
+                    />
+                    <p className="text-[10px] text-cv-muted">Recommended: 200x40px, PNG or SVG with transparent background.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted">Favicon URL</Label>
+                    <Input
+                      value={wlConfig.faviconUrl}
+                      onChange={(e) => setWlConfig({ ...wlConfig, faviconUrl: e.target.value })}
+                      className="cv-input"
+                      placeholder="https://yourbrand.com/favicon.ico"
+                    />
+                    <p className="text-[10px] text-cv-muted">Recommended: 32x32px ICO or PNG.</p>
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <ColorField id="wl-primary" label="Primary Color" value={wlConfig.primaryColor} onChange={(v) => setWlConfig({ ...wlConfig, primaryColor: v })} />
+                  <ColorField id="wl-secondary" label="Secondary Color" value={wlConfig.secondaryColor} onChange={(v) => setWlConfig({ ...wlConfig, secondaryColor: v })} />
+                  <ColorField id="wl-accent" label="Accent Color" value={wlConfig.accentColor} onChange={(v) => setWlConfig({ ...wlConfig, accentColor: v })} />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted">Heading Font</Label>
+                    <Select value={wlConfig.headingFont} onValueChange={(v) => setWlConfig({ ...wlConfig, headingFont: v })}>
+                      <SelectTrigger className="cv-input"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {WL_FONT_OPTIONS.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted">Body Font</Label>
+                    <Select value={wlConfig.bodyFont} onValueChange={(v) => setWlConfig({ ...wlConfig, bodyFont: v })}>
+                      <SelectTrigger className="cv-input"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {WL_FONT_OPTIONS.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <FormActions saved={wlSaved} />
+              </SectionCard>
+
+              {/* Custom Domain */}
+              <SectionCard
+                icon={Globe}
+                title="Custom Domain"
+                description="Serve your white-labeled partner platform on your own domain. Your domain must be approved by Careverse admin."
+              >
+                <Field
+                  id="wl-domain"
+                  label="Custom Domain"
+                  value={wlDomainInput}
+                  onChange={(e) => setWlDomainInput(e.target.value)}
+                  placeholder="partners.yourbrand.com"
+                />
+                <div className="flex items-center gap-2 rounded-xl border border-cv-line bg-cv-soft/60 px-4 py-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-cv-muted">Domain Status</span>
+                  <StatusBadge
+                    status={
+                      wlConfig.domainStatus === 'CONNECTED' ? 'connected' :
+                      wlConfig.domainStatus === 'PENDING' ? 'processing' : 'none'
+                    }
+                  />
+                </div>
+                <p className="text-[10px] text-cv-muted">
+                  Your domain must be verified and approved by Careverse before it goes live. DNS configuration instructions will be provided after submission.
+                </p>
+              </SectionCard>
+
+              {/* Login / Auth Screens */}
+              <SectionCard
+                icon={Lock}
+                title="Login & Authentication Screens"
+                description="Customize the login experience your team sees when signing in to the partner platform."
+              >
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted">Login Logo URL</Label>
+                  <Input
+                    value={wlConfig.loginLogoUrl}
+                    onChange={(e) => setWlConfig({ ...wlConfig, loginLogoUrl: e.target.value })}
+                    className="cv-input"
+                    placeholder="https://yourbrand.com/login-logo.png"
+                  />
+                  <p className="text-[10px] text-cv-muted">If empty, your main logo will be used on the login screen.</p>
+                </div>
+                <Field
+                  id="wl-login-headline"
+                  label="Login Headline"
+                  value={wlConfig.loginHeadline}
+                  onChange={(e) => setWlConfig({ ...wlConfig, loginHeadline: e.target.value })}
+                  placeholder="Welcome back"
+                />
+                <Field
+                  id="wl-login-subtext"
+                  label="Login Subtext"
+                  value={wlConfig.loginSubtext}
+                  onChange={(e) => setWlConfig({ ...wlConfig, loginSubtext: e.target.value })}
+                  placeholder="Sign in to your partner dashboard"
+                />
+                <ColorField id="wl-login-bg" label="Login Background Color" value={wlConfig.loginBackgroundColor} onChange={(v) => setWlConfig({ ...wlConfig, loginBackgroundColor: v })} />
+              </SectionCard>
+
+              {/* Email Branding */}
+              <SectionCard
+                icon={Mail}
+                title="Email & Communications Branding"
+                description="Customize how partner-facing emails and communications appear to your team."
+              >
+                <Field
+                  id="wl-email-from"
+                  label="Email From Name"
+                  value={wlConfig.emailFromName}
+                  onChange={(e) => setWlConfig({ ...wlConfig, emailFromName: e.target.value })}
+                  placeholder="Your Brand Team"
+                />
+                <ColorField id="wl-email-header" label="Email Header Color" value={wlConfig.emailHeaderColor} onChange={(v) => setWlConfig({ ...wlConfig, emailHeaderColor: v })} />
+                <div className="flex items-center justify-between gap-4 py-2 border-b border-cv-line">
+                  <div>
+                    <p className="text-sm font-bold text-cv-ink">Show logo in email header</p>
+                    <p className="text-xs text-cv-muted mt-0.5">Display your logo at the top of partner notification emails.</p>
+                  </div>
+                  <Switch
+                    checked={wlConfig.emailShowLogo}
+                    onCheckedChange={(v) => setWlConfig({ ...wlConfig, emailShowLogo: v })}
+                  />
+                </div>
+                <Field
+                  id="wl-comm-sender"
+                  label="Communication Sender Name"
+                  value={wlConfig.communicationSenderName}
+                  onChange={(e) => setWlConfig({ ...wlConfig, communicationSenderName: e.target.value })}
+                  placeholder="Your Brand Team"
+                />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-cv-muted">Communication Footer Text (optional)</Label>
+                  <textarea
+                    value={wlConfig.communicationFooterText}
+                    onChange={(e) => setWlConfig({ ...wlConfig, communicationFooterText: e.target.value })}
+                    rows={3}
+                    className="cv-input w-full resize-none py-3 px-4"
+                    placeholder="Your custom footer message for partner communications."
+                  />
+                </div>
+              </SectionCard>
+
+              {/* Required Disclosures - read only */}
+              <Card className="cv-card border-amber-200 bg-amber-50/40">
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 shrink-0">
+                      <Lock className="h-4 w-4 text-amber-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-cv-ink">Required Careverse Disclosures</p>
+                      <p className="text-xs text-cv-muted mt-1 leading-relaxed">
+                        The following items are required by Careverse and cannot be removed or modified:
+                      </p>
+                      <ul className="mt-2 space-y-1">
+                        <li className="flex items-center gap-2 text-xs text-cv-body">
+                          <Check className="h-3.5 w-3.5 text-cv-good" />
+                          Careverse product and benefit information
+                        </li>
+                        <li className="flex items-center gap-2 text-xs text-cv-body">
+                          <Check className="h-3.5 w-3.5 text-cv-good" />
+                          Legal disclosures and cancellation policies
+                        </li>
+                        <li className="flex items-center gap-2 text-xs text-cv-body">
+                          <Check className="h-3.5 w-3.5 text-cv-good" />
+                          &quot;This is not insurance&quot; disclaimers
+                        </li>
+                        <li className="flex items-center gap-2 text-xs text-cv-body">
+                          <Check className="h-3.5 w-3.5 text-cv-good" />
+                          Powered by Careverse attribution (where required by your plan)
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
+          </TabsContent>
+        )}
       </Tabs>
 
       <SupportLink variant="card" context="Questions about your account, settings, or payouts? Message us anytime." />
